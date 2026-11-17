@@ -85,6 +85,8 @@ Embark on a captivating 10-day journey through Sri Lanka’s living history, whe
 - Return to Galle for a farewell seafood dinner in a colonial villa
 ![](/img/tours/mask.jpg) ![](/img/tours/sri-lankan-fish-curry.jpg)
 
+[Try on a Gini Raksha mask with your camera](/mask/){.btn .small}
+
 ### Day 10 · Departure from Colombo
 
 - Leisurely drive to Colombo airport
