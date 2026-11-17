@@ -1,0 +1,8 @@
+# Guest reviews shown on the home and About pages.
+# Format:  name | review | photo (optional)
+
+amin m | A reliable and an excellent value for money tour and travel company. Sunbird Travels were very helpful in arranging an itinerary of places to visit in Sri Lanka. They chose really good hotels and tailored the plan to our needs. Amith our driver was polite and kind. Nothing was too much trouble for him. We had a lot of flexibility in making changes to our itinerary as we made progress with our travels. | /img/people/review-01-alamin.jpg
+kirstenbjergegaarda | Excellent, reliable and safe – memories for life. Mr. Rohana planned our tour according to our wishes and Mr. Amith was our driver for almost two weeks. Great personality, very professional, excellent service level and we felt safe at all times. | /img/people/review-02-kirstenbjergegaarda-pic.jpg
+Mona | It was a great journey with family and friends and we enjoyed every moment. Serene landscape, hassle-free roads, comfortable stay and good food. Thanks to Mr. Rohana and Mr. Amith for making the trip memorable. | /img/people/review-04-mona.jpg
+Rosemarie | We had an amazing trip, thanks to our wonderful driver Amith. We felt really safe and comfortable in his car. He showed us some beautiful places and took the most fun-loving pictures during our trip. Always helpful, available and on time. We look forward to booking again! | /img/people/review-05-rosmeri.jpg
+Jack | Me and my girlfriend Emma had a truly memorable time touring around Sri Lanka. Our driver Amith was absolutely exceptional – kind, polite, a fab driver and a phenomenal tour guide and photographer. He catered for our every need and really made our trip feel special. | /img/people/review-06-jacki.jpg

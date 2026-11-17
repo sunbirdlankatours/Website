@@ -1,0 +1,36 @@
+# Sunbird Lanka Tours – website settings
+# Change the text after the colon and save. Lines starting with # are notes.
+
+site_name: Sunbird Lanka Tours
+company: Sunbird Lanka Tours & Travels (Pvt) Ltd
+motto: Utmost Content in Tourism
+url: https://sunbirdtours.lk
+description: Tailor-made Sri Lanka tours, wildlife safaris and MICE events by Sunbird Lanka Tours & Travels, a licensed inbound tour operator since 2010.
+
+# Contact details (shown in the header, footer and contact page)
+phone: (+94) 766 800 130
+phone_link: +94766800130
+phone2: (+94) 112 938 465
+phone2_link: +94112938465
+whatsapp: 94766800130
+email: letstravel@sunbirdtours.lk
+email2: support24@sunbirdtours.lk
+address: No. 403, Elakanda Road, Hendala, Wattala 11300, Sri Lanka
+hours: 08.00 A.M - 5.00 P.M
+
+# Social media
+facebook: https://www.facebook.com/TOURS.SUNBIRDLANKA/
+instagram: https://www.instagram.com/sunbirdtours.srilanka/
+tripadvisor: https://www.tripadvisor.com/Attraction_Review-g297897-d16831459-Reviews-Sunbird_Lanka_Tours_Travels-Negombo_Western_Province.html
+
+# Enquiry forms: get a free key at https://web3forms.com (enter letstravel@sunbirdtours.lk)
+web3forms_key: PASTE-YOUR-WEB3FORMS-KEY-HERE
+
+# Google tag (analytics) and Tawk.to live chat
+google_tag: GT-KV5H35VK
+tawk_chat: 6826d5949ff758190ef177e5/1irbr4js0
+
+# Languages in the "Language" menu
+languages: en, fr, de, it, es, nl, pt, ru, ar, zh-CN
+
+footer_text: We turn your Sri Lanka journey into a soulful, joy-filled adventure with authentic moments and lasting memories.

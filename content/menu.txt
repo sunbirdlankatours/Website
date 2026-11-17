@@ -1,0 +1,35 @@
+# Main menu. Format:  Label | link
+# Indent a line with two spaces to put it inside the item above (dropdown).
+
+Bespoke Tours | /tours/#bespoke
+  Adventure, Culture & Nature | /adventure-nature-based-tours/
+  Bird Watching Tour | /bird-watching-tour/
+  Cultural & Heritage Tour | /cultural-heritage-tour/
+  Family Tour | /family-tour/
+  Luxury Bespoke Tour | /luxury-bespoke-tour/
+  North & East Coast Tour | /north-east-cost-tour/
+  Romantic Central & Southern Beaches | /romantic-central-southern-beaches/
+  Romantic North & East | /romantic-north-east/
+  Buddhist Pilgrimage Tour | /pilgrimage-tour/
+  Sports-Based Tour | /sports-based-tour/
+  Sustainable Tour | /sustainable-tour-itinerary/
+  Village & Home Stay Tour | /village-based-home-stay-tour/
+  Wellness Tour | /wellness-tour-itinerary/
+Wildlife Tours | /tours/#wildlife
+  Negombo Lagoon Day Tour | /negombo-lagoon-day-tour/
+  Udawalawe Jeep Safari | /udawalawe-jeep-safari/
+  Whale Watching Day Tour | /whale-watching-day-tour/
+  Wilpattu Day Tour | /wilpattu-day-tour/
+  Yala Jeep Safari | /jeep-safari-yala-park-day-tour/
+MICE | /mice/
+Explore Sri Lanka | /destinations/
+Comfort Travel | /transport-and-stays/
+  Vehicle Hire | /transport-and-stays/#vehicles
+  Accommodation | /transport-and-stays/#stays
+Our Story | /about-us/
+  About Us | /about-us/
+  Our CEO | /about-us/#ceo
+  Sustainable Tourism | /about-us/#sustainability
+  Social Responsibility | /about-us/#csr
+  Blog | /blog/
+Contact Us | /contact-us/

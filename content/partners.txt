@@ -1,0 +1,9 @@
+# Logos shown under the reviews.  Format:  name | logo | link (optional)
+
+TripAdvisor | /img/logos/trip-advisor.png | https://www.tripadvisor.com/Attraction_Review-g297897-d16831459-Reviews-Sunbird_Lanka_Tours_Travels-Negombo_Western_Province.html
+SLTA | /img/logos/slta-1.png
+SLCB | /img/logos/slcb.png
+SLTB | /img/logos/sltb.png
+SLTB | /img/logos/sltb2.png
+SLAITO | /img/logos/slaito.png
+ASMET | /img/logos/asmet.png

@@ -1,0 +1,8 @@
+# Vehicles on the Comfort Travel page.
+# Format:  name | model | seats | driving type | price (optional)
+
+Budget Car | Hatchback cars | 3 | With driver
+Tuk Tuk Ride | Bajaj petrol | 2 | With driver
+Luxury Van | High roof van | 8 | With driver
+Luxury Coaches / Buses | Buses | 32 | With driver
+Luxury Motor Yacht | 50 m | 8 | Catamaran | $980 per day
