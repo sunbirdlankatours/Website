@@ -363,6 +363,58 @@ class Builder:
                        for i in range(len(slides)))
         return '<section class="slider" aria-label="Highlights">%s<div class="dots">%s</div></section>' % ("".join(slides), dots)
 
+    # Gold sunbird used in the home hero. The wing is separate so it can flap.
+    SUNBIRD_SVG = (
+        '<svg viewBox="0 0 64 48" aria-hidden="true" focusable="false">'
+        '<path class="b-tail" d="M22 31 L5 40 L8 43 L24 34 Z"/>'
+        '<path class="b-body" d="M20 29 C20 21 29 16 37 17.5 C43 18.6 46.5 22.5 45.5 27 C44 33 35 36.5 27 35 C22.5 34.2 20 32 20 29 Z"/>'
+        '<circle class="b-body" cx="43.5" cy="17.5" r="5.6"/>'
+        '<path class="b-bill" d="M48.6 16.4 Q56.5 16.2 62 22.8"/>'
+        '<circle class="b-eye" cx="45" cy="16.4" r="1.15"/>'
+        '<path class="b-feet" d="M30 35.5 L29 41 M34 35 L34.5 41"/>'
+        '<path class="b-wing" d="M30 26 C27 16 20 9 11 6 C16 14 21.5 22 31 28.5 Z"/>'
+        '</svg>')
+
+    def home_hero(self):
+        """The big first screen on the home page (settings live in content/pages/home.md)."""
+        p = self.current
+
+        def parts(key, n):
+            return (split_row(p.get(key) or "") + [""] * n)[:n]
+
+        first, script, last = parts("hero_title", 3)
+        btn_text, btn_link = parts("hero_button", 2)
+        greet, greet_small = parts("hero_greeting", 2)
+        facts = "".join('<li><strong>%s</strong>%s</li>' % tuple(esc(x) for x in (split_row(r) + [""])[:2])
+                        for r in (p.get("hero_facts") or []))
+        wa = self.s.get("whatsapp")
+        return (
+            '<section class="hero-home" aria-label="Welcome">'
+            '<img class="hh-photo" src="{img}" alt="{alt}" style="--focus:{focus}" fetchpriority="high" decoding="async">'
+            '<div class="hh-shade"></div>'
+            '<div class="wrap hh-inner">'
+            '<p class="hh-kicker">{kicker}</p>'
+            '<h1 class="hh-title"><span>{first}</span> <em class="hh-script">{script}<svg class="hh-branch" viewBox="0 0 200 24" preserveAspectRatio="none" aria-hidden="true" focusable="false"><path d="M2 15 C 60 23, 132 21, 197 4"/></svg><span class="hh-bird">{bird}</span></em> <span>{last}</span></h1>'
+            '<p class="hh-text">{text}</p>'
+            '<p class="hh-btns"><a class="btn gold" href="{link}">{btn}{arrow}</a>{wa}</p>'
+            '{facts}'
+            '</div>'
+            '{greet}'
+            '<a class="hh-scroll" href="#start" aria-label="Scroll down"><span></span></a>'
+            '</section><span id="start"></span>'
+        ).format(
+            img=esc(p.get("image")), alt=esc(p.get("hero_photo_alt")), focus=esc(p.get("hero_focus") or "50% 50%"),
+            kicker=esc(p.get("hero_kicker")), first=esc(first), script=esc(script), last=esc(last), bird=self.SUNBIRD_SVG,
+            text=esc(p.get("hero_text")), link=esc(btn_link or "/contact-us/#plan"), btn=esc(btn_text or "Plan your trip"),
+            arrow=ICON["arrow"],
+            wa=('<a class="btn ghost" href="https://wa.me/%s" target="_blank" rel="noopener">%sWhatsApp us</a>'
+                % (esc(wa), ICON["whatsapp"])) if wa else "",
+            facts=('<ul class="hh-facts">%s</ul>' % facts) if facts else "",
+            greet=('<p class="hh-greet" aria-hidden="true"><span>%s</span><small>%s</small>'
+                   '<svg viewBox="0 0 220 24"><path d="M4 16 C 50 4, 110 22, 216 8"/></svg></p>'
+                   % (esc(greet), esc(greet_small))) if greet else "",
+        )
+
     def categories(self):
         cards = []
         for row in self.current.get("categories") or []:
@@ -456,6 +508,7 @@ class Builder:
         kind, _, arg = name.partition(":")
         return {
             "slider": lambda: self.slider(),
+            "hero": lambda: self.home_hero(),
             "categories": lambda: self.categories(),
             "tours": lambda: self.tour_grid(arg or "all"),
             "places": lambda: self.place_cards(arg or "all"),
@@ -538,7 +591,7 @@ class Builder:
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Manrope:wght@600;700;800&family=Montez&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Manrope:wght@600;700;800&family=Montez&family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Caveat:wght@700&display=swap">
 <link rel="stylesheet" href="/css/site.css?v={ver}">
 {gtag}</head>
 <body class="layout-{layout}">
@@ -548,7 +601,7 @@ class Builder:
 <span class="tb-right"><span class="gtranslate_wrapper"></span><a class="tb-item" href="https://wa.me/{wa}" target="_blank" rel="noopener">{waicon}{phone}</a></span>
 </div></div>
 <header class="site-header"><div class="wrap">
-<a class="logo" href="/"><img src="/img/logo.png" alt="{site}" width="170" height="64"></a>
+<a class="logo" href="/"><img class="logo-dark" src="/img/logo.png" alt="{site}" width="170" height="64"><img class="logo-light" src="/img/logo-white.png" alt="{site}" width="170" height="64"></a>
 <nav id="nav" class="nav" aria-label="Main">{nav}<a class="btn nav-cta" href="/contact-us/#plan">Request a Quote</a></nav>
 <a class="btn header-cta" href="/contact-us/#plan">Request a Quote</a>
 <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="nav"><span class="bars"></span><span class="sr">Menu</span></button>

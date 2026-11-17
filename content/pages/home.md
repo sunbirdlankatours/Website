@@ -3,7 +3,24 @@ title: "Sunbird Lanka Tours – Utmost Content in Tourism"
 url: /
 layout: home
 description: "Tailor-made Sri Lanka tours, wildlife safaris and MICE events by Sunbird Lanka Tours & Travels, a licensed inbound tour operator since 2010."
-# Slider:  photo | small script line | big title | button text | button link
+# ---- Hero (the big first screen). Used by the {{hero}} line below.
+# Photo, and which part of it to keep in view on phones (left-right %, top-bottom %)
+image: /img/site/sunbird-lanka-tours-hero-bg-2-3-nk.jpg
+hero_photo_alt: "Sigiriya rock fortress rising out of the forest"
+hero_focus: "62% 50%"
+hero_kicker: "Tailor-made Sri Lanka tours · Since 2010"
+# Title: first line | word in gold handwriting (the sunbird lands on it) | last line
+hero_title: "Your Sri Lanka | Story | Starts Here"
+hero_text: "Private driver-guides, hand-picked stays and a route planned around you, from misty tea hills to wild southern shores."
+hero_button: "Plan your trip | /contact-us/#plan"
+# Small facts under the buttons:  big text | small text
+hero_facts:
+  - "15+ | years in tourism"
+  - "1500+ | tours planned"
+  - "Licensed | tour operator"
+# Handwritten greeting in the corner (big screens):  greeting | small line
+hero_greeting: "Ayubowan! | Welcome to Sri Lanka"
+# Old photo slider (not shown any more; put {{slider}} back in the text below to use it)
 slides:
   - "/img/site/sunbird-lanka-tours-hero-bg-1-1k.jpg | Feel the Heartbeat of Sri Lanka | Gentle Bond of Sri Lanka’s Giants | Explore Tours | /tours/"
   - "/img/site/sunbird-lanka-tours-hero-bg-2-3-nk.jpg | Where History Touches the Sky | Eighth Wonder, Endless Wonder | Explore Tours | /tours/"
@@ -54,7 +71,7 @@ events:
   - "/img/site/sunbird-lanka-tours-adamspeak04.jpg | Adam’s Peak | Hill Country"
 ---
 
-{{slider}}
+{{hero}}
 
 ::: band
 ~ Wonderful Places For You
