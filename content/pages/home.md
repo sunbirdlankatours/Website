@@ -4,10 +4,13 @@ url: /
 layout: home
 description: "Tailor-made Sri Lanka tours, wildlife safaris and MICE events by Sunbird Lanka Tours & Travels, a licensed inbound tour operator since 2010."
 # ---- Hero (the big first screen). Used by the {{hero}} line below.
-# Photo, and which part of it to keep in view on phones (left-right %, top-bottom %)
-image: /img/site/sunbird-lanka-tours-hero-bg-2-3-nk.jpg
-hero_photo_alt: "Sigiriya rock fortress rising out of the forest"
-hero_focus: "62% 50%"
+# Photo for computers (wide) and for phones (tall), and which part of each to keep
+# in view (left-right %, top-bottom %). Old photo: /img/site/sunbird-lanka-tours-hero-bg-2-3-nk.jpg
+image: /img/site/hero-sigiriya-view-wide.jpg
+hero_photo_phone: /img/site/hero-sigiriya-view-phone.jpg
+hero_photo_alt: "A traveller in a white dress looks out at Sigiriya rock from Pidurangala on a misty morning"
+hero_focus: "52% 30%"
+hero_focus_wide: "70% 35%"
 hero_kicker: "Tailor-made Sri Lanka tours · Since 2010"
 # Title: first line | word in gold handwriting (the sunbird lands on it) | last line
 hero_title: "Your Sri Lanka | Story | Starts Here"

@@ -390,7 +390,7 @@ class Builder:
         wa = self.s.get("whatsapp")
         return (
             '<section class="hero-home" aria-label="Welcome">'
-            '<img class="hh-photo" src="{img}" alt="{alt}" style="--focus:{focus}" fetchpriority="high" decoding="async">'
+            '<picture>{wide_src}<img class="hh-photo" src="{img}" alt="{alt}" style="--focus:{focus};--focus-wide:{focus_wide}" fetchpriority="high" decoding="async"></picture>'
             '<div class="hh-shade"></div>'
             '<div class="wrap hh-inner">'
             '<p class="hh-kicker">{kicker}</p>'
@@ -403,7 +403,10 @@ class Builder:
             '<a class="hh-scroll" href="#start" aria-label="Scroll down"><span></span></a>'
             '</section><span id="start"></span>'
         ).format(
-            img=esc(p.get("image")), alt=esc(p.get("hero_photo_alt")), focus=esc(p.get("hero_focus") or "50% 50%"),
+            img=esc(p.get("hero_photo_phone") or p.get("image")),
+            wide_src=('<source media="(min-width: 761px)" srcset="%s">' % esc(p.get("image"))) if p.get("hero_photo_phone") else "",
+            alt=esc(p.get("hero_photo_alt")), focus=esc(p.get("hero_focus") or "50% 50%"),
+            focus_wide=esc(p.get("hero_focus_wide") or p.get("hero_focus") or "50% 50%"),
             kicker=esc(p.get("hero_kicker")), first=esc(first), script=esc(script), last=esc(last), bird=self.SUNBIRD_SVG,
             text=esc(p.get("hero_text")), link=esc(btn_link or "/contact-us/#plan"), btn=esc(btn_text or "Plan your trip"),
             arrow=ICON["arrow"],
@@ -744,7 +747,7 @@ def apply_base_path(base):
     if not base:
         return 0
     rules_html = [
-        re.compile(r'(\s(?:href|src|action|poster)=")/(?!/)'),
+        re.compile(r'(\s(?:href|src|srcset|action|poster)=")/(?!/)'),
         re.compile(r'(http-equiv="refresh" content="\d+;\s*url=)/(?!/)'),
         re.compile(r'(location\.replace\(")/(?!/)'),
     ]
