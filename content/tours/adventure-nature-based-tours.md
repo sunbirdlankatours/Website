@@ -12,6 +12,8 @@ Embark on a 16-day journey through Sri Lanka where every moment is a blend of th
 
 ## Itinerary
 
+[Open this itinerary as a pop-up book](/popup-book/){.btn .small}
+
 ### Day 1 · Arrival → Colombo
 
 - Arrive at Bandaranaike International Airport (CMB)
