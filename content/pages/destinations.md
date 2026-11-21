@@ -11,7 +11,7 @@ description: "Sri Lanka’s best destinations – Kandy, Ella, Sigiriya, Galle, 
 
 ## Where would you like to go?
 
-From ancient cities and misty tea country to wild national parks and golden beaches, here are the places our guests love most. Tap a name to jump to it.
+From ancient cities and misty tea country to wild national parks and golden beaches, here are the places our guests love most. Pick a place to see what’s there, when to go and the tours that stop there.
 
 {{places:all}}
 :::
@@ -21,5 +21,5 @@ From ancient cities and misty tea country to wild national parks and golden beac
 
 Tell us what you love and we’ll suggest the right mix of places for your trip.
 
-[Plan my trip](/contact-us/#plan){.btn}
+[Plan my trip](/contact-us/#plan){.btn .gold}
 :::

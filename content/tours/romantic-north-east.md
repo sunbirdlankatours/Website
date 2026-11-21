@@ -2,6 +2,12 @@
 title: "Romantic North & East"
 tagline: "Love by the Lagoon: A Coastal Escape to Sri Lanka’s"
 category: "bespoke"
+themes:
+  - honeymoon-luxury
+  - beach-holidays
+# weather: the months this tour is at its best, and the mixed ones (other months count as off-season)
+best_months: "Apr-Sep"
+mixed_months: "Feb-Mar, Oct"
 duration: "10 days"
 image: "/img/tours/romantic-north-east-trip-gallery-01.jpg"
 summary: "Escape into a 10-day romantic adventure along Sri Lanka’s less-traveled North & East coasts. Enjoy golden beaches, historic cities, wildlife safaris, and luxurious…"
@@ -12,7 +18,7 @@ Escape into a 10-day romantic adventure along Sri Lanka’s less-traveled North 
 
 ## Itinerary
 
-### Day 1 · Arrival in Colombo → Transfer to Trincomalee
+### Day 1 · Colombo → Trincomalee · Sunset on the east coast
 
 - Travel to Trincomalee (about 6 hours by car).
 - Check in to a beachfront resort in Nilaveli or Uppuveli.
@@ -20,7 +26,7 @@ Escape into a 10-day romantic adventure along Sri Lanka’s less-traveled North 
 - Private candlelight dinner by the sea.
 ![](/img/tours/sunbird-lanka-airplane-runwayt.jpg) ![](/img/tours/romantic-sunset-walk-on-the-beach.jpg)
 
-### Day 2 · Trincomalee Relaxation + Pigeon Island Snorkeling
+### Day 2 · Trincomalee · Snorkelling at Pigeon Island
 
 - Morning: Leisurely breakfast by the beach.
 - Take a private boat to Pigeon Island for snorkeling among colorful corals.
@@ -28,7 +34,7 @@ Escape into a 10-day romantic adventure along Sri Lanka’s less-traveled North 
 - Evening: Watch sunset from Koneswaram Temple Cliff overlooking the ocean.
 ![](/img/tours/pigeon-island.jpg) ![](/img/tours/corel-reef.jpg)
 
-### Day 3 · Trincomalee → Pasikudah
+### Day 3 · Trincomalee → Pasikudah · A villa on the bay
 
 - Drive to Pasikudah (~2.5 hours).
 - Check-in to a luxury beachfront resort with private villas.
@@ -36,7 +42,7 @@ Escape into a 10-day romantic adventure along Sri Lanka’s less-traveled North 
 - Romantic dinner on the beach or private deck.
 ![](/img/tours/pasikuda-beach.jpg) ![](/img/tours/romantic-beach-dinner.jpg)
 
-### Day 4 · Pasikudah Leisure Day
+### Day 4 · Pasikudah · A beach picnic for two
 
 - Private boat ride along the coast.
 - Optional: Visit local fishing villages or explore nearby coral reefs.
@@ -44,7 +50,7 @@ Escape into a 10-day romantic adventure along Sri Lanka’s less-traveled North 
 - Evening stargazing by the shore.
 ![](/img/tours/pasikuda-beach-boat-ride.jpg) ![](/img/tours/evening-stargazing-by-the-shore.jpg)
 
-### Day 5 · Pasikudah → Jaffna
+### Day 5 · Pasikudah → Jaffna · North to Jaffna
 
 - Drive to Jaffna (~5 hours) through scenic northern landscapes.
 - Check in to a boutique hotel.
@@ -52,7 +58,7 @@ Escape into a 10-day romantic adventure along Sri Lanka’s less-traveled North 
 - Try authentic Jaffna cuisine at a cozy local restaurant.
 ![](/img/tours/jaffbafox-02.jpg) ![](/img/tours/jaffna-cousine.jpg)
 
-### Day 6 · Jaffna Cultural Exploration
+### Day 6 · Jaffna · Temples, islands and hot springs
 
 - Visit romantic spots like Nallur Kandaswamy Temple and Casuarina Beach
 - Explore ruins of Delft Island by private boat trip (optional).
@@ -60,7 +66,7 @@ Escape into a 10-day romantic adventure along Sri Lanka’s less-traveled North 
 - Intimate dinner at your hotel or a rooftop cafe
 ![](/img/tours/jaffna-nallur.jpg) ![](/img/tours/delfneduntheevut.jpg)
 
-### Day 7 · Jaffna → Wilpattu National Park
+### Day 7 · Jaffna → Wilpattu · Safari and a bonfire dinner
 
 - Transfer to Wilpattu (~5 hours).
 - Check in to a jungle lodge or luxury eco-resort.
@@ -68,7 +74,7 @@ Escape into a 10-day romantic adventure along Sri Lanka’s less-traveled North 
 - Evening: Romantic bonfire dinner under the stars.
 ![](/img/tours/mineriyasafari.jpg) ![](/img/tours/bonfire-dinner.jpg)
 
-### Day 8 · Wilpattu → Anuradhapura
+### Day 8 · Wilpattu → Anuradhapura · The ancient city at dusk
 
 - Morning safari or relaxing morning at the lodge.
 - Drive to Anuradhapura (~2.5 hours).
@@ -77,7 +83,7 @@ Escape into a 10-day romantic adventure along Sri Lanka’s less-traveled North 
 - Dinner at a quiet garden restaurant.
 ![](/img/tours/willpattu.jpg) ![](/img/tours/jaya-siri-maha-bodhi-tree.jpg)
 
-### Day 9 · Anuradhapura Ancient City Tour + Mihintale
+### Day 9 · Anuradhapura · Ruins and Mihintale together
 
 - Explore the UNESCO-listed ruins together.
 - Visit the serene Mihintale hill, a peaceful and spiritual spot.
@@ -85,7 +91,7 @@ Escape into a 10-day romantic adventure along Sri Lanka’s less-traveled North 
 - Romantic farewell dinner with traditional music.
 ![](/img/tours/mihintale-hb.jpg) ![](/img/tours/spa-relax.jpg)
 
-### Day 10 · Anuradhapura → Colombo / Airport
+### Day 10 · Anuradhapura → Colombo · Last photos, then home
 
 - Leisurely breakfast.
 - Transfer back to Colombo (~4.5 hours) or directly to Bandaranaike Airport.

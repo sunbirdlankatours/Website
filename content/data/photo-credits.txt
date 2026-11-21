@@ -1,0 +1,13 @@
+# Photos downloaded for the About us page (static/img/about/), 2026-11-21.
+# All from Unsplash, under the Unsplash License: free for commercial use, no permission or credit required
+# (https://unsplash.com/license). Each line: file | where it came from
+about-open-sigiriya.jpg | https://unsplash.com/photos/smUAKwMT8XA
+about-galle-tuktuk.jpg | https://unsplash.com/photos/FOYmbDX-sTs
+about-temple-offering.jpg | https://unsplash.com/photos/wMrwB9vPqjw
+about-train-window.jpg | https://unsplash.com/photos/ePAa2c9XbtE
+about-hills.jpg | https://unsplash.com/photos/i9eaAR4dWi8
+about-nine-arches.jpg | https://unsplash.com/photos/jpTT_SAU034
+about-elephants.jpg | https://unsplash.com/photos/nDrkDvdC9kU
+about-waterfall.jpg | https://unsplash.com/photos/Wak57_M4JKM
+about-stilt-fisherman.jpg | https://unsplash.com/photos/Qx8_d5dGhrs
+about-lighthouse-sunset.jpg | https://unsplash.com/photos/fnySGfSMY-s

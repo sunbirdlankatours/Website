@@ -3,6 +3,9 @@ name: "Sigiriya"
 tagline: "The Lion Rock Fortress"
 image: "/img/places/terraced-gardens-destinations.jpg"
 order: 16
+region: "Cultural Triangle"
+district: "Matale"
+map: "7.9570, 80.7603"
 ---
 
 Often hailed as the Eighth Wonder of the World, Sigiriya is a 200-metre-high ancient rock fortress rising from Sri Lanka’s jungle heartland. Once a royal palace built by King Kashyapa in the 5th century, it dazzles with landscaped gardens, mirror walls, and legendary lion paws guarding the entrance. Climb to the summit for sweeping views and a walk through history at Sri Lanka’s most iconic UNESCO World Heritage Site.

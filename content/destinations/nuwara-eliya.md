@@ -3,6 +3,9 @@ name: "Nuwara Eliya"
 tagline: "Little England in the Hills"
 image: "/img/places/hakgala-botanical-gardens-destinations.jpg"
 order: 14
+region: "Hill country"
+district: "Nuwara Eliya"
+map: "6.9497, 80.7891"
 ---
 
 With misty mountains, endless tea plantations, and cool, crisp air, Nuwara Eliya feels like a highland escape from a bygone era. Once the favourite hill station of British colonials, it’s now a dreamy destination for scenic train rides, cascading waterfalls, tea tasting, boating, golfing, and invigorating hikes. At 2,000 m above sea level, this timeless retreat blends natural beauty with nostalgic charm.

@@ -3,6 +3,9 @@ name: "Wilpattu National Park"
 tagline: "Where the Wild Roam Free"
 image: "/img/places/mamals.jpg"
 order: 18
+region: "Wildlife parks"
+district: "Puttalam"
+map: "8.4500, 80.0300"
 ---
 
 Sri Lanka’s largest and oldest national park, Wilpattu is famed for its natural lakes, elusive leopards, and ancient wilderness. Just 30km from Anuradhapura, this vast reserve is a haven for elephants, sloth bears, and birds, all set against a backdrop of red earth and lush jungle. Hop in a safari jeep and uncover untamed beauty at every turn.

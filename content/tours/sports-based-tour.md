@@ -2,6 +2,11 @@
 title: "Sports-Based Tour"
 tagline: "Thrill, Chill, and Explore: The Ultimate Active Adventure Across Sri Lanka"
 category: "bespoke"
+themes:
+  - adventure-hiking
+# weather: the months this tour is at its best, and the mixed ones (other months count as off-season)
+best_months: "Apr-Sep"
+mixed_months: "Jan-Mar, Oct"
 duration: "10 days"
 image: "/img/tours/sport-based-trip-gallery01.jpg"
 summary: "Get ready for a high-energy adventure across Sri Lanka! This 10-day sports-based tour blends adrenaline and nature—from white-water rafting in Kitulgala and hiking the…"
@@ -12,68 +17,68 @@ Get ready for a high-energy adventure across Sri Lanka! This 10-day sports-based
 
 ## Itinerary
 
-### Day 1 · Arrival in Colombo
+### Day 1 · Colombo · Arrival and a light warm-up
 
 - Arrive at Bandaranaike International Airport.
 - Rest and short city tour.
 - Optional: Visit a gym or sports club for light training.
 ![](/img/tours/sunbird-lanka-airplane-runwayt.jpg) ![](/img/tours/red-cinamon.jpg)
 
-### Day 2 · Colombo to Negombo – Water Sports & Beach Activities
+### Day 2 · Colombo → Negombo · Water sports
 
 - Head to Negombo (30-40 mins from Colombo).
 - Activities: Jet skiing, windsurfing, paddleboarding, and snorkeling.
 - Relax on Negombo beach.
 ![](/img/tours/nrgambo-water-based-sport.jpg) ![](/img/tours/negambo-beach.jpg)
 
-### Day 3 · Negombo to Kitulgala – White Water Rafting
+### Day 3 · Negombo → Kitulgala · White-water rafting
 
 - Travel to Kitulgala (approx. 3.5 hrs).
 - Full-day white-water rafting on the Kelani River (Grade 2-3 rapids).
 - Optional: Trekking and canyoning nearby.
 ![](/img/tours/kitulgala-sport01.jpg) ![](/img/tours/kitulgala-sport02.jpg)
 
-### Day 4 · Kitulgala to Kandy – Hiking & Cultural Experience
+### Day 4 · Kitulgala → Kandy · Hiking and culture
 
 - Morning hike to scenic viewpoints near Kitulgala.
 - Travel to Kandy (approx. 2.5 hrs).
 - Evening visit to Kandy Lake and cultural show.
 ![](/img/tours/kitulgala-sports-hiking.jpg) ![](/img/tours/kitulgala-sports-hiking02.jpg)
 
-### Day 5 · Kandy to Nuwara Eliya – Cycling & Nature Trekking
+### Day 5 · Kandy → Nuwara Eliya · Cycling and trekking
 
 - Early morning cycling tour around Kandy hills.
 - Travel to Nuwara Eliya (approx. 2.5 hrs).
 - Trekking in Horton Plains National Park, visit World’s End viewpoint.
 ![](/img/tours/cyclying01.jpg) ![](/img/tours/cyclying02.jpg)
 
-### Day 6 · Nuwara Eliya – Golf & Adventure
+### Day 6 · Nuwara Eliya · Golf in the hills
 
 - Play golf at Nuwara Eliya Golf Club (one of the oldest in Asia). Optional: Visit a tea plantation or take a nature walk.
 - Optional: Visit a tea plantation or take a nature walk.
 ![](/img/tours/golf-club-02.jpg) ![](/img/tours/tea-factory.jpg)
 
-### Day 7 · Nuwara Eliya to Ella – Hiking & Rock Climbing
+### Day 7 · Nuwara Eliya → Ella · Hiking and rock climbing
 
 - Travel to Ella (approx. 2 hrs).
 - Hike Ella Rock or Little Adam’s Peak.
 - Try rock climbing or rappelling.
 ![](/img/tours/ella-hiking01.jpg) ![](/img/tours/ella-hiking02.jpg)
 
-### Day 8 · Ella to Arugam Bay – Surfing
+### Day 8 · Ella → Arugam Bay · First surf
 
 - Long drive to Arugam Bay (approx. 5-6 hrs).
 - Relax on the beach and get ready for surfing
 - Evening surf session for beginners or intermediates.
 ![](/img/tours/surfing02.jpg) ![](/img/tours/surfing01.jpg)
 
-### Day 9 · Arugam Bay – Full Day Surfing & Beach Sports
+### Day 9 · Arugam Bay · A full day of surf
 
 - Full day of surfing, beach volleyball, or kayaking.
 - Explore nearby lagoons for paddleboarding or bird watching.
 ![](/img/tours/full-surfing.jpg) ![](/img/tours/paddel-boat.jpg)
 
-### Day 10 · Arugam Bay to Colombo – Departure
+### Day 10 · Arugam Bay → Colombo · Back to Colombo
 
 - Return to Colombo (approx. 6 hrs).
 - Last-minute shopping or visit a sports shop.

@@ -3,6 +3,9 @@ name: "Weligama"
 tagline: "Surf, Stilt Fishers & Sandy Serenity"
 image: "/img/places/midigama-beach-destinations.jpg"
 order: 17
+region: "South & west coast"
+district: "Matara"
+map: "5.9750, 80.4297"
 ---
 
 Weligama, meaning “sandy village,” is a laid-back coastal gem on Sri Lanka’s southern shores. With its wide bay, perfect surf breaks, and iconic stilt fishermen, it’s a paradise for wave-chasers and culture lovers alike. Whether you're catching your first wave, lounging on untouched beaches, or indulging in fresh seafood, Weligama delivers the ultimate seaside escape—just minutes from Mirissa.

@@ -3,6 +3,9 @@ name: "Arugam Bay"
 tagline: "Sri Lanka’s Surf & Chill Paradise"
 image: "/img/places/pottuvil-lagoon.jpg"
 order: 2
+region: "North & east"
+district: "Ampara"
+map: "6.8400, 81.8360"
 ---
 
 Welcome to Arugam Bay, the surf capital of Sri Lanka and one of the top 10 surf spots in the world. Tucked away on the island’s southeast coast, this laid-back beach town offers epic waves, golden sands, and a vibrant nightlife scene. Beyond surfing, explore secluded beaches, lush lagoons, nearby national parks, and a touch of hidden history. Whether you’re chasing waves or just the perfect sunset, Arugam Bay is your ultimate beach escape.

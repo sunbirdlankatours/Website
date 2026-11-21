@@ -3,6 +3,9 @@ name: "Bentota"
 tagline: "Beach Bliss Meets Bold Adventure"
 image: "/img/places/lunuganga-estate.jpg"
 order: 3
+region: "South & west coast"
+district: "Galle"
+map: "6.4210, 79.9980"
 ---
 
 Discover the jewel of Sri Lanka’s southwest coast. With golden beaches, stylish resorts, and a stunning lagoon teeming with life, Bentota is where relaxation meets excitement. Dive into water sports, cruise through the lush Madu River mangroves, or explore cinnamon islands and birdlife. Take in Sri Lankan design at its best with a visit to Geoffrey Bawa’s Lunuganga estate. As the sun sets, Bentota’s oceanfront nightlife comes alive—laid-back, vibrant, and unforgettable.

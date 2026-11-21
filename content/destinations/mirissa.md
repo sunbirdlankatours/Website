@@ -3,6 +3,9 @@ name: "Mirissa"
 tagline: "Waves, Whales & Coconut Dreams"
 image: "/img/places/whale-watching-destinations.jpg"
 order: 12
+region: "South & west coast"
+district: "Matara"
+map: "5.9483, 80.4716"
 ---
 
 Nestled on Sri Lanka’s southern coast, Mirissa is where thrill meets chill. Cruise out for epic whale and dolphin encounters, catch perfect surf breaks, or simply lounge on its crescent beach fringed with swaying palms. As the sun sets, Mirissa’s vibrant nightlife comes alive—making every moment here pure seaside magic.

@@ -3,6 +3,9 @@ name: "Haputale"
 tagline: "Misty Views & Tea-Laced Hills"
 image: "/img/places/dhowa-rock-temple-destinations.jpg"
 order: 7
+region: "Hill country"
+district: "Badulla"
+map: "6.7680, 80.9580"
 ---
 
 Perched on a narrow mountain ridge, Haputale offers breathtaking views, cool mountain air, and endless tea-covered slopes. This peaceful hill town is a scenic stopover on the way to Horton Plains, with train rides and winding drives that reveal the highlands’ hidden beauty. A blend of culture, nature, and serenity—Haputale is your highland escape.

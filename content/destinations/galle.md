@@ -3,6 +3,9 @@ name: "Galle"
 tagline: "Where History Meets the Sea"
 image: "/img/places/dutch-reformed-church-destinations.jpg"
 order: 6
+region: "South & west coast"
+district: "Galle"
+map: "6.0329, 80.2168"
 ---
 
 Step into Galle, Sri Lanka’s iconic coastal city, where colonial charm and ocean vibes collide. Explore the legendary Galle Fort, stroll past Dutch-era mansions, and savor the day’s fresh seafood straight from the harbor. With golden beaches, buzzing culture, and rich history, Galle is your gateway to a stylish seaside escape.

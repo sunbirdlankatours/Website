@@ -3,6 +3,9 @@ name: "Yala"
 tagline: "Where Wild Meets Ancient Wonder"
 image: "/img/tours/yala-national-park-destinations.jpg"
 order: 19
+region: "Wildlife parks"
+district: "Hambantota"
+map: "6.3725, 81.5185"
 ---
 
 Yala National Park is Sri Lanka’s top wildlife destination, famous for having one of the world’s highest leopard densities. Here, jungles meet the coastline, offering thrilling safaris with sightings of elephants, sloth bears, crocs, and peacocks. Beyond the wild, Yala hides ancient secrets—centuries-old stupas and reservoirs whisper stories of forgotten kingdoms.

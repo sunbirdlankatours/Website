@@ -3,6 +3,9 @@ name: "Kandy"
 tagline: "The Cultural Heart of Sri Lanka"
 image: "/img/places/kandy-lake-destinations.jpg"
 order: 10
+region: "Hill country"
+district: "Kandy"
+map: "7.2906, 80.6337"
 ---
 
 Tucked in the central highlands, Kandy blends scenic charm with deep spirituality. Home to the sacred Temple of the Tooth and the vibrant Kandy Esala Perahera, this historic city pulses with Sinhala Buddhist heritage. Once the island’s final royal kingdom, Kandy is your gateway to Sri Lanka’s lush hill country and timeless traditions.

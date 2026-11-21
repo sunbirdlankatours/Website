@@ -2,6 +2,11 @@
 title: "Cultural & Heritage Tour"
 tagline: "Ancient Cities • Sacred Temples • Local Arts • Timeless Traditions"
 category: "bespoke"
+themes:
+  - culture-heritage
+# weather: the months this tour is at its best, and the mixed ones (other months count as off-season)
+best_months: "Feb-Sep"
+mixed_months: "Jan, Oct"
 duration: "10 days"
 image: "/img/tours/cultural-heritage-01.jpg"
 summary: "Embark on a captivating 10-day journey through Sri Lanka’s living history, where every sunrise brings you face-to-face with ancient capitals, sacred temples and UNESCO…"
@@ -12,7 +17,7 @@ Embark on a captivating 10-day journey through Sri Lanka’s living history, whe
 
 ## Itinerary
 
-### Day 1 · Arrival → Colombo
+### Day 1 · Colombo · A first taste of Colombo
 
 - Arrive at Bandaranaike International Airport (CMB)
 - Gangaramaya Temple – mix of modern architecture and ancient tradition
@@ -20,7 +25,7 @@ Embark on a captivating 10-day journey through Sri Lanka’s living history, whe
 - Evening: Cultural dinner in a colonial-era mansion
 ![](/img/tours/sunbird-lanka-airplane-runwayt.jpg) ![](/img/tours/colombo.jpg)
 
-### Day 2 · Colombo → Anuradhapura – Sacred City
+### Day 2 · Colombo → Anuradhapura · The sacred city
 
 - Drive to Anuradhapura (approx. 4 hrs)
 - Sri Maha Bodhi Tree (oldest living tree in recorded history)
@@ -28,7 +33,7 @@ Embark on a captivating 10-day journey through Sri Lanka’s living history, whe
 - Evening: Attend a local puja (offering) ceremony
 ![](/img/tours/ruwanweliseya-dagoba-buddhist-stupa-tourist-pilgrimage-site-anuradhapura-sri-lanka.jpg) ![](/img/tours/jaya-siri-maha-bodhi-tree.jpg)
 
-### Day 3 · Mihintale & Cultural Immersion
+### Day 3 · Mihintale · Where Buddhism began
 
 - Morning hike up to Mihintale, cradle of Buddhism in Sri Lanka
 - Visit Isurumuniya Rock Temple
@@ -36,7 +41,7 @@ Embark on a captivating 10-day journey through Sri Lanka’s living history, whe
 - Optional: Visit local village for a traditional lunch and rural lifestyle experience
 ![](/img/tours/mihintale-hb.jpg) ![](/img/tours/isuru-muniya.jpg)
 
-### Day 4 · Anuradhapura → Sigiriya ( Lion Rock & Frescoes )
+### Day 4 · Anuradhapura → Sigiriya · Lion Rock and frescoes
 
 - Drive to Sigiriya
 - Climb the Sigiriya Rock Fortress – UNESCO World Heritage site
@@ -45,7 +50,7 @@ Embark on a captivating 10-day journey through Sri Lanka’s living history, whe
 - Evening: Cultural dance performance at the hotel
 ![](/img/tours/sigiriya.jpg) ![](/img/tours/golden-cave-dambulla.jpg)
 
-### Day 5 · Sigiriya → Polonnaruwa
+### Day 5 · Polonnaruwa · The medieval capital
 
 - Full-day tour of Polonnaruwa – medieval capital
 - Gal Vihara, Parakrama Samudraya, Royal Palace ruins
@@ -53,7 +58,7 @@ Embark on a captivating 10-day journey through Sri Lanka’s living history, whe
 - Return to Sigiriya
 ![](/img/tours/polonnaruwa-galviharaya.jpg) ![](/img/tours/polonnaruwa-royal.jpg)
 
-### Day 6 · Travel to Kandy – Hill Capital
+### Day 6 · Sigiriya → Kandy · The hill capital
 
 - Stop at Matale Spice Garden en route
 - Temple of the Sacred Tooth Relic
@@ -61,7 +66,7 @@ Embark on a captivating 10-day journey through Sri Lanka’s living history, whe
 - Evening: Attend a Kandyan dance performance with drumming and fire-walking
 ![](/img/tours/matale-spice-garden.jpg) ![](/img/tours/kandy-dance.jpg)
 
-### Day 7 · Kandy to Nuwara Eliya – Tea Country
+### Day 7 · Kandy → Nuwara Eliya · Tea country
 
 - Scenic train ride or drive to Nuwara Eliya
 - Tea plantation and factory – learn about Sri Lankan tea heritage
@@ -69,7 +74,7 @@ Embark on a captivating 10-day journey through Sri Lanka’s living history, whe
 - Evening: Traditional high tea experience
 ![](/img/tours/bambara-kanda.jpg) ![](/img/tours/tea-factory.jpg)
 
-### Day 8 · Down to the South – Galle
+### Day 8 · Nuwara Eliya → Galle · Galle Fort at sunset
 
 - Drive to Galle (approx. 5–6 hrs with breaks)
 - Galle Dutch Fort – UNESCO site with colonial charm
@@ -77,7 +82,7 @@ Embark on a captivating 10-day journey through Sri Lanka’s living history, whe
 - Evening: Sunset over the Indian Ocean from the Fort
 ![](/img/tours/dutch-bay-islands.jpg) ![](/img/tours/galle-sunset.jpg)
 
-### Day 9 · Local Artisans & Traditions
+### Day 9 · Ambalangoda · Masks and local artisans
 
 - Mask Museum in Ambalangoda and see traditional mask-making
 - Moonstone mines in Meetiyagoda
@@ -87,7 +92,7 @@ Embark on a captivating 10-day journey through Sri Lanka’s living history, whe
 
 [Try on a Gini Raksha mask with your camera](/mask/){.btn .small}
 
-### Day 10 · Departure from Colombo
+### Day 10 · Galle → Airport · Souvenirs on the way home
 
 - Leisurely drive to Colombo airport
 - Optional stops depending on flight time

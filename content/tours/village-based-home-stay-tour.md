@@ -2,6 +2,12 @@
 title: "Village & Home Stay Tour"
 tagline: "A Heartfelt Journey into Sri Lanka’s Cultural Soul"
 category: "bespoke"
+themes:
+  - culture-heritage
+  - family-holidays
+# weather: the months this tour is at its best, and the mixed ones (other months count as off-season)
+best_months: "Feb-Sep"
+mixed_months: "Jan, Oct"
 duration: "12 days"
 image: "/img/tours/village-trip-gallery-01.jpg"
 summary: "Step off the tourist trail and into the warmth of real Sri Lankan homes. This 12-day immersive homestay tour invites you to live like a local—cook traditional meals…"
@@ -12,67 +18,67 @@ Step off the tourist trail and into the warmth of real Sri Lankan homes. This 12
 
 ## Itinerary
 
-### Day 1 · Arrival and transfer to the first village
+### Day 1 · Meet your host family
 
 - Meet your host family
 - Introduction to local culture and traditions
 - Evening: traditional welcome dinner
 ![](/img/tours/sunbird-lanka-airplane-runwayt.jpg) ![](/img/tours/host-family.jpg)
 
-### Day 2 · Village life immersion
+### Day 2 · Village life
 
 - Participate in farming or fishing activities
 - Learn local cooking with your host
 - Evening storytelling or cultural performance
 ![](/img/tours/farming.jpg) ![](/img/tours/fishing.jpg)
 
-### Day 3 · Local crafts and markets
+### Day 3 · Crafts and markets
 
 - Visit village artisans (weaving, pottery, etc.)
 - Market visit to buy local produce and crafts
 - Homestay dinner with your host family
 ![](/img/tours/crafting.jpg) ![](/img/tours/weaving.jpg)
 
-### Day 4 · Nature and environment
+### Day 4 · Nature walks and sacred sites
 
 - Guided walk/hike around the village area
 - Visit local sacred or historical sites
 - Relax in the village
 ![](/img/tours/hiking-village.jpg) ![](/img/tours/unawatuna-jungle-beach-02.jpg)
 
-### Day 5 · Travel to the next village
+### Day 5 · On to the next village
 
 - Transfer with stops at local points of interest
 - New homestay family introduction
 - Evening cultural exchange
 ![](/img/tours/village-02.jpg) ![](/img/tours/village-food-jafna.jpg)
 
-### Days 6–7 · Deep dive into community life
+### Days 6–7 · Deep into community life
 
 - Help with daily chores, farming, or cooking
 - Participate in community events (if available)
 - Learn traditional dances, songs, or customs
 ![](/img/tours/cooking-help.jpg) ![](/img/tours/tredistionals.jpg)
 
-### Day 8 · Village market and nearby attractions
+### Day 8 · Market day
 
 - Visit a nearby larger village or town market
 - Explore nearby natural or cultural attractions
 ![](/img/tours/fair.jpg) ![](/img/tours/village-help.jpg)
 
-### Day 9 · Travel to a third village
+### Day 9 · A third village
 
 - Meet a new host family
 - Share experiences and learn new local customs
 ![](/img/tours/village-host-03-1.jpg) ![](/img/tours/village-host-03-2.jpg)
 
-### Days 10–11 · Village workshop and relaxation
+### Days 10–11 · Workshops and slow days
 
 - Join craft workshops or agricultural activities
 - Free time to relax or explore on your own
 ![](/img/tours/hand-craft.jpg) ![](/img/tours/riding-bike-in-village.jpg)
 
-### Day 12 · Farewell and departure
+### Day 12 · Farewell to your hosts
 
 - Farewell breakfast with host family
 - Transfer to nearest city or airport

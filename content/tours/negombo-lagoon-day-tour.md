@@ -2,6 +2,11 @@
 title: "Negombo Lagoon Day Tour"
 tagline: "Cast a line into tradition on Sri Lanka’s West Coast!"
 category: "wildlife"
+themes:
+  - family-holidays
+# weather: the months this tour is at its best, and the mixed ones (other months count as off-season)
+best_months: "Dec-Apr"
+mixed_months: "Jul-Sep, Nov"
 duration: "1 day"
 image: "/img/tours/negombo-lagoon-fishing-day-tour-slider01.jpg"
 summary: "Discover the charm of Negombo—one of Sri Lanka’s oldest fishing towns—on a hands-on fishing adventure in its scenic lagoon. Explore bustling fish markets, cruise through…"

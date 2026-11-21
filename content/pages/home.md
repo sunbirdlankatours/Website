@@ -4,32 +4,65 @@ url: /
 layout: home
 description: "Tailor-made Sri Lanka tours, wildlife safaris and MICE events by Sunbird Lanka Tours & Travels, a licensed inbound tour operator since 2010."
 # ---- Hero (the big first screen). Used by the {{hero}} line below.
-# Photo for computers (wide) and for phones (tall), and which part of each to keep
-# in view (left-right %, top-bottom %). Old photo: /img/site/sunbird-lanka-tours-hero-bg-2-3-nk.jpg
-image: /img/site/hero-sigiriya-view-wide.jpg
-hero_photo_phone: /img/site/hero-sigiriya-view-phone.jpg
-hero_photo_alt: "A traveller in a white dress looks out at Sigiriya rock from Pidurangala on a misty morning"
-hero_focus: "52% 30%"
-hero_focus_wide: "70% 35%"
-hero_kicker: "Tailor-made Sri Lanka tours · Since 2010"
-# Title: first line | word in gold handwriting (the sunbird lands on it) | last line
-hero_title: "Your Sri Lanka | Story | Starts Here"
-hero_text: "Private driver-guides, hand-picked stays and a route planned around you, from misty tea hills to wild southern shores."
-hero_button: "Plan your trip | /contact-us/#plan"
-# Small facts under the buttons:  big text | small text
+# Photo for computers (wide) and, if you have one, a tall photo for phones (hero_photo_phone).
+# hero_focus = which part of the photo to keep in view (left-right %, top-bottom %);
+# hero_focus_wide is the same for big screens.
+# Older photos: /img/site/hero-sigiriya-view-wide.jpg (phone: /img/site/hero-sigiriya-view-phone.jpg)
+image: /img/site/sunbird-lanka-tours-hero-bg-2-3-nk.jpg
+hero_photo_alt: "Sigiriya, the Lion Rock, rising out of the forest in Sri Lanka's Cultural Triangle"
+hero_focus: "66% 50%"
+hero_focus_wide: "22% 50%"
+hero_kicker: "Private, tailor-made Sri Lanka tours · Since 2010"
+# Title: first line | second line, in italics | optional third line
+hero_title: "Sri Lanka, | planned around you."
+hero_text: "Your own driver-guide, hand-picked stays and a route built around what you love, from ancient cities and tea country to leopards and quiet beaches."
+hero_button: "Plan my trip | /contact-us/#plan"
+# Small facts along the bottom:  big text | small text
 hero_facts:
   - "15+ | years in tourism"
-  - "1500+ | tours planned"
-  - "Licensed | tour operator"
-# Handwritten greeting in the corner (big screens):  greeting | small line
-hero_greeting: "Ayubowan! | Welcome to Sri Lanka"
+  - "1,500+ | trips planned"
+  - "SLTDA | licensed tour operator"
+# Where the photo was taken (bottom right on big screens)
+hero_place: "Sigiriya · Cultural Triangle"
 # Old photo slider (not shown any more; put {{slider}} back in the text below to use it)
 slides:
   - "/img/site/sunbird-lanka-tours-hero-bg-1-1k.jpg | Feel the Heartbeat of Sri Lanka | Gentle Bond of Sri Lanka’s Giants | Explore Tours | /tours/"
   - "/img/site/sunbird-lanka-tours-hero-bg-2-3-nk.jpg | Where History Touches the Sky | Eighth Wonder, Endless Wonder | Explore Tours | /tours/"
   - "/img/site/sunbird-lanka-tours-hero-bg-04-surffing-female.jpg | Where Every Wave Whispers Luxury | Golden Shores, Endless Smiles | Explore Tours | /tours/"
   - "/img/site/sunbird-lanka-tours-hero-bg-05-mice.jpg | Elite Events. Effortless Execution. | MICE Solutions at a Glance | Book a Consultation | /mice/"
-# Tour categories:  photo | name | link
+# (A dotted map of Sri Lanka with a drawn route can be added to a page with an {{island}} line, plus an
+#  island_route list here: "place | longitude | latitude", in the order the route visits them.)
+# "I want a trip full of ___" wheel (the {{trip-wheel}} line below).
+# Each line:  word | big photo | short line under it | link | which part of the photo to keep in view (optional)
+#              | where you'd go (shown in the "Want it all?" list below the wheel)
+# The first line is the word shown first. Use big photos (1000 px wide or more).
+# Each word opens one tour category page (content/categories). They are in order of how much people
+# search for them (Google Trends and Google suggestions, November 2026).
+wheel_kicker: "Tour categories"
+wheel_text: "I want a trip full of"
+wheel_all_link: /tours/
+# The monsoon map under the wheel (the {{island-dial}} line below). Its weather comes from best-time-to-visit.md.
+# On computers, scrolling over the map turns the months.
+dial_kicker: "When to go"
+dial_title: "There is always a sunny side"
+dial_text: "Sri Lanka has two monsoons. Scroll over the map to move through the year and watch them cross the island."
+dial_text_phone: "Sri Lanka has two monsoons. Tap a month to see where the sun is."
+# The train window under the tours (the {{ella-ride}} line below): it leads to the scroll-by-scroll ride at /ella-train/.
+# Words between *stars* in the title are set in italics. ride_time is the little label on the window.
+ride_kicker: "The hill country line"
+ride_title: "Take the train to *Ella*"
+ride_text: "About seven hours through tea country, mountains and misty tunnels. Ride it here first, one scroll at a time, then let us put the real one in your trip."
+ride_time: "Kandy → Ella · about 7 hours"
+trip_wheel:
+  - "beaches | /img/tours/sport-based-trip-gallery01.jpg | Golden coasts in the south and the quiet east · 7 to 10 days | /tours/beach-holidays/ | 50% 40% | Mirissa · Galle · Trincomalee"
+  - "safaris | /img/tours/wilpattu-national-park-day-tour-slider-01.jpg | Leopards, elephants and whales · day trips to 16 days | /tours/safari-wildlife/ |  | Yala · Wilpattu · Udawalawe · Mirissa"
+  - "family fun | /img/site/sunbird-lanka-tours-hero-bg-1-1k.jpg | Elephants, train rides and beach days with kids · day trips to 12 days | /tours/family-holidays/ |  | Udawalawe · Kandy · Negombo"
+  - "history | /img/tours/sigiriya01.jpg | Sigiriya, Kandy and the ancient cities · 8 to 16 days | /tours/culture-heritage/ |  | Sigiriya · Anuradhapura · Kandy · Jaffna"
+  - "romance | /img/tours/romantic-north-east-trip-gallery-01.jpg | Honeymoons and luxury stays for two · 10 days | /tours/honeymoon-luxury/ |  | Nuwara Eliya · Galle · Pasikudah"
+  - "wellness | /img/tours/wellness-trip-gallery-01.jpg | Ayurveda, yoga and slow days · 7 to 10 days | /tours/ayurveda-wellness/ | 60% 50% | Bentota · Kandy · Ella"
+  - "adventure | /img/site/sunbird-lanka-tours-hero-bg-04-surffing-female.jpg | Rafting, hiking and surfing · 10 to 16 days | /tours/adventure-hiking/ | 60% 50% | Kitulgala · Ella · Arugam Bay"
+# Old tour category cards (not shown any more; put {{categories}} back in the text below to use them)
+#   photo | name | link
 categories:
   - "/img/site/sunbird-lanka-tours-cultural-heritage-1.jpg | Cultural & Heritage | /cultural-heritage-tour/"
   - "/img/site/sunbird-lanka-tours-wildlife-naturee-2.jpg | Adventure & Nature | /adventure-nature-based-tours/"
@@ -76,42 +109,42 @@ events:
 
 {{hero}}
 
-::: band
-~ Wonderful Places For You
+::: band intro
+<figure class="ia-photo"><img src="/img/about/about-train-window.jpg" alt="A traveller leaning out of the hill country train among the tea fields" decoding="async"><figcaption>The hill country train</figcaption><p class="ia-badge"><small>Licensed by</small><strong>SLTDA</strong><small>since 2010</small></p></figure>
+<div class="intro-text">
+~ Who we are · Since 2010
 
-## Tour Categories
+<h2 class="ia-words"><span>Utmost <em>content</em></span> <span>in tourism.</span></h2>
 
-{{categories}}
+We plan private, tailor-made journeys across Sri Lanka for curious travellers. Our own local team builds every route *by hand*, and looks after every guest from the first message to the flight home.
+
+1. Built by hand
+2. Your own driver-guide
+3. With you to the flight home
+
+[Our story](/about-us/){.btn .pill}
+</div>
 :::
 
-::: band mist
-~ Let’s Travel Together
+{{trip-wheel}}
 
-## Beyond Limits
+{{island-dial}}
 
-![](/img/site/sunbird-lanka-tours-about-01-01.jpg) ![](/img/site/sunbird-lanka-tours-about-01-02k.jpg) ![](/img/site/sunbird-lanka-tours-about-01-03k.jpg)
-
-Welcome to Sunbird Lanka Tours & Travels — where every journey is crafted with heart. Our promise is simple: to turn your Sri Lanka adventure into a soulful, tailor-made experience filled with authentic moments, cultural treasures, and memories that linger long after your trip.
-
-Guided by our motto, “Utmost Content in Tourism,” we believe travel should inspire joy, foster connections, and respect the beautiful island we call home. Our mission is to help you discover the heart and soul of our island.
-
-- **Exclusive trips** — Escape to Sri Lanka’s best-kept secrets for a lifetime of memories.
-- **Professional guides** — Expert guidance and local insights, so you travel smarter.
-
-[We Plan, You Enjoy – Stress-Free Travels](/contact-us/#plan){.btn}
-:::
-
-::: band
+::: band trips
+<div class="tg-intro">
 ~ Best Recommended Trips
 
 ## Discover Sri Lanka Like Never Before
 
 From safaris to sacred cities, our top-recommended trips are crafted for unforgettable moments. Travel smart. Travel local. Travel Sunbird.
 
-{{tours:featured}}
+[See all tours](/tours/){.btn .pill}
+</div>
 
-[See all tours](/tours/){.btn}
+{{tours:featured}}
 :::
+
+{{ella-ride}}
 
 ::: band mist
 ~ Top Destinations
@@ -120,7 +153,7 @@ From safaris to sacred cities, our top-recommended trips are crafted for unforge
 
 {{places:featured}}
 
-[Explore Sri Lanka](/destinations/){.btn}
+[Explore Sri Lanka](/destinations/){.btn .pill}
 :::
 
 {{stats}}

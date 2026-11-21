@@ -13,7 +13,7 @@ description: "MICE in Sri Lanka: venues, incentive trips, conferences and corpor
 
 ![Marino Beach Colombo – capacity 15 pax](/img/site/mareena-colombo.jpg "Marino Beach Colombo · 15 pax") ![Galle Face – capacity 50–80 pax](/img/site/galle-face02.jpg "Galle Face · 50–80 pax") ![Knightsbridge – capacity 20 pax](/img/site/knightsbridge.jpg "Knightsbridge · 20 pax") ![The Cinnamon Grand – capacity 20 pax](/img/site/cinemon-red.jpg "The Cinnamon Grand · 20 pax") ![Cinnamon Red Colombo – capacity 24 pax](/img/site/cinemon-red-01k.jpg "Cinnamon Red Colombo · 24 pax")
 
-[Book a consultation](/contact-us/#plan){.btn}
+[Book a consultation](/contact-us/#plan){.btn .gold}
 :::
 
 ::: band mist
@@ -51,5 +51,5 @@ Our destinations offer the perfect mix of business and beauty — iconic landmar
 
 No stress. No delays. Just extraordinary events. Book a consultation with our MICE experts and discover how we can turn your next meeting, incentive trip, conference, or event into a world-class experience.
 
-[Book a consultation](/contact-us/#plan){.btn .light}
+[Book a consultation](/contact-us/#plan){.btn .gold}
 :::

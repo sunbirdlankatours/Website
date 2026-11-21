@@ -2,6 +2,12 @@
 title: "North & East Coast Tour"
 tagline: "Uncover Sri Lanka’s Untouched Side – Culture, Coastlines & Charm"
 category: "bespoke"
+themes:
+  - beach-holidays
+  - culture-heritage
+# weather: the months this tour is at its best, and the mixed ones (other months count as off-season)
+best_months: "Apr-Sep"
+mixed_months: "Feb-Mar, Oct"
 duration: "10 days"
 image: "/img/tours/north-easttrip-nagadeepa-01.jpg"
 summary: "Discover Sri Lanka’s hidden gems on this immersive 10-day journey through the island’s serene North and East. Explore the sacred ruins of Anuradhapura, experience the…"
@@ -12,7 +18,7 @@ Discover Sri Lanka’s hidden gems on this immersive 10-day journey through the 
 
 ## Itinerary
 
-### Day 1 · Arrival in Colombo → Transfer to Anuradhapura
+### Day 1 · Colombo → Anuradhapura · Arrival and the drive north
 
 - Arrive at Bandaranaike International Airport (CMB)
 - Transfer to Anuradhapura Travel time: ~4–5 hours
@@ -20,7 +26,7 @@ Discover Sri Lanka’s hidden gems on this immersive 10-day journey through the 
 - Optional: Explore Mihintale (cradle of Buddhism in Sri Lanka).
 ![](/img/tours/sunbird-lanka-airplane-runwayt.jpg) ![](/img/tours/mihintale-hb.jpg)
 
-### Day 2 · Explore Anuradhapura (UNESCO World Heritage Site)
+### Day 2 · Anuradhapura · The ancient capital
 
 - Visit to Ruwanwelisaya
 - Sri Maha Bodhi Tree (oldest living tree in recorded history)
@@ -28,14 +34,14 @@ Discover Sri Lanka’s hidden gems on this immersive 10-day journey through the 
 - Sunset at Isurumuniya Rock Temple.
 ![](/img/tours/ruwanweliseya-dagoba-buddhist-stupa-tourist-pilgrimage-site-anuradhapura-sri-lanka.jpg) ![](/img/tours/jaya-siri-maha-bodhi-tree.jpg)
 
-### Day 3 · Anuradhapura → Jaffna
+### Day 3 · Anuradhapura → Jaffna · North to Jaffna
 
 - Travel time: ~5 hours
 - En route: Stop at Thanthirimale Temple
 - Evening walk around Jaffna town & Jaffna Fort
 ![](/img/tours/jaffna.jpg) ![](/img/tours/jaffna-nallur.jpg)
 
-### Day 4 · Explore Jaffna & Northern Culture
+### Day 4 · Jaffna · Temples, the far north and crab curry
 
 - Visit to Nallur Kandaswamy Temple
 - Dambakola Patuna
@@ -43,20 +49,20 @@ Discover Sri Lanka’s hidden gems on this immersive 10-day journey through the 
 - Try Jaffna cuisine (crab curry is a must).
 ![](/img/tours/pigeon-boat.jpg) ![](/img/tours/jaffna-crab-curry.jpg)
 
-### Day 5 · Nagadeepa & Delft Island Day Trip
+### Day 5 · Nagadeepa & Delft · Island temples and wild ponies
 
 - Ferry to Nagadeepa Temple (Buddhist & Hindu shrines).
 - Continue to Delft Island for wild ponies, coral walls, and Dutch ruins.
 ![](/img/tours/delfneduntheevut.jpg) ![](/img/tours/naaga-deepa.jpg)
 
-### Day 6 · Jaffna → Trincomalee
+### Day 6 · Jaffna → Trincomalee · East coast beaches
 
 - Travel time: ~5–6 hours
 - Check-in & relax on Uppuveli or Nilaveli Beach.
 - Evening: Optional whale watching (seasonal: May–Sept)
 ![](/img/tours/nilaveli-beach01.jpg) ![](/img/tours/mirissa02.jpg)
 
-### Day 7 · Explore Trincomalee
+### Day 7 · Trincomalee · Temples, forts and coral
 
 - Visit to Koneswaram Temple
 - Lovers’ Leap
@@ -64,20 +70,20 @@ Discover Sri Lanka’s hidden gems on this immersive 10-day journey through the 
 - Snorkeling at Pigeon Island National Park
 ![](/img/tours/koneswaram-cliff-temple.jpg) ![](/img/tours/pigeon-island.jpg)
 
-### Day 8 · Trincomalee → Pasikudah
+### Day 8 · Trincomalee → Pasikudah · The calm, shallow bay
 
 - Travel time: ~2–3 hours
 - Relax on the calm, shallow Pasikudah Bay.
 - Enjoy water sports or a peaceful beach day.
 ![](/img/tours/pasy-kudabay01.jpg) ![](/img/tours/pasy-kudabay02.jpg)
 
-### Day 9 · Pasikudah → Sigiriya
+### Day 9 · Pasikudah → Polonnaruwa → Sigiriya · Ancient ruins on the way
 
 - Explore Polonnaruwa ancient ruins (UNESCO Site).
 - Continue to Habarana for overnight stay or optional elephant safari in Minneriya.
 ![](/img/tours/polonnaruwa-galviharaya.jpg) ![](/img/tours/safari-at-minneriya.jpg)
 
-### Day 10 · Sigiriya → Colombo or Airport
+### Day 10 · Sigiriya → Colombo · Lion Rock at dawn
 
 - Early morning climb of Sigiriya Rock Fortress
 - Optional visit to Dambulla Cave Temples.

@@ -3,6 +3,9 @@ name: "Hatton"
 tagline: "Tea Country’s Hidden Gem"
 image: "/img/places/mlesna-tea-castle-destinations.jpg"
 order: 8
+region: "Hill country"
+district: "Nuwara Eliya"
+map: "6.8916, 80.5955"
 ---
 
 Tucked in Sri Lanka’s highlands, Hatton is a dreamy escape wrapped in emerald tea fields, misty mornings, and colonial charm. From the spiritual climb to Adam’s Peak to scenic strolls by Castlereigh Reservoir, every view is postcard-perfect. With iconic estates like Bogawantalawa and Maskeliya, this is the heart of Ceylon tea country—serene, scenic, and steeped in legacy.

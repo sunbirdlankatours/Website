@@ -3,6 +3,9 @@ name: "Kitulgala"
 tagline: "Sri Lanka’s Adventure Playground"
 image: "/img/places/belilena-cave-destinations.jpg"
 order: 11
+region: "Hill country"
+district: "Kegalle"
+map: "6.9890, 80.4170"
 ---
 
 Famed as the setting for The Bridge on the River Kwai, Kitulgala is where nature and adrenaline collide. Just 60km from Kandy, this lush haven of rainforests, rivers, and waterfalls is Sri Lanka’s top spot for white-water rafting and jungle trekking. Whether you're chasing thrills or hidden trails, Kitulgala is your gateway to wild beauty and ancient history.

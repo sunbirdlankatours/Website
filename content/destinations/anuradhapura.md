@@ -3,6 +3,9 @@ name: "Anuradhapura"
 tagline: "The Timeless Heart of Sri Lanka"
 image: "/img/places/the-sacred-bodhi-tree.jpg"
 order: 1
+region: "Cultural Triangle"
+district: "Anuradhapura"
+map: "8.3114, 80.4037"
 ---
 
 Discover Sri Lanka’s first capital and the sacred heart of its heritage. From ancient Buddhist temples to massive stupas and the world’s oldest sacred tree, Anuradhapura blends history, spirituality, and stunning ruins. A UNESCO World Heritage Site and part of the Cultural Triangle, this city is a must-visit for culture lovers and curious travelers alike.

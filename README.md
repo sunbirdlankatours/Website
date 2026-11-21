@@ -20,6 +20,35 @@ You edit the text files; GitHub turns them into the website automatically.
 | Photos | `static/img/…` |
 | Colours and layout | `static/css/site.css` |
 
+## The admin panel (the easy way)
+
+Everything in the table above, apart from colours and layout, can also be changed in the admin panel:
+tours with their days and photos, destinations, photos, reviews, logos, vehicles, settings and blog posts.
+Photos are shrunk automatically when you upload them, so the site stays fast.
+
+**On your own computer:**
+
+```
+python admin.py
+```
+
+The panel opens at <http://localhost:8090/admin/>. Saving writes straight into the files in this folder
+and rebuilds the site at once, so you can check it at <http://localhost:8090/>. To put the changes online,
+upload them to GitHub as usual (GitHub Desktop: **Commit**, then **Push**).
+
+**On the live website**, at `sunbirdtours.lk/admin/` (or `vockshel-gif.github.io/SunBird/admin/` before the
+domain switch). Saving sends the change to GitHub, and the website updates about a minute later. The first
+time, the panel asks for a GitHub key:
+
+1. On github.com open **Settings → Developer settings → Fine-grained tokens → Generate new token**.
+2. Repository access: **Only select repositories** → this website's repository.
+3. Repository permissions: **Contents: Read and write** (and **Actions: Read-only** to see when the site is live).
+4. Copy the token and paste it into the panel. It stays in that browser only. Don't share it.
+
+The repository the panel saves to is set by `admin_repo:` in `content/settings.txt`.
+If you also edit files on your computer, **pull** in GitHub Desktop before you start, so you have the
+changes made in the panel.
+
 ## Editing on github.com
 
 1. Open the file on github.com and click the ✏️ pencil.

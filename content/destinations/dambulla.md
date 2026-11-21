@@ -3,6 +3,9 @@ name: "Dambulla"
 tagline: "Where History Lives in Stone"
 image: "/img/places/dambulla-cave-temple.jpg"
 order: 4
+region: "Cultural Triangle"
+district: "Matale"
+map: "7.8567, 80.6490"
 ---
 
 Nestled among hills and lakes, Dambulla is a spiritual and cultural treasure. Its iconic Golden Buddha and ancient cave temples, dating back over 2,000 years, make it Sri Lanka’s best-preserved sacred site. Once a royal refuge, this UNESCO World Heritage Site offers a glimpse into a rich past—and it’s just a stone’s throw from the legendary Sigiriya Rock Fortress.

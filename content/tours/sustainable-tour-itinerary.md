@@ -2,6 +2,11 @@
 title: "Sustainable Tour"
 tagline: "Travel Light, Leave a Lasting Impact – Explore Sri Lanka Sustainably"
 category: "bespoke"
+themes:
+  - adventure-hiking
+# weather: the months this tour is at its best, and the mixed ones (other months count as off-season)
+best_months: "Jan-Apr"
+mixed_months: "May-Sep, Dec"
 duration: "15 days"
 image: "/img/tours/sustainable-trip-gallery-02.jpg"
 summary: "Embark on a 15-day eco-journey across Sri Lanka where every step supports the planet and local communities. From kayaking in Negombo lagoons to tea-tasting in misty…"
@@ -12,7 +17,7 @@ Embark on a 15-day eco-journey across Sri Lanka where every step supports the pl
 
 ## Itinerary
 
-### Days 1–2 · Arrival in Colombo & Negombo
+### Days 1–2 · Negombo · Kayaks and fishing villages
 
 - Arrive at Bandaranaike International Airport (Colombo).
 - Stay at an eco-friendly guesthouse or small local hotel in Negombo.
@@ -20,7 +25,7 @@ Embark on a 15-day eco-journey across Sri Lanka where every step supports the pl
 - Visit sustainable fishing villages and learn about traditional fishing methods.
 ![](/img/tours/sunbird-lanka-airplane-runwayt.jpg) ![](/img/tours/lagoon-boat-ride.jpg)
 
-### Days 3–4 · Sigiriya & Dambulla
+### Days 3–4 · Negombo → Sigiriya · Lion Rock and Dambulla caves
 
 - Travel to Sigiriya (about 4 hours by train/bus or private eco-transport).
 - Climb Sigiriya Rock Fortress early morning to avoid crowds.
@@ -28,14 +33,14 @@ Embark on a 15-day eco-journey across Sri Lanka where every step supports the pl
 - Explore Dambulla Cave Temple, preserving heritage and avoiding plastic usage.
 ![](/img/tours/sigiriya-01.jpg) ![](/img/tours/sigiriya-02.jpg)
 
-### Days 5–6 · Minneriya National Park & Eco Villages
+### Days 5–6 · Minneriya · Elephants and eco villages
 
 - Go on a responsible jeep safari in Minneriya National Park to see elephants.
 - Stay at an eco-lodge that supports conservation efforts.
 - Participate in community projects like tree planting or organic farming workshops.
 ![](/img/tours/village-tour.jpg) ![](/img/tours/mineriyasafari.jpg)
 
-### Days 7–8 · Kandy – Sacred City & Cultural Show
+### Days 7–8 · Kandy · Sacred city and forest reserve
 
 - Travel to Kandy via scenic train or eco-friendly transport.
 - Visit the Temple of the Tooth with respect for cultural heritage.
@@ -44,7 +49,7 @@ Embark on a 15-day eco-journey across Sri Lanka where every step supports the pl
 - Shop at local markets promoting handicrafts and fair-trade products.
 ![](/img/tours/eco-ride-train.jpg) ![](/img/tours/kandy-highlights.jpg)
 
-### Days 9–10 · Nuwara Eliya / Horton Plains
+### Days 9–10 · Nuwara Eliya · Tea estates and Horton Plains
 
 - Journey to Nuwara Eliya, the heart of Sri Lanka’s tea country.
 - Stay at a sustainable tea estate guesthouse.
@@ -52,7 +57,7 @@ Embark on a 15-day eco-journey across Sri Lanka where every step supports the pl
 - Learn about organic tea cultivation and sample local teas
 ![](/img/tours/ella-hiking02.jpg) ![](/img/tours/tea-trails.jpg)
 
-### Days 11–12 · Ella
+### Days 11–12 · Ella · The scenic train and Little Adam’s Peak
 
 - Take the scenic train ride to Ella, one of the most eco-conscious routes.
 - Stay in an eco-friendly guesthouse.
@@ -60,14 +65,14 @@ Embark on a 15-day eco-journey across Sri Lanka where every step supports the pl
 - Support local cafés and artisan businesses.
 ![](/img/tours/train-journey.jpg) ![](/img/tours/ella-eco-freindly-lodge.jpg)
 
-### Days 13–14 · Yala National Park / Tissamaharama
+### Days 13–14 · Yala · Safari, the responsible way
 
 - Visit Yala National Park with certified eco-tour operators.
 - Stay at a sustainable eco-lodge or camp.
 - Respect wildlife by maintaining safe distances and following guidelines.
 ![](/img/tours/yala-national-park-destinations.jpg) ![](/img/tours/yala-eco-loidge.jpg)
 
-### Day 15 · Return to Colombo & Departure
+### Day 15 · Yala → Colombo · Home the low-impact way
 
 - Travel back to Colombo sustainably (train or eco-friendly shuttle).
 - Last-minute shopping at local cooperatives for souvenirs.

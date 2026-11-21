@@ -2,6 +2,12 @@
 title: "Luxury Bespoke Tour"
 tagline: "Luxury Redefined Across Sri Lanka’s Most Iconic Destinations"
 category: "bespoke"
+themes:
+  - honeymoon-luxury
+  - ayurveda-wellness
+# weather: the months this tour is at its best, and the mixed ones (other months count as off-season)
+best_months: "Dec-Apr"
+mixed_months: "Jul-Sep, Nov"
 duration: "10 days"
 image: "/img/tours/sunbird-lanka-tours-luxury-honeymoon-packages-8.jpg"
 summary: "Indulge in the ultimate Sri Lankan escape with our 10-Day Luxury Bespoke Tour — a seamless blend of culture, comfort, and curated experiences. From private helicopter…"
@@ -12,7 +18,7 @@ Indulge in the ultimate Sri Lankan escape with our 10-Day Luxury Bespoke Tour �
 
 ## Itinerary
 
-### Day 1 · Arrival in Colombo – Private Welcome
+### Day 1 · Colombo · A private welcome
 
 - VIP arrival assistance at Bandaranaike International Airport
 - Private transfer to The Wallawwa or Shangri-La Colombo
@@ -20,7 +26,7 @@ Indulge in the ultimate Sri Lankan escape with our 10-Day Luxury Bespoke Tour �
 - Dinner: Fine dining at Ministry of Crab or Kaema Sutra (curated Sri Lankan fusion)
 ![](/img/tours/sunbird-lanka-airplane-runwayt.jpg) ![](/img/tours/shangri-la-colombo-1.jpg)
 
-### Day 2 · Fly to Sigiriya by Private Helicopter
+### Day 2 · Colombo → Sigiriya · By helicopter to Lion Rock
 
 - Optional: Scenic helicopter transfer to Sigiriya (or luxury SUV with stopovers)
 - Check-in at Water Garden Sigiriya or Jetwing Vil Uyana
@@ -28,7 +34,7 @@ Indulge in the ultimate Sri Lankan escape with our 10-Day Luxury Bespoke Tour �
 - Sunset cocktails with fortress views from your villa
 ![](/img/tours/helicopter-tour.jpg) ![](/img/tours/sigiriya-02.jpg)
 
-### Day 3 · Culture & Wilderness
+### Day 3 · Dambulla & Minneriya · Culture and wilderness
 
 - Visit Dambulla Cave Temple with an archaeologist guide
 - Village experience in Hiriwadunna (exclusive lunch with locals in a curated setting)
@@ -36,14 +42,14 @@ Indulge in the ultimate Sri Lankan escape with our 10-Day Luxury Bespoke Tour �
 - Optional: Private dinner in the jungle with candlelight
 ![](/img/tours/golden-cave-dambulla.jpg) ![](/img/tours/luxury-safari.jpg)
 
-### Day 4 · Polonnaruwa or Relax
+### Day 4 · Polonnaruwa · The ancient city, or a spa day
 
 - Customizable options: Private guided tour of Polonnaruwa ancient city by e-bikes
 - OR full spa & leisure day at the resort
 - Evening: Champagne sundown by a lake or paddy field dinner with live classical music
 ![](/img/tours/polonnaruwa-03.jpg) ![](/img/tours/spa-relax.jpg)
 
-### Day 5 · Journey to Kandy – Cultural Heartbeat
+### Day 5 · Sigiriya → Kandy · The cultural heartbeat
 
 - Luxury transfer to Kandy with a visit to a spice garden en route
 - Check-in at The Kandy House or Kings Pavilion
@@ -51,7 +57,7 @@ Indulge in the ultimate Sri Lankan escape with our 10-Day Luxury Bespoke Tour �
 - Evening: Private Kandyan dance performance at a colonial estate
 ![](/img/tours/kandy-highlights.jpg) ![](/img/tours/kandy-dance.jpg)
 
-### Day 6 · Scenic Train or Private Drive to Tea Country
+### Day 6 · Kandy → Nuwara Eliya · First class to tea country
 
 - Private car to Nanu Oya or scenic 1st class observation train ride through the mountains
 - Tea plantation & factory (short kid-friendly version)
@@ -59,21 +65,21 @@ Indulge in the ultimate Sri Lankan escape with our 10-Day Luxury Bespoke Tour �
 - Stay in a colonial-style family lodge or resort
 ![](/img/tours/luxury-tain-inside.jpg) ![](/img/tours/tea-trails.jpg)
 
-### Day 7 · Leisure in the Highlands
+### Day 7 · Nuwara Eliya · Slow days in the highlands
 
 - Soft hiking trails or scenic helicopter charter over Horton Plains (optional)
 - Picnic lunch in a tea estate or by a waterfall
 - Spa, reading, croquet, and gourmet dining at your bungalow
 ![](/img/tours/helicopter-tour-high-hills2.jpg) ![](/img/tours/nuwara-eliya.jpg)
 
-### Day 8 · Drive to South Coast – Luxury Beach Retreat
+### Day 8 · Nuwara Eliya → South coast · A villa by the ocean
 
 - Private drive to the South Coast via Ella or Udawalawe (option to stop for a short wildlife safari)
 - Check-in at Cape Weligama, Amanwella, or KK Beach
 - Beachfront villa with infinity pool and ocean views
 ![](/img/tours/cape-weligama-1.jpg) ![](/img/tours/cape-weligama-02.jpg)
 
-### Day 9 · Galle Fort & Exclusive Experiences
+### Day 9 · Galle · The fort, privately
 
 - Private walking tour of Galle Fort with an art historian
 - Visit artisan boutiques, galleries, and historic Dutch mansions
@@ -81,7 +87,7 @@ Indulge in the ultimate Sri Lankan escape with our 10-Day Luxury Bespoke Tour �
 - Optional: Cooking class with a local chef in a colonial house
 ![](/img/tours/night-tour.jpg) ![](/img/tours/relax.jpg)
 
-### Day 10 · Return to Colombo & Departure
+### Day 10 · South coast → Colombo · A slow farewell
 
 - Leisurely breakfast and spa
 - Helicopter or luxury road transfer back to Colombo

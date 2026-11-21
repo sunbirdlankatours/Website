@@ -2,6 +2,12 @@
 title: "Buddhist Pilgrimage Tour"
 tagline: "Spiritual Awakening"
 category: "bespoke"
+themes:
+  - culture-heritage
+  - ayurveda-wellness
+# weather: the months this tour is at its best, and the mixed ones (other months count as off-season)
+best_months: "Feb-May"
+mixed_months: "Jan, Jun-Sep, Dec"
 duration: "8 days"
 image: "/img/tours/sunbird-lanka-tours-spiritual-pilgrimage-journeys-7.jpg"
 summary: "Embark on a soulful journey with Sunbird Lanka Tours, where travel becomes a path to spiritual awakening and inner peace. Our thoughtfully curated pilgrimages go beyond…"
@@ -12,14 +18,14 @@ Embark on a soulful journey with Sunbird Lanka Tours, where travel becomes a pat
 
 ## Itinerary
 
-### Day 1 · Airport to Colombo
+### Day 1 · Colombo · Colombo’s sacred temples
 
 - Warm Welcome: Airport greeting & transfer to your Colombo hotel.
 - Gangarama Temple: Experience serenity at this iconic Buddhist site.
 - Kelaniya Raja Maha Vihara: Walk in the footsteps of the Buddha at this sacred temple.
 ![](/img/tours/sunbird-lanka-airplane-runwayt.jpg) ![](/img/tours/gangarama-01.jpg)
 
-### Day 2 · Colombo to Anuradhapuraya
+### Day 2 · Colombo → Anuradhapura · Stupas and the sacred Bodhi tree
 
 - UNESCO World Heritage Site – Walk through one of the world’s oldest continuously inhabited cities.
 - Jetavanaramaya Stupa – Marvel at one of the tallest brick structures on Earth, believed to enshrine Buddha’s sacred waistband.
@@ -30,7 +36,7 @@ Embark on a soulful journey with Sunbird Lanka Tours, where travel becomes a pat
 - A Day of Devotion – Immerse yourself in a living heritage of faith, architecture, and ancient wisdom.
 ![](/img/tours/jetawanaramaya-01.jpg) ![](/img/tours/bhodi-tree.jpg)
 
-### Day 3 · Anuradhapuraya
+### Day 3 · Mihintale · Where Buddhism began
 
 - Mihintale – Climb the sacred hill where Buddhism first touched Sri Lankan soil—an unforgettable spiritual milestone.
 - Ruwanwelisaya Stupa – Witness the awe-inspiring stupa glowing at sunset, built by King Dutugemunu to house a revered relic of the Buddha.
@@ -38,7 +44,7 @@ Embark on a soulful journey with Sunbird Lanka Tours, where travel becomes a pat
 - Spirit & Serenity – A day infused with devotion, reflection, and the peaceful power of ancient faith.
 ![](/img/tours/mihintale-hb.jpg) ![](/img/tours/ruwanweliseya-dagoba-buddhist-stupa-tourist-pilgrimage-site-anuradhapura-sri-lanka.jpg)
 
-### Day 4 · Anuradhapuraya to Polonnaruwa
+### Day 4 · Anuradhapura → Polonnaruwa → Dambulla · Royal cities and cave temples
 
 - Polonnaruwa Ancient City – Walk through Sri Lanka’s medieval capital, a UNESCO World Heritage Site rich with royal grandeur.
 - Gal Viharaya Rock Temple – Marvel at the serene, colossal Buddha statues carved into granite—icons of sacred artistry.
@@ -49,7 +55,7 @@ Embark on a soulful journey with Sunbird Lanka Tours, where travel becomes a pat
 - A Cultural Pilgrimage – From royal cities to sacred caves, experience the heart of Sri Lanka’s Buddhist legacy in one powerful journey.
 ![](/img/tours/polonnaruwa-galviharaya.jpg) ![](/img/tours/golden-cave-dambulla.jpg)
 
-### Day 5 · Dambulla to Kandy
+### Day 5 · Dambulla → Kandy · The Temple of the Tooth
 
 - Kandy – The Royal Capital – Step into Sri Lanka’s last kingdom, nestled in the misty hills and steeped in heritage.
 - Temple of the Tooth Relic (Sri Dalada Maligawa) – Pay homage at the island’s most sacred Buddhist shrine, housing the revered relic of the Buddha.
@@ -59,7 +65,8 @@ Embark on a soulful journey with Sunbird Lanka Tours, where travel becomes a pat
 - A Day of Reverence & Rhythm – Where sacred tradition meets artistic expression in the heart of the island.
 ![](/img/tours/kandy-highlights.jpg) ![](/img/tours/kandy-dance.jpg)
 
-### Day 6 · Kandy to Adam’s Peak (December to May only)
+### Day 6 · Kandy → Adam’s Peak · To the foot of the sacred mountain
+- Adam’s Peak season: December to May only
 
 - Morning Kandy City Tour – Explore the elegance of Sri Lanka’s hill capital with temples, gardens, and colonial charm.
 - Scenic Mountain Drive – Journey through winding roads, lush hills, and tea-covered slopes en route to Adam’s Peak.
@@ -69,7 +76,7 @@ Embark on a soulful journey with Sunbird Lanka Tours, where travel becomes a pat
 - Perfect Pre-Hike Pause – Rest, reflect, and reconnect before the unforgettable ascent begins.
 ![](/img/tours/green-tea-treatment.jpg) ![](/img/tours/sripada-adams-peak.jpg)
 
-### Day 7 · Adam’s Peak to Negombo
+### Day 7 · Adam’s Peak → Negombo · Sunrise from the summit
 
 - Midnight Pilgrimage – Begin your ascent at 2:00 AM to experience one of Sri Lanka’s most sacred spiritual traditions.
 - Sri Pada (Sacred Footprint) – Reach the summit of Adam’s Peak, where a sacred footprint marks centuries of devotion.
@@ -80,7 +87,7 @@ Embark on a soulful journey with Sunbird Lanka Tours, where travel becomes a pat
 - From Peak to Peace – A perfect close to your journey—soulfully elevated and gently grounded.
 ![](/img/tours/sripada-adams-peak-sunrising.jpg) ![](/img/tours/negambo-lagoon-destinations.jpg)
 
-### Day 8 · Negombo to Airport
+### Day 8 · Negombo → Airport · A last look at Negombo
 
 - Leisurely breakfast.
 - Negombo city tour and Departure

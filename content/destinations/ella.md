@@ -3,9 +3,14 @@ name: "Ella"
 tagline: "Highlands, Hikes & Heavenly Views"
 image: "/img/places/ella-rock.jpg"
 order: 5
+region: "Hill country"
+district: "Badulla"
+map: "6.8667, 81.0466"
 ---
 
 In the misty highland of Sri Lanka is Ella, a lush green village with jaw-dropping views all around. Its landscape is dotted with mountains, valleys, and features Sri Lanka’s most famous railway line. The waterfalls of Ella are the most beautiful. On a clear night, the distant glow of the Great Basses lighthouse on the south coast is visible from Ella. And, at times, you can even see the Uda Walawe National Park. Situated in the tea country, with a 1000m elevation, its tea plantations in Ella thrive all around. Fresh mountain air and the mild climate make Ella a quiet scenic retreat for any weary raveler. There are plenty of mountain treks for a lovely walking holiday.
+
+[Ride the train to Ella](/ella-train/){.btn .small}
 
 Ella’s best-kept secrets await beyond the trails.
 

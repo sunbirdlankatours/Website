@@ -2,6 +2,12 @@
 title: "Udawalawe Jeep Safari"
 tagline: "Day tour -Wildlife. Wilderness. Wow."
 category: "wildlife"
+themes:
+  - safari-wildlife
+  - family-holidays
+# weather: the months this tour is at its best, and the mixed ones (other months count as off-season)
+best_months: "Dec-Sep"
+mixed_months: "Oct-Nov"
 duration: "1 day"
 image: "/img/tours/udawalawe-day-tour-slider01k.jpg"
 summary: "At Sunbird Lanka Tours, your journey deserves more than just a place to stay — it deserves an experience. We handpick exceptional accommodations that seamlessly blend…"

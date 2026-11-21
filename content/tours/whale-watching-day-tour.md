@@ -2,6 +2,12 @@
 title: "Whale Watching Day Tour"
 tagline: "Sail with Giants of the Deep!"
 category: "wildlife"
+themes:
+  - safari-wildlife
+  - family-holidays
+# weather: the months this tour is at its best, and the mixed ones (other months count as off-season)
+best_months: "Dec-Apr"
+mixed_months: "Nov"
 duration: "1 day"
 image: "/img/tours/whale-watching-day-tour-slider-01.jpg"
 summary: "Set off from Sri Lanka’s southern coast—one of Asia’s top whale watching hotspots—for an unforgettable ocean adventure. Witness the awe-inspiring Blue Whale, the largest…"

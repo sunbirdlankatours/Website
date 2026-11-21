@@ -2,6 +2,11 @@
 title: "Yala Jeep Safari Day Tour"
 tagline: "Where Leopards & Giants Rule the Wild"
 category: "wildlife"
+themes:
+  - safari-wildlife
+# weather: the months this tour is at its best, and the mixed ones (other months count as off-season)
+best_months: "Feb-Aug"
+mixed_months: "Jan, Nov-Dec"
 duration: "1 day"
 image: "/img/tours/yala-national-park-day-tour-slider01.jpg"
 summary: "Step into the untamed wilderness of Yala National Park, Sri Lanka’s most visited and wildlife-rich reserve. Spanning over 130,000 hectares, Yala is famous for its high…"

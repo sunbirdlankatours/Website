@@ -2,6 +2,12 @@
 title: "Wellness Tour"
 tagline: "Rejuvenate in Paradise"
 category: "bespoke"
+themes:
+  - ayurveda-wellness
+  - beach-holidays
+# weather: the months this tour is at its best, and the mixed ones (other months count as off-season)
+best_months: "Dec-Apr"
+mixed_months: "Jul-Sep, Nov"
 duration: "7 days"
 image: "/img/tours/wellness-trip-gallery-01.jpg"
 summary: "This 7-day wellness journey is designed for those seeking deep relaxation, healing, and spiritual balance. From serene beaches to misty hill retreats, immerse yourself…"
@@ -12,7 +18,7 @@ This 7-day wellness journey is designed for those seeking deep relaxation, heali
 
 ## Itinerary
 
-### Days 1–2 · Coastal Arrival & Ayurvedic Wellness (Beruwala/Bentota)
+### Days 1–2 · Bentota · Ayurveda by the sea
 
 - Arrive and unwind at a beachfront wellness resort.
 - Ayurvedic doctor consultation to design your personalized treatment plan.
@@ -20,7 +26,7 @@ This 7-day wellness journey is designed for those seeking deep relaxation, heali
 - Evening: Guided meditation sessions by the sea.
 ![](/img/tours/sunbird-lanka-airplane-runwayt.jpg) ![](/img/tours/beach-ayurvedic-wellness.jpg)
 
-### Days 3–4 · Yoga & Mindfulness Retreat in the Highlands (Kandy/Ella)
+### Days 3–4 · Kandy or Ella · Yoga in the highlands
 
 - Transfer to a hill country retreat surrounded by lush greenery.
 - Sunrise yoga, pranayama breathing, and mindfulness workshops.
@@ -28,21 +34,21 @@ This 7-day wellness journey is designed for those seeking deep relaxation, heali
 - Optional silent walks or journaling sessions in the gardens.
 ![](/img/tours/yoga-hill-country.jpg) ![](/img/tours/green-tea-treatment.jpg)
 
-### Day 5 · Nature Immersion & Forest Bathing (Ella/Nuwara Eliya)
+### Day 5 · Ella · Forest bathing
 
 - Guided nature hike through tea plantations and forest trails.
 - Experience “Shinrin-yoku” (forest bathing) to calm your nervous system.
 - Picnic lunch in the hills with panoramic views.
 ![](/img/tours/bambara-kanda.jpg) ![](/img/tours/forest-bathing.jpg)
 
-### Day 6 · Detox & Deep Relaxation (South Coast or Return to Wellness Resort)
+### Day 6 · South coast · Detox and deep rest
 
 - Return to your coastal wellness center or continue to a new one.
 - Enjoy herbal steam baths, cleansing juices, and a full-body detox wrap.
 - Afternoon at leisure with ocean-view lounging or reading.
 ![](/img/tours/steam-bath.jpg) ![](/img/tours/relax-beach.jpg)
 
-### Day 7 · Beach Serenity & Farewell (Mirissa/Bentota) – Departure
+### Day 7 · Mirissa or Bentota · Beach yoga and farewell
 
 - Morning yoga and light breakfast.
 - Soak in the sun or take a calming beach stroll.

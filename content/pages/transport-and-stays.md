@@ -21,7 +21,7 @@ We offer tailor-made transport solutions ranging from small cars to larger touri
 
 {{vehicles}}
 
-[Book a vehicle](/contact-us/#plan){.btn}
+[Book a vehicle](/contact-us/#plan){.btn .gold}
 :::
 
 ::: band mist
@@ -38,5 +38,5 @@ At Sunbird Lanka Tours, your journey deserves more than just a place to stay —
 
 ![Paradise Road Tintagel, Colombo](/img/site/paradise-road-tintagel.jpg "Paradise Road Tintagel · Colombo") ![Uga Residence, Colombo](/img/site/uga-residence.jpg "Uga Residence · Colombo") ![Shangri-La Hotel, Colombo](/img/site/shangri-la-colombo.jpg "Shangri-La Hotel · Colombo") ![Water Garden, Sigiriya](/img/site/water-garden-sigiriya2.jpg "Water Garden · Sigiriya") ![Heritance Kandalama, Dambulla](/img/site/heritance-kandalama.jpg "Heritance Kandalama · Dambulla") ![Cinnamon Lodge, Habarana](/img/site/cinnamon-lodge.jpg "Cinnamon Lodge · Habarana") ![Forest Rock Garden, Sigiriya](/img/site/forest-rock-garden-sigiriya.jpg "Forest Rock Garden · Sigiriya") ![Deer Park Hotel, Giritale](/img/site/deer-park-hotel-girithale.jpg "Deer Park Hotel · Giritale") ![Gal Oya Lodge](/img/site/gal-oya-lodge-sigiriya-1.jpg "Gal Oya Lodge") ![Jetwing Surf, Arugam Bay](/img/site/jetwing-surf-arugambay.jpg "Jetwing Surf · Arugam Bay") ![Uga Jungle Beach, Trincomalee](/img/site/uga-jungle-beach-trincomalee.jpg "Uga Jungle Beach · Trincomalee") ![Mapakada Village, Mahiyanganaya](/img/site/mapakada-village-mahiyanganaya.jpg "Mapakada Village · Mahiyanganaya")
 
-[Let us craft your perfect stay](/contact-us/#plan){.btn}
+[Let us craft your perfect stay](/contact-us/#plan){.btn .gold}
 :::

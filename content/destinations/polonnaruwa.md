@@ -3,6 +3,9 @@ name: "Polonnaruwa"
 tagline: "Echoes of an Ancient Kingdom"
 image: "/img/places/vatadage-destinations.jpg"
 order: 15
+region: "Cultural Triangle"
+district: "Polonnaruwa"
+map: "7.9403, 81.0188"
 ---
 
 Step into a majestic past at Polonnaruwa, Sri Lanka’s medieval capital. Home to awe-inspiring ruins, colossal stone monuments, ancient temples, and royal reservoirs, this UNESCO World Heritage Site tells stories of Sinhala kings and Chola invaders. Wander through centuries-old marvels nestled in one of the country’s most fertile farming regions.

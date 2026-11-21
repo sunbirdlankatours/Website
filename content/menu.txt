@@ -1,35 +1,16 @@
-# Main menu. Format:  Label | link
+# Main menu. Format:  Label | link | short note
 # Indent a line with two spaces to put it inside the item above (dropdown).
+# The note is optional: in a dropdown it shows in small letters under the name.
+# Kept short on purpose: every other page is linked from the footer.
+# Contact is in the About us dropdown and behind the yellow "Plan my trip" button on every page.
 
-Bespoke Tours | /tours/#bespoke
-  Adventure, Culture & Nature | /adventure-nature-based-tours/
-  Bird Watching Tour | /bird-watching-tour/
-  Cultural & Heritage Tour | /cultural-heritage-tour/
-  Family Tour | /family-tour/
-  Luxury Bespoke Tour | /luxury-bespoke-tour/
-  North & East Coast Tour | /north-east-cost-tour/
-  Romantic Central & Southern Beaches | /romantic-central-southern-beaches/
-  Romantic North & East | /romantic-north-east/
-  Buddhist Pilgrimage Tour | /pilgrimage-tour/
-  Sports-Based Tour | /sports-based-tour/
-  Sustainable Tour | /sustainable-tour-itinerary/
-  Village & Home Stay Tour | /village-based-home-stay-tour/
-  Wellness Tour | /wellness-tour-itinerary/
-Wildlife Tours | /tours/#wildlife
-  Negombo Lagoon Day Tour | /negombo-lagoon-day-tour/
-  Udawalawe Jeep Safari | /udawalawe-jeep-safari/
-  Whale Watching Day Tour | /whale-watching-day-tour/
-  Wilpattu Day Tour | /wilpattu-day-tour/
-  Yala Jeep Safari | /jeep-safari-yala-park-day-tour/
-MICE | /mice/
-Explore Sri Lanka | /destinations/
-Comfort Travel | /transport-and-stays/
-  Vehicle Hire | /transport-and-stays/#vehicles
-  Accommodation | /transport-and-stays/#stays
-Our Story | /about-us/
-  About Us | /about-us/
-  Our CEO | /about-us/#ceo
-  Sustainable Tourism | /about-us/#sustainability
-  Social Responsibility | /about-us/#csr
-  Blog | /blog/
-Contact Us | /contact-us/
+Tours | /tours/
+Destinations | /destinations/
+Travel guide | /best-time-to-visit-sri-lanka/
+  Best time to visit | /best-time-to-visit-sri-lanka/ | The weather, month by month
+  Transport & stays | /transport-and-stays/ | Cars, drivers and hotels
+  Travel stories | /blog/ | News and ideas from the island
+About us | /about-us/
+  Our story | /about-us/ | Who we are and how we plan
+  MICE & events | /mice/ | Meetings, incentives and groups
+  Contact us | /contact-us/ | Call, write or come and see us

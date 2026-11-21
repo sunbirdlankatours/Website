@@ -2,6 +2,11 @@
 title: "Wilpattu Day Tour"
 tagline: "The Wild Awaits"
 category: "wildlife"
+themes:
+  - safari-wildlife
+# weather: the months this tour is at its best, and the mixed ones (other months count as off-season)
+best_months: "Feb-Sep"
+mixed_months: "Jan, Oct"
 duration: "1 day"
 image: "/img/tours/wilpattu-national-park-day-tour-slider-01.jpg"
 summary: "Discover the untamed beauty of Sri Lanka’s largest national park, stretching across 130,000 hectares and bordering Mannar, Anuradhapura, and Puttalam. Famous for its…"

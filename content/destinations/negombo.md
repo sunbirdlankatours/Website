@@ -3,6 +3,9 @@ name: "Negombo"
 tagline: "Where Your Sri Lankan Journey Begins"
 image: "/img/places/hamilton-canal-destinations.jpg"
 order: 13
+region: "South & west coast"
+district: "Gampaha"
+map: "7.2083, 79.8358"
 ---
 
 Just minutes from the airport, Negombo is the perfect first or last stop in Sri Lanka. With golden beaches, a breezy coastal vibe, and rich colonial charm, it’s more than a transit town. Discover historic churches, canals from the Dutch era, and the scenic Negombo Lagoon—all in one laid-back seaside escape.

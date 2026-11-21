@@ -2,6 +2,12 @@
 title: "Romantic Central & Southern Beaches"
 tagline: "Whispers of Romance in the Highlands and Beaches of Sri Lanka"
 category: "bespoke"
+themes:
+  - honeymoon-luxury
+  - beach-holidays
+# weather: the months this tour is at its best, and the mixed ones (other months count as off-season)
+best_months: "Dec-Apr"
+mixed_months: "Jul-Sep, Nov"
 duration: "10 days"
 image: "/img/tours/sustainable-trip-gallery-01.jpg"
 summary: "Escape to the heart of paradise with a 10-day romantic journey through Sri Lanka’s misty hills and sun-kissed southern shores. From tranquil lakeside strolls in Kandy to…"
@@ -12,7 +18,7 @@ Escape to the heart of paradise with a 10-day romantic journey through Sri Lanka
 
 ## Itinerary
 
-### Day 1 · Arrival in Colombo → Kandy (Central Highlands)
+### Day 1 · Colombo → Kandy · Dinner by the lake
 
 - Transfer to Kandy (~3.5 hours).
 - Evening: Visit the Temple of the Tooth and enjoy a cultural dance show.
@@ -20,7 +26,7 @@ Escape to the heart of paradise with a 10-day romantic journey through Sri Lanka
 - Romantic dinner by the lake.
 ![](/img/tours/sunbird-lanka-airplane-runwayt.jpg) ![](/img/tours/kandy-highlights.jpg)
 
-### Day 2 · Kandy & Peradeniya Botanical Gardens
+### Day 2 · Kandy · Gardens and tea tasting
 
 - Morning walk in Peradeniya Botanical Gardens.
 - Explore Kandy town — quaint cafes, craft shops.
@@ -28,7 +34,7 @@ Escape to the heart of paradise with a 10-day romantic journey through Sri Lanka
 - Leisure evening stroll around Kandy Lake.
 ![](/img/tours/romantic-peradeniya.jpg) ![](/img/tours/kandy-lake.jpg)
 
-### Day 3 · Kandy → Nuwara Eliya (The “Little England”)
+### Day 3 · Kandy → Nuwara Eliya · “Little England”
 
 - Scenic drive through misty tea plantations (~2.5 hours).
 - Visit a tea factory en route.
@@ -36,7 +42,7 @@ Escape to the heart of paradise with a 10-day romantic journey through Sri Lanka
 - Romantic evening walk around Gregory Lake
 ![](/img/tours/couple-little-england.jpg) ![](/img/tours/cozy-fire-nuwaraeliya.jpg)
 
-### Day 4 · Nuwara Eliya Leisure & Waterfalls
+### Day 4 · Nuwara Eliya · Waterfalls and a couple’s spa
 
 - Visit nearby waterfalls like Lover’s Leap or St. Clair’s Falls.
 - Horseback riding or boating on Gregory Lake.
@@ -44,7 +50,7 @@ Escape to the heart of paradise with a 10-day romantic journey through Sri Lanka
 - Dinner at a quaint restaurant with mountain views.
 ![](/img/tours/lovers-leap-or-st-clairs-falls.jpg) ![](/img/tours/spa-relax.jpg)
 
-### Day 5 · : Nuwara Eliya → Ella
+### Day 5 · Nuwara Eliya → Ella · Sunset over Ella Gap
 
 - Short scenic drive (~2 hours).
 - Check into a luxury resort with panoramic views of Ella Gap.
@@ -52,7 +58,7 @@ Escape to the heart of paradise with a 10-day romantic journey through Sri Lanka
 - Romantic sunset dinner overlooking the valley.
 ![](/img/tours/nine-arch-bridge02.jpg) ![](/img/tours/romantic-couple.jpg)
 
-### Day 6 · Ella → Mirissa (Southern Beach)
+### Day 6 · Ella → Mirissa · Candlelight on the beach
 
 - Transfer to Mirissa (~5 hours).
 - Check into a beachside villa or luxury resort.
@@ -60,14 +66,14 @@ Escape to the heart of paradise with a 10-day romantic journey through Sri Lanka
 - Private beach candlelight dinner.
 ![](/img/tours/romantic-mirissa.jpg) ![](/img/tours/romantic-dinner-beach.jpg)
 
-### Day 7 · Mirissa Leisure & Whale Watching
+### Day 7 · Mirissa · Whales and slow afternoons
 
 - Morning whale watching cruise (seasonal: Nov–Apr).
 - Afternoon relaxation on the beach or spa treatment.
 - Evening stroll through Mirissa town, enjoy fresh seafood.
 ![](/img/tours/mirissa01.jpg) ![](/img/tours/seefood-diner.jpg)
 
-### Day 8 · Mirissa → Unawatuna / Galle
+### Day 8 · Mirissa → Unawatuna · Galle Fort and the sea
 
 - Short drive to Unawatuna or Galle (~30–45 minutes).
 - Explore the Galle Fort, a UNESCO World Heritage site.
@@ -75,14 +81,14 @@ Escape to the heart of paradise with a 10-day romantic journey through Sri Lanka
 - Romantic dinner in a historic fort hotel or beachfront restaurant.
 ![](/img/tours/galle-romance.jpg) ![](/img/tours/unawatuna-1.jpg)
 
-### Day 9 · Unawatuna Leisure Day
+### Day 9 · Unawatuna · A day of your own
 
 - Day at leisure on Unawatuna beach or visit nearby Jungle Beach for privacy.
 - Optional cooking class for couples or a yoga session.
 - Sunset drinks at a rooftop bar with ocean views.
 ![](/img/tours/unawatuna-jungle-beach.jpg) ![](/img/tours/unawatuna-jungle-beach-02.jpg)
 
-### Day 10 · Unawatuna → Colombo or Airport
+### Day 10 · Unawatuna → Colombo · Breakfast by the beach, then home
 
 - Leisurely morning, breakfast by the beach.
 - Transfer to Colombo (~2.5 hours) or Bandaranaike International Airport.
