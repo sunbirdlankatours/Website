@@ -1,0 +1,2 @@
+# Used by build.py to make the smaller WebP copies of the photos. Without it the site still builds.
+Pillow>=10,<13

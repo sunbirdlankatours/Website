@@ -86,12 +86,51 @@ and add it to `content/menu.txt` if it should appear in the menu.
 On github.com open `static/img/tours` (or another folder) → **Add file → Upload files**.
 Use JPG photos around 1600 px wide or smaller. Then use `/img/tours/your-photo.jpg` in the text.
 
-## Make the enquiry forms work (one time)
+## Where trip letters and forms go
 
-1. Go to <https://web3forms.com>, enter `letstravel@sunbirdtours.lk` and get your free **Access Key** by email.
-2. Put it in `content/settings.txt` on the `web3forms_key:` line.
+A letter or form sent from the website goes two ways at once. Either one arriving is enough:
 
-Until then the forms ask visitors to email or WhatsApp you instead.
+- **Into the admin panel** (Inquiries). This works once the site runs on Cloudflare Pages
+  with the inquiry box connected (next section).
+- **By email** through Web3Forms. Go to <https://web3forms.com>, enter `letstravel@sunbirdtours.lk`,
+  get the free **Access Key** by email and put it in `content/settings.txt` on the `web3forms_key:` line.
+
+With neither, the forms ask visitors to email or WhatsApp you instead.
+
+## Host on Cloudflare Pages, with the inquiry box (one time)
+
+Cloudflare builds the site straight from this GitHub repository (it doesn't need GitHub Actions),
+serves it fast all over the world, and keeps the inquiries in a free D1 database.
+Use the Cloudflare account that already holds the `sunbirdtours.lk` DNS.
+
+1. **Workers & Pages → Create → Pages → Connect to Git**, allow Cloudflare to see the `SunBird`
+   repository and pick it.
+2. Build settings: framework preset **None**, build command
+   `pip install -r requirements.txt && python build.py`, build output directory `_site`,
+   production branch `main`. **Save and Deploy.**
+   The site appears at `https://<project-name>.pages.dev`.
+3. **Workers & Pages → D1 SQL database → Create**, name it `sunbird-inquiries`.
+4. Open the Pages project → **Settings → Bindings → Add → D1 database**:
+   variable name `DB`, database `sunbird-inquiries` → Save.
+5. **Deployments → the newest one → ⋯ → Retry deployment**, so the site picks up the database.
+6. Test it: send a letter from `https://<project-name>.pages.dev/contact-us/`, then open
+   `https://<project-name>.pages.dev/admin/`, sign in with the GitHub key and open **Inquiries**.
+
+How it works:
+
+- The inquiry box is `functions/api/inquiries.js`. The table makes itself on first use.
+- It lets in whoever signs in to the admin panel with a GitHub key that may change this repository.
+- It takes at most 10 letters an hour from one connection.
+- Every save in the admin panel starts a new Cloudflare build. The top bar says "Live on the site"
+  when it's done. The free plan allows 500 builds a month.
+- **Moving the real domain** (only when you're ready to replace the old WordPress site): in the Pages
+  project, open **Custom domains → Set up a custom domain** and add `sunbirdtours.lk`, then `www.sunbirdtours.lk`.
+  **Do not change the MX / email records.**
+- Once Cloudflare hosts the site, `.github/workflows/publish.yml` (GitHub Pages) isn't needed any more.
+
+Photos: when Pillow is installed (`pip install pillow`; on Cloudflare the build command installs it),
+the build makes smaller WebP copies of every photo in `/imgv/`, in several widths for the big ones,
+so phones download phone-sized photos. The text files keep using the normal `/img/...jpg` names.
 
 ## Publish on GitHub Pages (one time)
 
@@ -119,3 +158,6 @@ python -m http.server 8000 --directory _site
 ```
 
 Then open <http://localhost:8000>.
+
+To try the inquiry box on your own computer, build with `INQUIRY_API=/api/inquiries` (or `CF_PAGES=1`)
+and serve `_site` with Cloudflare's `wrangler pages dev _site --d1 DB` instead.

@@ -5,7 +5,8 @@
 
 The finished site is written to the _site folder. GitHub runs this automatically
 every time you save a change (see .github/workflows/publish.yml), so you normally
-never need to run it yourself. Needs only Python 3.8+ (no extra packages).
+never need to run it yourself. Needs only Python 3.8+. With the Pillow package
+(pip install pillow, see requirements.txt) photos also get smaller WebP copies.
 """
 import datetime
 import hashlib
@@ -24,6 +25,13 @@ STATIC = os.path.join(ROOT, "static")
 OUT = os.path.join(ROOT, "_site")
 
 esc = lambda s: html.escape(str(s or ""), quote=True)  # noqa: E731
+
+# The inquiry box (functions/api/inquiries.js) only exists when Cloudflare Pages hosts the site;
+# Cloudflare sets CF_PAGES while it builds. Letters and forms then also go there, for the admin panel.
+# INQUIRY_API=/api/inquiries switches it on by hand (for testing), INQUIRY_API=off switches it off.
+INQUIRY_API = os.environ.get("INQUIRY_API") or ("/api/inquiries" if os.environ.get("CF_PAGES") else "")
+if INQUIRY_API.lower() in ("off", "no", "0"):
+    INQUIRY_API = ""
 
 
 # =============================================================== reading files
@@ -1769,6 +1777,9 @@ class Builder:
         gt = s.get("google_tag")
         tawk = s.get("tawk_chat")
         cfg = {"key": s.get("web3forms_key", ""), "email": s.get("email", ""), "whatsapp": s.get("whatsapp", "")}
+        if INQUIRY_API:
+            base = os.environ.get("SITE_BASE_PATH", "").strip("/")
+            cfg["api"] = ("/" + base if base and INQUIRY_API.startswith("/") else "") + INQUIRY_API
         doc = """<!doctype html>
 <html lang="en">
 <head>
@@ -2199,6 +2210,155 @@ class Builder:
         return len(urls)
 
 
+# =============================================================== faster photos
+# Every photo in /img/ also gets a WebP copy in /imgv/ (a smaller file), and the big ones
+# (1000px and wider) get copies in several widths, so a phone downloads a phone-sized photo.
+# The pages keep the original .jpg/.png as the fallback, and content/ never changes: the
+# copies are added to the finished pages at the end of the build. The copies are named after
+# the photo's contents, so a changed photo gets new names and browsers may keep them for a year.
+# Needs the Pillow package (pip install pillow); without it the site builds exactly as before.
+# Made copies are kept in .cache/photos, so only new or changed photos take time.
+PHOTO_CACHE = os.path.join(ROOT, ".cache", "photos")
+PHOTO_WIDTHS = (480, 800, 1200, 1800)
+PHOTO_BIG = 1000      # photos at least this wide get the extra widths
+PHOTO_MAX = 2400      # never wider than this
+PHOTO_QUALITY = 76
+
+
+def make_photo_copies():
+    """Make the WebP copies into _site/imgv/ and return {"/img/x.jpg": [(width, url), ...]},
+    widest last. The original itself is the widest choice when its WebP copy wasn't smaller."""
+    try:
+        from PIL import Image, ImageOps
+    except ImportError:
+        print("Photos: Pillow isn't installed, so there are no WebP copies (pip install pillow)")
+        return {}
+    import io
+    from concurrent.futures import ThreadPoolExecutor
+    src_root = os.path.join(OUT, "img")
+    paths = [os.path.join(folder, name) for folder, _, files in os.walk(src_root)
+             for name in files if name.lower().endswith((".jpg", ".jpeg", ".png"))]
+    os.makedirs(PHOTO_CACHE, exist_ok=True)
+    made = [0]
+
+    def copies_for(data, digest):
+        """The widths and file names for one photo, from the cache or made now."""
+        meta_path = os.path.join(PHOTO_CACHE, "%s-q%d.json" % (digest, PHOTO_QUALITY))
+        if os.path.exists(meta_path):
+            with open(meta_path, encoding="utf-8") as f:
+                meta = json.load(f)
+            if all(os.path.exists(os.path.join(PHOTO_CACHE, c[1])) for c in meta["copies"]):
+                return meta
+        im = Image.open(io.BytesIO(data))
+        icc = im.info.get("icc_profile")
+        im = ImageOps.exif_transpose(im)  # photos turned by their camera stay turned
+        im = im.convert("RGBA" if im.mode in ("RGBA", "LA", "P", "PA") else "RGB")
+        w, h = im.size
+        widths = [x for x in PHOTO_WIDTHS if x < w * 0.9] if w >= PHOTO_BIG else []
+        widths.append(min(w, PHOTO_MAX))
+        copies = []
+        for x in widths:
+            r = im if x == w else im.resize((x, max(1, round(h * x / w))), Image.LANCZOS)
+            name = "%s-%d-q%d.webp" % (digest, x, PHOTO_QUALITY)
+            buf = io.BytesIO()
+            r.save(buf, "WEBP", quality=PHOTO_QUALITY, method=4, **({"icc_profile": icc} if icc else {}))
+            with open(os.path.join(PHOTO_CACHE, name), "wb") as f:
+                f.write(buf.getvalue())
+            copies.append([x, name, buf.tell()])
+        # a full-size copy that isn't clearly smaller than the original isn't worth sending
+        if copies[-1][0] == w and copies[-1][2] > len(data) * 0.9:
+            copies.pop()
+        meta = {"w": w, "h": h, "copies": copies}
+        with open(meta_path, "w", encoding="utf-8") as f:
+            json.dump(meta, f)
+        made[0] += 1
+        return meta
+
+    def one(path):
+        with open(path, "rb") as f:
+            data = f.read()
+        if len(data) < 15000:  # tiny files: nothing to gain
+            return None
+        digest = hashlib.sha1(data).hexdigest()[:10]
+        try:
+            meta = copies_for(data, digest)
+        except Exception as e:  # a photo Pillow can't read just keeps its original
+            print("Photos: skipped %s (%s)" % (os.path.relpath(path, OUT), e))
+            return None
+        if not meta["copies"]:
+            return None
+        rel = os.path.relpath(path, src_root).replace(os.sep, "/")
+        stem = rel.rsplit(".", 1)[0]
+        out = []
+        for x, name, _ in meta["copies"]:
+            url = "/imgv/%s-%d.%s.webp" % (stem, x, digest)
+            dst = os.path.join(OUT, *url.strip("/").split("/"))
+            os.makedirs(os.path.dirname(dst), exist_ok=True)
+            shutil.copyfile(os.path.join(PHOTO_CACHE, name), dst)
+            out.append((x, url))
+        if meta["copies"][-1][0] < min(meta["w"], PHOTO_MAX):
+            out.append((meta["w"], "/img/" + rel))  # the original is the widest choice
+        return "/img/" + rel, out
+
+    with ThreadPoolExecutor(max(2, min(16, os.cpu_count() or 2))) as ex:
+        photos = dict(r for r in ex.map(one, paths) if r)
+    print("Photos: %d with WebP copies (%d made new)" % (len(photos), made[0]))
+    return photos
+
+
+def use_photo_copies(photos):
+    """Point the finished pages at the WebP copies: srcset on <img> (data-srcset on photos that
+    load later), the widths on <picture> sources, and a WebP image-set() on background photos."""
+    if not photos:
+        return 0
+    img_tag = re.compile(r"<(?:img|source)\b[^>]*>")
+    attr_src = re.compile(r'\s(src|data-src|srcset)="(/img/[^"?#]+)(?:\?[^"]*)?"')
+    bg = re.compile(r"""background-image:\s*url\((['"]?)(/img/[^'")?#]+)\1\)""")
+    srcset = lambda opts: ", ".join("%s %dw" % (u, x) for x, u in opts)
+
+    def fix_tag(m):
+        tag = m.group(0)
+        if " srcset=" in tag and tag.startswith("<img") or " data-srcset=" in tag:
+            return tag
+        a = attr_src.search(tag)
+        if not a or a.group(2) not in photos:
+            return tag
+        opts = photos[a.group(2)]
+        name = a.group(1)
+        if name == "srcset":  # a <picture> source: swap its one photo for the choice of widths
+            return tag[:a.start()] + ' srcset="%s" sizes="100vw"' % srcset(opts) + tag[a.end():]
+        add = ' %s="%s"' % ("srcset" if name == "src" else "data-srcset", srcset(opts))
+        if " sizes=" not in tag:
+            add += ' sizes="100vw"'
+        return tag[:a.end()] + add + tag[a.end():]
+
+    def fix_bg(m):
+        opts = photos.get(m.group(2))
+        if not opts:
+            return m.group(0)
+        webp = [o for o in opts if o[1].endswith(".webp")]
+        if not webp:
+            return m.group(0)
+        pick = ([o for o in webp if o[0] <= 1800] or webp)[-1][1]
+        return "%s;background-image:image-set(url('%s') type('image/webp'),url('%s') type('image/jpeg'))" % (
+            m.group(0), pick, m.group(2))
+
+    changed = 0
+    for folder, _, files in os.walk(OUT):
+        for name in files:
+            if not name.endswith(".html"):
+                continue
+            path = os.path.join(folder, name)
+            with open(path, encoding="utf-8") as f:
+                text = f.read()
+            new = bg.sub(fix_bg, img_tag.sub(fix_tag, text))
+            if new != text:
+                with open(path, "w", encoding="utf-8") as f:
+                    f.write(new)
+                changed += 1
+    return changed
+
+
 def apply_base_path(base):
     """Prefix every site-relative link with `base` (for example "/SunBird") so the site also
     works from a sub-folder such as username.github.io/SunBird/. GitHub fills this in
@@ -2207,10 +2367,13 @@ def apply_base_path(base):
     if not base:
         return 0
     rules_html = [
-        re.compile(r'(\s(?:href|src|srcset|action|poster)=")/(?!/)'),
+        re.compile(r'(\s(?:href|src|action|poster)=")/(?!/)'),
         re.compile(r'(http-equiv="refresh" content="\d+;\s*url=)/(?!/)'),
         re.compile(r'(location\.replace\(")/(?!/)'),
     ]
+    # srcset holds a list ("/a.webp 480w, /b.webp 800w"): every address in it needs the start
+    srcsets = re.compile(r'(\s(?:srcset|data-srcset)=")([^"]*)(")')
+    one_set = lambda v: re.sub(r"(^|,\s*)/(?!/)", lambda m: m.group(1) + base + "/", v)
     css_url = re.compile(r"""(url\(\s*['"]?)/(?!/)""")
     changed = 0
     for folder, _, files in os.walk(OUT):
@@ -2224,6 +2387,7 @@ def apply_base_path(base):
             if name.endswith(".html"):
                 for rx in rules_html:
                     new = rx.sub(lambda m: m.group(1) + base + "/", new)
+                new = srcsets.sub(lambda m: m.group(1) + one_set(m.group(2)) + m.group(3), new)
             if new != text:
                 with open(path, "w", encoding="utf-8") as f:
                     f.write(new)
@@ -2254,8 +2418,14 @@ def main():
     if os.path.isdir(os.path.join(OUT, "admin")):
         with open(os.path.join(OUT, "admin", "config.json"), "w", encoding="utf-8") as f:
             json.dump({"mode": "github", "repo": site.s.get("admin_repo", ""),
-                       "branch": site.s.get("admin_branch", "main") or "main"}, f)
+                       "branch": site.s.get("admin_branch", "main") or "main",
+                       # on Cloudflare: the inquiry box, and the commit this build was made from
+                       # (the panel compares it with its last save to say "Live on the site")
+                       "inquiries": bool(INQUIRY_API),
+                       "host": "cloudflare" if os.environ.get("CF_PAGES") else "",
+                       "built_from": os.environ.get("CF_PAGES_COMMIT_SHA", "")}, f)
     print("Built %d pages, %d tours, %d posts, %d redirects -> %s" % (n, len(site.tours), len(site.posts), n_red, OUT))
+    use_photo_copies(make_photo_copies())
     base = os.environ.get("SITE_BASE_PATH", "")
     if apply_base_path(base):
         print("Links adjusted to work from the sub-folder %s" % base)
