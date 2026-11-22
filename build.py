@@ -482,7 +482,11 @@ HELLO_SCRIPT = (
     'h.classList.add("hl-on","hl-hold","hl-"+m);var o=document.createElement("div");o.className="hl";o.setAttribute("aria-hidden","true");'
     'o.innerHTML=\'<div class="hl-bg"></div>\';document.body.appendChild(o);'
     'var off=function(){h.classList.remove("hl-on","hl-hold");if(o.parentNode)o.parentNode.removeChild(o)};'
-    'var s=document.createElement("script");s.src="/js/hello.js?v={ver}";s.async=true;s.onerror=off;document.head.appendChild(s);'
+    # hello.js sits next to site.css, so take the folder from site.css's own link: that link gets the
+    # "/SunBird" prefix on the GitHub test site (apply_base_path), a script address in here would not
+    "var c=document.querySelector('link[href*=\"css/site.css\"]');"
+    'var s=document.createElement("script");s.src=(c?c.getAttribute("href").split("css/site.css")[0]:"/")+"js/hello.js?v={ver}";'
+    's.async=true;s.onerror=off;document.head.appendChild(s);'
     'setTimeout(off,9500)}catch(x){}})();</script>')
 
 
