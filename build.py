@@ -1221,6 +1221,88 @@ class Builder:
             '<p class="form-status" role="status" aria-live="polite"></p></form>'
         ).format(subject=esc(subject), opts="".join(opts), wa=esc(self.s.get("whatsapp")))
 
+    def letter(self, tour=None):
+        """{{letter}}: the trip request as a letter to us. Every blue word is a blank, filled one after another in the
+        order of the sentence from one small panel (a bottom sheet on phones): who's coming, their country (picked
+        from a list), when, the exact number of days and nights (a slider), what they'd love, their email and number,
+        a P.S. and their name. Answers given earlier in the visit (the tour finder, the month question) are already
+        written in. It is written full screen, so the letter, the step being answered and "Seal and send" are all on
+        one screen ("Plan my trip" links open it that way at once). "Seal and send" folds the letter into
+        an airmail envelope in the logo colours, stamps it and sends it off (site.js), by email through Web3Forms,
+        and "Send it on WhatsApp instead" opens WhatsApp with the same letter written out. Without JavaScript, or
+        for anyone who prefers it, the plain form (form()) is right underneath."""
+        s = self.s
+        cats = [c for c in self.site.cats if c.get("word")]
+        data = {"words": [c["word"] for c in cats], "months": MONTHS,
+                "photos": {c["word"]: [c.get("image", ""), c.get("focus", "")] for c in cats},
+                "tours": [t["title"] for t in self.site.tours], "tour": tour["title"] if tour else ""}
+        # a span, not a button, so a long answer wraps onto the next line like the words around it (site.js makes
+        # Enter and Space work on it as on a button)
+        blank = '<span role="button" tabindex="0" class="tf-b lt-b empty" data-q="{q}" aria-haspopup="dialog" aria-expanded="false">{ph}</span>'
+        b = {q: blank.format(q=q, ph=ph) for q, ph in (
+            ("who", "who’s coming?"), ("country", "your country"), ("when", "when?"), ("len", "for how long?"),
+            ("love", "what would make it perfect?"), ("tour", "which tour?"), ("email", "your email"),
+            ("phone", "your number (optional)"), ("ps", "anything else you’d like us to know"), ("name", "your name"))}
+        pen = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19.5 8.5a2.1 2.1 0 0 0-4-4L4 16v4zM14 6l4 4"/></svg>'
+        return (
+            '<div class="lt-box">'
+            '<div class="lt" hidden>'
+            '<p class="lt-tip">{pen}Tap the blue words to write your letter. It takes about a minute.</p>'
+            # full screen only: how far along (one dash per step) and the way out
+            '<div class="lt-top"><p class="lt-title">Your letter to Sunbird Lanka Tours</p>'
+            '<ol class="lt-dots" aria-hidden="true">{dots}</ol>'
+            '<button type="button" class="lt-close" aria-label="Close the letter">×</button></div>'
+            '<div class="lt-main"><div class="lt-stage">'
+            '<article class="lt-paper" aria-label="Your letter to Sunbird Lanka Tours">'
+            '<header class="lt-head"><p class="lt-to">To Sunbird Lanka Tours<br>Wattala, Sri Lanka</p><p class="lt-date"></p></header>'
+            '<div class="lt-body">'
+            '<p>Dear Sunbird team,</p>'
+            '<p><span data-t="me">We’re</span> {who} from {country}, hoping to visit Sri Lanka {when} {len}. '
+            '<span data-t="we">We’d</span> love {love}.'
+            '<span class="lt-tour-line" hidden> <span data-t="i">We</span> like the look of your {tour}.</span></p>'
+            '<p>You can write back to me at {email}, or WhatsApp me on {phone}.</p>'
+            '<p class="lt-ps"><span class="lt-ps-k">P.S.</span> {ps}</p>'
+            '<p class="lt-sign">Warm wishes,<br><span class="lt-name">{name}</span></p>'
+            '<input type="checkbox" name="botcheck" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true">'
+            '</div></article>'
+            # the airmail envelope the letter folds into (drawn in CSS; it shows only while sending)
+            '<div class="lt-env" aria-hidden="true"><div class="lt-env-back"></div>'
+            '<div class="lt-env-front"><p class="lt-env-from"></p><p class="lt-env-to">Sunbird Lanka Tours<br>Wattala, Sri Lanka</p></div>'
+            '<div class="lt-env-flap"></div><div class="lt-stamp"><img alt=""><span>ශ්‍රී ලංකා</span></div>'
+            '<svg class="lt-mark" viewBox="0 0 150 64"><g fill="none" stroke="currentColor" stroke-width="1.6">'
+            '<circle cx="32" cy="32" r="28"/><circle cx="32" cy="32" r="21"/>'
+            '<path d="M66 20c8-5 16 5 24 0s16 5 24 0 16 5 24 0M66 32c8-5 16 5 24 0s16 5 24 0 16 5 24 0M66 44c8-5 16 5 24 0s16 5 24 0 16 5 24 0"/></g>'
+            '<g fill="currentColor" stroke="none" text-anchor="middle" font-family="Inter, sans-serif" font-weight="600">'
+            '<text class="lt-mark-d" x="32" y="31" font-size="9"></text><text class="lt-mark-y" x="32" y="42" font-size="8"></text></g></svg>'
+            '</div></div>'
+            '</div>'
+            '<div class="lt-foot"><button type="button" class="btn gold lt-start">Start my letter</button>'
+            '<p class="lt-note">We reply within 24 hours. <button type="button" class="lt-plain-on">Prefer a plain form?</button></p></div>'
+            # full screen only: the step being answered (under the letter on phones, beside it on bigger screens), and
+            # at the end "Seal and send"
+            '<div class="lt-sheet">'
+            '<div class="lt-ask"><div class="lt-sheet-head"><p class="lt-q"></p><p class="lt-step"></p></div>'
+            '<div class="lt-pane"></div><p class="lt-err" role="alert"></p>'
+            '<p class="lt-sheet-foot"><button type="button" class="lt-prev">Back</button>'
+            '<button type="button" class="btn small lt-next">Next</button></p></div>'
+            '<div class="lt-ready" hidden><p class="lt-ready-t">Your letter is ready.</p>'
+            '<p class="lt-ready-s">Read it over. To change anything, tap a blue word.</p>'
+            '<button type="button" class="btn gold lt-send">Seal and send</button>'
+            '<a class="lt-wa" href="https://wa.me/{wa}" target="_blank" rel="noopener">{wa_icon}Send it on WhatsApp instead</a>'
+            '<p class="lt-status" role="status" aria-live="polite"></p></div>'
+            '</div>'
+            '<div class="lt-done" hidden tabindex="-1">'
+            '<h3 class="lt-done-t">Your letter is on its way.</h3><p class="lt-done-s"></p>'
+            '<p class="lt-demo" hidden>Preview only: this letter wasn’t really sent, because the Web3Forms key in settings.txt isn’t set yet.</p>'
+            '<p class="lt-done-btns"><a class="btn" href="/tours/">Browse our tours</a><button type="button" class="lt-again">Write another letter</button></p>'
+            '</div>'
+            '<script type="application/json" class="lt-data">{data}</script>'
+            '</div>'
+            '<div class="lt-plain"><p class="lt-back" hidden><button type="button">Back to the letter</button></p>{form}</div>'
+            '</div>'
+        ).format(pen=pen, wa=esc(s.get("whatsapp")), wa_icon=ICON["whatsapp"], form=self.form(tour), dots="<li></li>" * 8,
+                 data=json.dumps(data, ensure_ascii=False).replace("</", "<\\/"), **b)
+
     def shortcode(self, name):
         kind, _, arg = name.partition(":")
         return {
@@ -1245,6 +1327,7 @@ class Builder:
             "vehicles": lambda: self.vehicles(),
             "contact-cards": lambda: self.contact_cards(),
             "form": lambda: self.form(),
+            "letter": lambda: self.letter(),
         }.get(kind, lambda: "<!-- unknown block %s -->" % esc(name))()
 
     # ---------------------------------------------------------- layout

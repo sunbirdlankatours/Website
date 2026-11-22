@@ -21,7 +21,7 @@ description: "Contact Sunbird Lanka Tours & Travels in Wattala, Sri Lanka by pho
 
 Tell us a little about your trip and we’ll send you a free, tailor-made plan — usually within 24 hours.
 
-{{form}}
+{{letter}}
 :::
 
 ::: band flush
