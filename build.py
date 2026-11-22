@@ -9,8 +9,10 @@ never need to run it yourself. Needs only Python 3.8+ (no extra packages).
 """
 import datetime
 import hashlib
+import heapq
 import html
 import json
+import math
 import os
 import re
 import shutil
@@ -273,6 +275,69 @@ def tour_stops(t):
 MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October",
           "November", "December"]
 
+# Where places are (latitude, longitude), for the route maps on tour pages: the stops tours make that have no
+# destination page (places with one take their "map:" from there), and the towns and junctions the main roads
+# run through. A new stop with no point here or there is left off the map (build.py prints a warning).
+MAP_POINTS = {
+    "colombo": (6.9271, 79.8612), "chilaw": (7.5758, 79.7953), "puttalam": (8.0362, 79.8283),
+    "norochcholai": (8.12, 79.74), "kalpitiya": (8.2295, 79.7590), "nochchiyagama": (8.2667, 80.2083),
+    "ambepussa": (7.25, 80.17), "kegalle": (7.2513, 80.3464), "kurunegala": (7.4863, 80.3647),
+    "matale": (7.4675, 80.6234), "kekirawa": (8.0378, 80.5980), "habarana": (8.0360, 80.7490),
+    "minneriya": (8.03, 80.86), "welikanda": (7.95, 81.22), "pasikudah": (7.9283, 81.5610),
+    "batticaloa": (7.7170, 81.7000), "kalmunai": (7.4167, 81.8167), "akkaraipattu": (7.2167, 81.8500),
+    "pottuvil": (6.8763, 81.8316), "kantale": (8.3672, 81.0034), "trincomalee": (8.5874, 81.2152),
+    "mihintale": (8.3511, 80.5022), "horowpathana": (8.55, 80.87), "medawachchiya": (8.5390, 80.4944),
+    "vavuniya": (8.7514, 80.4971), "kilinochchi": (9.3803, 80.3770), "elephant pass": (9.56, 80.41),
+    "velanai": (9.635, 79.905), "kurikadduwan": (9.615, 79.805), "nagadeepa": (9.6130, 79.7740),
+    "delft": (9.5170, 79.6930), "kinniya": (8.49, 81.19), "mutur": (8.4550, 81.2650), "verugal": (8.25, 81.42),
+    "gampola": (7.1643, 80.5696), "ramboda": (7.06, 80.69), "nawalapitiya": (7.05, 80.5333),
+    "avissawella": (6.9553, 80.2040), "talawakele": (6.9370, 80.6580), "dalhousie": (6.83, 80.48),
+    "adam's peak": (6.8096, 80.4994), "ambewela": (6.88, 80.80), "pattipola": (6.855, 80.83),
+    "horton plains": (6.8023, 80.8050), "ohiya": (6.82, 80.84), "welimada": (6.9040, 80.9130),
+    "bandarawela": (6.8290, 80.9880), "badulla": (6.9934, 81.0550), "belihuloya": (6.718, 80.770),
+    "balangoda": (6.6524, 80.6982), "pelmadulla": (6.62, 80.54), "ratnapura": (6.7056, 80.3847),
+    "wellawaya": (6.7370, 81.1030), "monaragala": (6.8728, 81.3507), "siyambalanduwa": (6.909, 81.547),
+    "thanamalvila": (6.44, 81.13), "udawalawe": (6.45, 80.89), "embilipitiya": (6.3439, 80.8496),
+    "tissamaharama": (6.2788, 81.2870), "palatupana": (6.28, 81.40), "bundala": (6.20, 81.22),
+    "hambantota": (6.1241, 81.1185), "ambalantota": (6.12, 81.02), "kalametiya": (6.0833, 80.9333),
+    "tangalle": (6.0240, 80.7970), "dikwella": (5.97, 80.69), "matara": (5.9485, 80.5353),
+    "unawatuna": (6.0100, 80.2490), "hikkaduwa": (6.1395, 80.1063), "ambalangoda": (6.2355, 80.0538),
+    "kalutara": (6.5854, 79.9607), "kalawana": (6.53, 80.40), "sinharaja": (6.41, 80.47),
+    "deniyaya": (6.3436, 80.5600), "akuressa": (6.0960, 80.4770),
+}
+# The main roads, each as the towns it runs through in order. A tour's line follows these from stop to stop (the
+# shortest way along them), so it goes round the coast and up through the hills the way you'd really drive.
+ROADS = [
+    "colombo > negombo > chilaw > puttalam > norochcholai > kalpitiya",
+    "puttalam > nochchiyagama > anuradhapura", "nochchiyagama > wilpattu",
+    "colombo > ambepussa > kegalle > kandy", "ambepussa > kurunegala > dambulla", "negombo > kurunegala",
+    "kurunegala > anuradhapura", "kandy > kurunegala",
+    "kandy > matale > dambulla > kekirawa > anuradhapura", "dambulla > sigiriya > habarana",
+    "dambulla > habarana > minneriya > polonnaruwa > welikanda > pasikudah > batticaloa > kalmunai > akkaraipattu"
+    " > pottuvil > arugam bay",
+    "habarana > kantale > trincomalee", "anuradhapura > mihintale > horowpathana > trincomalee",
+    "anuradhapura > medawachchiya > vavuniya > kilinochchi > elephant pass > jaffna > velanai > kurikadduwan > nagadeepa",
+    "kurikadduwan > delft", "trincomalee > kinniya > mutur > verugal > pasikudah",
+    "kandy > gampola > ramboda > nuwara eliya", "gampola > nawalapitiya > hatton",
+    "colombo > avissawella > kitulgala > hatton > talawakele > nuwara eliya", "hatton > dalhousie > adam's peak",
+    "nuwara eliya > ambewela > pattipola > horton plains > ohiya > haputale",
+    "nuwara eliya > welimada > bandarawela > ella > badulla",
+    "bandarawela > haputale > belihuloya > balangoda > pelmadulla > ratnapura > avissawella",
+    "ella > wellawaya > monaragala > siyambalanduwa > pottuvil",
+    "wellawaya > thanamalvila > udawalawe > embilipitiya > pelmadulla",
+    "wellawaya > tissamaharama > palatupana > yala",
+    "tissamaharama > bundala > hambantota > ambalantota > kalametiya > tangalle > dikwella > matara > mirissa"
+    " > weligama > unawatuna > galle > hikkaduwa > ambalangoda > bentota > kalutara > colombo",
+    "ambalantota > embilipitiya", "ratnapura > kalawana > sinharaja > deniyaya > akuressa > matara",
+]
+# Where the hills are, for the shading on the island: soft bumps (latitude, longitude, spread in degrees, height)
+# - the central highlands, then single peaks and ridges
+HILLS = [(6.95, 80.72, .26, .5), (7.00, 80.77, .07, .55), (6.80, 80.80, .06, .45), (6.81, 80.50, .05, .5),
+         (7.42, 80.80, .07, .5), (6.92, 81.10, .06, .4), (6.77, 80.95, .05, .35), (6.45, 80.62, .09, .3),
+         (8.12, 80.65, .025, .3), (7.27, 80.62, .05, .2)]
+# the route map's frame, in the island map's units (the island is 563.5 × 1000): room around it for the names
+TMAP_VB = (-95, -20, 718.5, 1040)
+
 
 def parse_months(text, where=""):
     """'Dec-Apr, Jul' -> {11, 0, 1, 2, 3, 6}: month numbers, January = 0. A range may run past December."""
@@ -403,6 +468,22 @@ ARRIVE_SCRIPT = (
     'var a=document.createElement("small");a.textContent=t.lead||"";'
     'var e=document.createElement("em");e.textContent=t.word||"";'
     'p.appendChild(a);p.appendChild(e);o.appendChild(p);document.body.appendChild(o)}catch(x){}})();</script>')
+
+# The opening screen: when someone opens the site (not when moving between its pages, which have their own
+# circle, nor with the Back button or inside the admin's preview), a pale screen goes up at once and js/hello.js
+# puts the logo together on it, then flies it into the header. The full version plays once per visit (tab);
+# a reload gets a short one, and devices asking for less motion get a still logo that fades. Never stays up:
+# the screen comes down if hello.js can't load, and after 9 seconds whatever happens.
+HELLO_SCRIPT = (
+    '<script>(function(){try{var h=document.documentElement;if(h.classList.contains("arriving")||window.self!==window.top)return;'
+    'var n=performance.getEntriesByType&&performance.getEntriesByType("navigation")[0];if(n&&n.type==="back_forward")return;'
+    'var seen=false;try{seen=sessionStorage.getItem("sbHello")==="1";sessionStorage.setItem("sbHello","1")}catch(x){}'
+    'var m=matchMedia("(prefers-reduced-motion: reduce)").matches?"calm":seen?"short":"full";window.SBhello={mode:m};'
+    'h.classList.add("hl-on","hl-hold","hl-"+m);var o=document.createElement("div");o.className="hl";o.setAttribute("aria-hidden","true");'
+    'o.innerHTML=\'<div class="hl-bg"></div>\';document.body.appendChild(o);'
+    'var off=function(){h.classList.remove("hl-on","hl-hold");if(o.parentNode)o.parentNode.removeChild(o)};'
+    'var s=document.createElement("script");s.src="/js/hello.js?v={ver}";s.async=true;s.onerror=off;document.head.appendChild(s);'
+    'setTimeout(off,9500)}catch(x){}})();</script>')
 
 
 ICON = {
@@ -545,12 +626,15 @@ class Builder:
                 '<span class="tl-n">{n:02d}</span><img class="tl-thumb" src="{img}" alt="" loading="lazy">'
                 '<span class="tl-main"><span class="tl-t">{title}</span>'
                 '<span class="tl-why"><span>{dur}</span>{words}</span></span>'
-                '<span class="tl-ms" aria-hidden="true">{strip}</span>'
+                '<span class="tl-ms"><span class="tl-ms-bar" aria-hidden="true">{strip}</span>{best}</span>'
                 '<span class="tl-go" aria-hidden="true">{arrow}</span></a></li>'.format(
                     i=i, rid=rid, url=t["url"], n=i + 1, img=esc(t.get("image")), title=esc(t["title"]),
                     dur=esc("Day trip" if tour_days(t) == 1 else t.get("duration", "")),
                     words="".join("<span>%s</span>" % esc(cap(w)) for w in words_of(t)),
-                    strip="".join('<i class="%s"></i>' % c for c in t.get("season", "")), arrow=ICON["arrow"]))
+                    # each month's first letter sits in its square, and the best months are written out underneath
+                    strip="".join('<i class="%s">%s</i>' % (c, MONTHS[m][0]) for m, c in enumerate(t.get("season", ""))),
+                    best=('<span class="tl-ms-best"><b>Best</b> %s</span>' % esc(month_runs(t["season"])))
+                    if month_runs(t.get("season", "")) else "", arrow=ICON["arrow"]))
         # the blanks are spans acting as buttons (not <button>s), so a long answer wraps with the sentence
         blank = '<span class="tf-b empty" role="button" tabindex="0" data-q="{q}" aria-label="{label}">{ph}</span>'
         # testing switch in settings.txt: the full-screen sentence every time, starting empty
@@ -670,6 +754,304 @@ class Builder:
 
     def place_match(self, p, text):
         return re.search(r"(?<![\w-])%s(?![\w-])" % re.escape(p["short"]), text, flags=re.I) is not None
+
+    # ---------------------------------------------------------- the route map beside a tour's opening words
+    def map_xy(self, ll):
+        """Latitude/longitude -> a point in the island map's own units (563.5 × 1000)."""
+        pr = self.site.map["projection"]
+        return (ll[1] - pr["lon0"]) * pr["cos"] * pr["scale"], (pr["lat1"] - ll[0]) * pr["scale"]
+
+    def map_spots(self):
+        """Every named point on the map, by its lower-case name: the destinations (their "map:" line), then
+        MAP_POINTS (the other stops, and the towns the roads run through)."""
+        if not hasattr(self, "_spots"):
+            spots = {p["short"].lower(): p["ll"] for p in self.site.places if p["ll"]}
+            spots.update({p["name"].lower(): p["ll"] for p in self.site.places if p["ll"]})
+            for k, ll in MAP_POINTS.items():
+                spots.setdefault(k, ll)
+            self._spots = {k: self.map_xy(ll) for k, ll in spots.items()}
+        return self._spots
+
+    def road_net(self):
+        """ROADS as a network: for each town, the towns next to it along a road and how far."""
+        if not hasattr(self, "_roads"):
+            spots, net = self.map_spots(), {}
+            for road in ROADS:
+                towns = [t.strip() for t in road.split(">")]
+                for a, b in zip(towns, towns[1:]):
+                    if a not in spots or b not in spots:
+                        print("Warning: ROADS in build.py names a town with no map point: %s" % (a if a not in spots else b))
+                        continue
+                    d = math.dist(spots[a], spots[b])
+                    net.setdefault(a, []).append((b, d))
+                    net.setdefault(b, []).append((a, d))
+            self._roads = net
+        return self._roads
+
+    def road_way(self, a, b):
+        """The towns along the roads from place a to place b, shortest way first (a and b included); just [a, b]
+        when either isn't on a road."""
+        net = self.road_net()
+        if a not in net or b not in net:
+            return [a, b]
+        best, back, todo = {a: 0}, {}, [(0, a)]
+        while todo:
+            d, t = heapq.heappop(todo)
+            if t == b:
+                break
+            if d > best.get(t, 1e18):
+                continue
+            for u, step in net[t]:
+                if d + step < best.get(u, 1e18):
+                    best[u], back[u] = d + step, t
+                    heapq.heappush(todo, (d + step, u))
+        if b not in back:
+            return [a, b]
+        way = [b]
+        while way[-1] != a:
+            way.append(back[way[-1]])
+        return way[::-1]
+
+    def map_points(self, name):
+        """The map point(s) for a place as a day heading writes it: "Kandy", "Dambulla & Minneriya" (both),
+        "Kandy or Ella" (the first), as (name, lower-case key). [] when it's not on the map (the airport)."""
+        name = name.replace("’", "'").strip()
+        if " or " in name:
+            name = name.split(" or ")[0]
+        out = []
+        for part in [x.strip() for x in name.split("&")]:
+            if part.lower() in self.map_spots():
+                out.append((part, part.lower()))
+            elif part.lower() not in ("airport", "south coast", "north coast", "east coast", "west coast"):
+                print("Warning: no map point for the tour stop %r (add it to MAP_POINTS in build.py)" % part)
+        return out
+
+    def tour_route(self, t):
+        """The places a tour stops at, in the order of its days, as (name, key); a place repeats when the tour
+        comes back to it. Day tours have no day headings: their one place comes from the title or text."""
+        route = []
+        for h in re.findall(r"^###\s+(.*)$", t.get("body", ""), flags=re.M):
+            parts = h.split(" · ")
+            if len(parts) > 2:
+                for w in parts[1].split("→"):
+                    for pt in self.map_points(w):
+                        if not route or route[-1][1] != pt[1]:
+                            route.append(pt)
+        if not route and tour_days(t) == 1:
+            for text in (t["title"], t.get("body", "")[:600]):
+                hit = [p["short"] for p in self.site.places if p["ll"] and self.place_match(p, text)]
+                hit = hit or [k.title() for k in MAP_POINTS if re.search(r"\b%s\b" % re.escape(k), text, re.I)]
+                if hit:
+                    route = [(hit[0], hit[0].lower())]
+                    break
+        return route
+
+    def write_lines_map(self):
+        """The island drawn as fine engraved lines, shared by every tour's map: /img/sri-lanka-lines.svg in blues
+        (deep blue in the hills, pale toward the coast, with pale lines rippling out into the sea) and
+        /img/sri-lanka-lines-sun.svg, the same island in yellows, which shows through where the pointer is.
+        Each line is a thin ribbon cut to the coast: it swells where the land rises and tapers to a point at
+        both ends, the way an engraver's line does."""
+        mp = self.site.map
+        vx, vy, vw, vh = TMAP_VB
+        # the coast and the district borders as rings of points (the district shapes are "M x y l dx dy ..." paths)
+        rings = []
+        for dist in mp["districts"]:
+            ring, x, y, cmd = [], 0.0, 0.0, "M"
+            toks = re.findall(r"[MmLlHhVvZz]|-?(?:\d+\.?\d*|\.\d+)(?:e-?\d+)?", dist["d"])
+            i = 0
+            while i < len(toks):
+                if toks[i].isalpha():
+                    cmd = toks[i]
+                    i += 1
+                    if cmd in "Zz":
+                        if len(ring) > 2:
+                            rings.append(ring)
+                        ring = []
+                    continue
+                if cmd in "Mm":
+                    if len(ring) > 2:
+                        rings.append(ring)
+                    x, y = (float(toks[i]), float(toks[i + 1])) if cmd == "M" else (x + float(toks[i]), y + float(toks[i + 1]))
+                    ring, cmd, i = [(x, y)], ("L" if cmd == "M" else "l"), i + 2
+                    continue
+                if cmd in "Ll":
+                    x, y = (float(toks[i]), float(toks[i + 1])) if cmd == "L" else (x + float(toks[i]), y + float(toks[i + 1]))
+                    i += 2
+                elif cmd in "Hh":
+                    x, i = (float(toks[i]) if cmd == "H" else x + float(toks[i])), i + 1
+                else:
+                    y, i = (float(toks[i]) if cmd == "V" else y + float(toks[i])), i + 1
+                ring.append((x, y))
+            if len(ring) > 2:
+                rings.append(ring)
+        # how high the land is (0 the plains .. 1 the highest hills), from the soft bumps in HILLS
+        bumps = [(self.map_xy((lat, lon)), s * mp["projection"]["scale"], a) for lat, lon, s, a in HILLS]
+
+        def height(x, y):
+            return min(1.0, sum(a * math.exp(-((x - p[0]) ** 2 + (y - p[1]) ** 2) / (2 * s * s)) for p, s, a in bumps))
+
+        def simplify(pts, tol):   # drop points a straight line would put back within tol (Ramer–Douglas–Peucker)
+            if len(pts) < 3:
+                return pts
+            (x0, w0), (x1, w1) = pts[0], pts[-1]
+            far, k = 0, 0
+            for j in range(1, len(pts) - 1):
+                x, w = pts[j]
+                off = abs(w - (w0 + (w1 - w0) * (x - x0) / ((x1 - x0) or 1)))
+                if off > far:
+                    far, k = off, j
+            if far <= tol:
+                return [pts[0], pts[-1]]
+            return simplify(pts[:k + 1], tol)[:-1] + simplify(pts[k:], tol)
+
+        gap, thin, thick = 7.0, 2.1, 5.8
+        ribbons = []
+        y = gap / 2
+        while y < mp["height"]:
+            # where this line crosses the coast: pairs of crossings per ring, joined across district borders
+            spans = []
+            for ring in rings:
+                xs = sorted(p[0] + (y - p[1]) * (q[0] - p[0]) / (q[1] - p[1])
+                            for p, q in zip(ring, ring[1:] + ring[:1]) if (p[1] <= y < q[1]) or (q[1] <= y < p[1]))
+                spans += list(zip(xs[0::2], xs[1::2]))
+            spans.sort()
+            joined = []
+            for a, b in spans:
+                if joined and a <= joined[-1][1] + 1.5:
+                    joined[-1][1] = max(joined[-1][1], b)
+                else:
+                    joined.append([a, b])
+            for a, b in joined:
+                if b - a < 4:
+                    continue
+                n = max(2, int((b - a) / 4) + 1)
+                pts = []
+                for j in range(n):
+                    x = a + (b - a) * j / (n - 1)
+                    taper = min(1.0, (x - a) / 4, (b - x) / 4)
+                    pts.append((x, (thin + (thick - thin) * height(x, y)) * (.5 + .5 * taper)))
+                pts = simplify(pts, .05)
+                top = " ".join("%.1f %.2f" % (x, y - w / 2) for x, w in pts)
+                bottom = " ".join("%.1f %.2f" % (x, y + w / 2) for x, w in reversed(pts))
+                ribbons.append("M%sL%sZ" % (top, bottom))
+            y += gap
+        land = "".join(ribbons)
+        cx, cy = self.map_xy((6.95, 80.75))
+        sea_x, sea_y = mp["width"] / 2, mp["height"] / 2
+
+        def art(stops, sea):
+            return (
+                '<svg xmlns="http://www.w3.org/2000/svg" viewBox="{vb}"><defs>'
+                '<radialGradient id="g" gradientUnits="userSpaceOnUse" cx="{cx:.0f}" cy="{cy:.0f}" r="560">{stops}</radialGradient>'
+                '{sea_defs}</defs>{sea}<path fill="url(#g)" d="{land}"/></svg>'
+            ).format(vb="%g %g %g %g" % TMAP_VB, cx=cx, cy=cy, land=land, stops="".join(
+                '<stop offset="%s" stop-color="%s"/>' % s for s in stops),
+                sea_defs=('<radialGradient id="f"><stop offset="0" stop-color="#fff"/><stop offset=".55" stop-color="#fff" stop-opacity=".7"/>'
+                          '<stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>'
+                          '<mask id="m" maskUnits="userSpaceOnUse" x="{x}" y="{y}" width="{w}" height="{h}">'
+                          '<ellipse cx="{ex}" cy="{ey}" rx="{rx}" ry="{ry}" fill="url(#f)"/></mask>').format(
+                    x=vx, y=vy, w=vw, h=vh, ex=sea_x, ey=sea_y, rx=sea_x + 120, ry=sea_y + 90) if sea else "",
+                sea=('<path d="%s" stroke="#29abe2" stroke-width="1" stroke-opacity=".3" mask="url(#m)"/>' % "".join(
+                    "M%g %.1fH%g" % (vx, gap / 2 + k * gap, vx + vw) for k in range(int(vy / gap) - 1, int((vy + vh) / gap) + 1)))
+                if sea else "")
+
+        os.makedirs(os.path.join(OUT, "img"), exist_ok=True)
+        for name, stops, sea in (("sri-lanka-lines.svg", (("0", "#16498c"), (".3", "#1d6cb2"), (".62", "#2394d4"), ("1", "#36abe2")), True),
+                                 ("sri-lanka-lines-sun.svg", (("0", "#d27400"), (".3", "#e59406"), (".62", "#f0b414"), ("1", "#f6c62a")), False)):
+            with open(os.path.join(OUT, "img", name), "w", encoding="utf-8") as f:
+                f.write(art(stops, sea))
+
+    def tour_map(self, t):
+        """The engraved island (write_lines_map) with the tour's own route on it: a gold line that draws itself
+        along the roads (ROADS) from stop to stop in the order of the days, and a dot and a name at each place
+        (the start in sky blue). Names go out to sea on the coasts and dodge each other where places are close.
+        Pointing at the island lights it up in yellow around the pointer (site.js moves the round mask)."""
+        mp = self.site.map
+        if not mp:
+            return ""
+        route, spots = self.tour_route(t), self.map_spots()
+        vx, vy, vw, vh = TMAP_VB
+        fs, ls, W = 20, 1.2, mp["width"]
+        # the line: along the roads between stops, then smoothed (Catmull-Rom turned into curves the browser can
+        # draw). Each bend is kept shorter than the hop it's on, so short hops between close towns don't loop.
+        pts, at = [], []   # the points the line goes through, and where each stop is among them
+        for i, (_, key) in enumerate(route):
+            way = [key] if i == 0 else self.road_way(route[i - 1][1], key)[1:]
+            for k in way:
+                xy = spots[k]
+                if not pts or math.dist(pts[-1], xy) > 2:
+                    pts.append(xy)
+            at.append(len(pts) - 1)
+        path, along = "", [0.0]
+
+        def bend(dx, dy, most):
+            size = math.hypot(dx, dy) / 6
+            k = min(1, most / size) if size else 0
+            return dx / 6 * k, dy / 6 * k
+
+        if len(pts) > 1:
+            path = "M%.1f %.1f" % pts[0]
+            for i in range(len(pts) - 1):
+                p0, p1, p2 = pts[max(i - 1, 0)], pts[i], pts[i + 1]
+                p3 = pts[min(i + 2, len(pts) - 1)]
+                hop = math.dist(p1, p2)
+                a, b = bend(p2[0] - p0[0], p2[1] - p0[1], hop * .4), bend(p3[0] - p1[0], p3[1] - p1[1], hop * .4)
+                path += "C%.1f %.1f %.1f %.1f %.1f %.1f" % (p1[0] + a[0], p1[1] + a[1], p2[0] - b[0], p2[1] - b[1], p2[0], p2[1])
+                along.append(along[-1] + hop)
+        total = along[-1] or 1
+        # one dot and name per place, at its first visit; a name tries the side out to sea first, then the
+        # other side, above, below and the corners, and takes the first spot that doesn't cover another name or dot
+        stops, seen = [], set()
+        for (name, key), i in zip(route, at):
+            if key not in seen:
+                seen.add(key)
+                stops.append((name, spots[key][0], spots[key][1], along[i] / total))
+        boxes = [(x - 9, y - 9, x + 9, y + 9) for _, x, y, _ in stops]
+        marks = []
+        for k, (name, x, y, d) in enumerate(stops):
+            txt = name.upper()
+            w, g = len(txt) * (0.66 * fs + ls), 13
+            sides = [(x + g, y + fs * .36, "start"), (x - g, y + fs * .36, "end")]
+            if x < W * .4:
+                sides.reverse()
+            cands = sides + [(x, y - g - 2, "middle"), (x, y + g + fs * .78, "middle"), (x + g, y - fs * .55, "start"),
+                             (x + g, y + fs * 1.15, "start"), (x - g, y - fs * .55, "end"), (x - g, y + fs * 1.15, "end")]
+
+            def box(c):
+                x0 = c[0] if c[2] == "start" else c[0] - w if c[2] == "end" else c[0] - w / 2
+                return (x0 - 3, c[1] - fs * .8, x0 + w + 3, c[1] + fs * .15)
+
+            def cost(b):
+                c = 0 if vx <= b[0] and b[2] <= vx + vw and vy <= b[1] and b[3] <= vy + vh else 1e6
+                for q in boxes:
+                    ox, oy = min(b[2], q[2]) - max(b[0], q[0]), min(b[3], q[3]) - max(b[1], q[1])
+                    if ox > 0 and oy > 0:
+                        c += ox * oy
+                return c
+
+            best = min(cands, key=lambda c: cost(box(c)))
+            boxes.append(box(best))
+            marks.append('<g class="tm-stop{start}" style="--d:{d:.3f}"><circle cx="{x:.1f}" cy="{y:.1f}" r="{r}"/>'
+                         '<text x="{tx:.1f}" y="{ty:.1f}" text-anchor="{a}">{txt}</text></g>'.format(
+                             start=" start" if k == 0 else "", d=d, x=x, y=y, r=8 if k == 0 else 6.5,
+                             tx=best[0], ty=best[1], a=best[2], txt=esc(txt)))
+        # a small north arrow in the sea at the bottom right
+        north = ('<g class="tm-north" transform="translate(%g %g)"><path d="M0 -26 7 4 0 -2 -7 4Z"/><text y="22" text-anchor="middle">N</text></g>'
+                 % (W + 10, mp["height"] - 30))
+        label = "Map of Sri Lanka" + (": " + ", ".join(dict.fromkeys(n for n, _ in route)) if route else "")
+        return (
+            '<figure class="tmap"><svg viewBox="{vb}" role="img" aria-label="{label}"><defs>'
+            '<radialGradient id="tm-glow"><stop offset="0" stop-color="#fff"/><stop offset=".5" stop-color="#fff"/>'
+            '<stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>'
+            '<mask id="tm-spot" maskUnits="userSpaceOnUse" x="{vx}" y="{vy}" width="{vw}" height="{vh}">'
+            '<circle class="tm-spot" cx="0" cy="0" r="0" fill="url(#tm-glow)"/></mask></defs>'
+            '<image class="tm-art" href="/img/sri-lanka-lines.svg" x="{vx}" y="{vy}" width="{vw}" height="{vh}"/>'
+            '<image class="tm-art tm-sun" href="/img/sri-lanka-lines-sun.svg" x="{vx}" y="{vy}" width="{vw}" height="{vh}" mask="url(#tm-spot)"/>'
+            '{line}{marks}{north}</svg><figcaption class="tm-credit">{credit}</figcaption></figure>'
+        ).format(vb="%g %g %g %g" % TMAP_VB, label=esc(label), vx=vx, vy=vy, vw=vw, vh=vh, marks="".join(marks), north=north,
+                 line=('<path class="tm-edge" d="%s" pathLength="1"/><path class="tm-line" d="%s" pathLength="1"/>' % (path, path))
+                 if path else "", credit=esc(mp.get("credit", "")))
 
     def place_tours(self, p):
         """Tours that stop at place p: a day heading names it ("Day 4 · Kandy → Ella · …"); for tours without
@@ -1407,13 +1789,14 @@ class Builder:
 {gtag}</head>
 <body class="layout-{layout}">
 {arrive}
+{hello}
 <a class="skip" href="#main">Skip to content</a>
 <div class="topbar"><div class="wrap">
 <span class="tb-item">{pin}{addr}</span><span class="tb-item tb-hours">{clock}{hours}</span>
 <span class="tb-right"><span class="gtranslate_wrapper"></span><a class="tb-item" href="https://wa.me/{wa}" target="_blank" rel="noopener">{waicon}{phone}</a></span>
 </div></div>
 <header class="site-header"><div class="wrap">
-<a class="logo" href="/"><img class="logo-dark" src="/img/logo.png" alt="{site}" width="170" height="64"><img class="logo-light" src="/img/logo-white.png" alt="{site}" width="170" height="64"></a>
+<a class="logo" href="/"><img class="logo-dark" src="/img/logo.svg" alt="{site}" width="170" height="64"><img class="logo-light" src="/img/logo-white.svg" alt="{site}" width="170" height="64"></a>
 <nav id="nav" class="nav" aria-label="Main">{nav}<a class="btn gold nav-cta" href="/contact-us/#plan">Plan my trip</a></nav>
 <a class="btn gold header-cta" href="/contact-us/#plan">Plan my trip</a>
 <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="nav"><span class="bars"></span><span class="sr">Menu</span></button>
@@ -1433,7 +1816,7 @@ class Builder:
             noindex='<meta name="robots" content="noindex">\n' if noindex else "", site=esc(s.get("site_name")), ogimg=esc(og_img),
             ver=self.site.ver, layout=layout, pin=ICON["pin"], clock=ICON["clock"], waicon=ICON["whatsapp"],
             addr=esc(s.get("address")), hours=esc(s.get("hours")), wa=esc(s.get("whatsapp")), phone=esc(s.get("phone")),
-            nav=self.nav(), body=body, footer=self.footer(), arrive=ARRIVE_SCRIPT,
+            nav=self.nav(), body=body, footer=self.footer(), arrive=ARRIVE_SCRIPT, hello=HELLO_SCRIPT.replace("{ver}", str(self.site.ver)),
             # smooth-scrolling library for the home page motion (see site.js)
             motion=('<script src="https://cdn.jsdelivr.net/npm/lenis@1.1.13/dist/lenis.min.js" defer></script>\n'
                     if layout == "home" else ""), cfg=json.dumps(cfg), langs=json.dumps(langs),
@@ -1544,27 +1927,51 @@ class Builder:
         body = re.sub(r"(<h2>FAQ</h2>)(.*?)(?=<h2>|\Z)", faq, body, flags=re.S)
         return body
 
+    def tour_hero(self, t, cats, down):
+        """The first screen of a tour page: the tour's photo across the whole screen, the tagline, the name big in
+        the middle, the route and the two ways to ask; along the bottom a row of facts (length, best months, what
+        it's good for, how it's run). The header sits over the photo. A wider photo than the card one can be given
+        as "hero_image" (the card photos are often small)."""
+        img = t.get("hero_image") or t.get("image") or ""
+        stops = [s for s in tour_stops(t) if s.lower() != "airport"]
+        back = (cats[0]["url"], cats[0]["name"]) if cats else ("/tours/", "All tours")
+        wa = "https://wa.me/%s?text=%s" % (esc(self.s.get("whatsapp")), quote("Hi Sunbird, I'm interested in the %s." % t["title"]))
+        fact = '<div class="th-fact"><dt>%s</dt><dd>%s</dd></div>'
+        facts = [fact % ("Length", esc("Day trip" if tour_days(t) == 1 else t.get("duration", "")))]
+        best = month_runs(t.get("season", ""))
+        if best:
+            facts.append(fact % ("Best time", '%s<span class="th-ms" aria-hidden="true">%s</span>' % (esc(best), "".join(
+                '<i class="%s">%s</i>' % (c, MONTHS[m][0]) for m, c in enumerate(t["season"])))))
+        words = [(c["url"], c["word"]) for c in cats if c.get("word")]
+        if words:
+            facts.append(fact % ("Good for", ", ".join(
+                '<a href="%s">%s</a>' % (u, esc(w[:1].upper() + w[1:] if i == 0 else w)) for i, (u, w) in enumerate(words))))
+        facts.append(fact % ("Travel", "Private &amp; tailor-made"))
+        return (
+            '<section class="tour-hero">'
+            '<div class="th-bg" aria-hidden="true"><img src="{img}" alt="" fetchpriority="high"></div>'
+            '<div class="wrap th-top"><a class="th-back" href="{bu}">{arrow}{bn}</a></div>'
+            '<div class="wrap th-in">{tag}<h1 class="th-title">{title}</h1>{route}'
+            '<p class="th-btns"><a class="btn gold" href="#enquire">Enquire about this tour{arrow}</a>'
+            '<a class="btn ghost" href="{wa}" target="_blank" rel="noopener">{waicon}Ask on WhatsApp</a></p></div>'
+            '<div class="wrap"><div class="th-foot"><dl class="th-facts">{facts}</dl>'
+            '<a class="th-down" href="{down}"><span>{dn}</span><i>{arrow}</i></a></div></div>'
+            '</section>'
+        ).format(img=esc(img), bu=back[0], bn=esc(back[1]), arrow=ICON["arrow"], title=esc(t["title"]),
+                 tag=('<p class="th-tag">%s</p>' % esc(t["tagline"])) if t.get("tagline") else "",
+                 route=('<p class="th-route">%s%s</p>' % (ICON["pin"], '<i aria-hidden="true">→</i>'.join(
+                     "<span>%s</span>" % esc(s) for s in stops))) if stops else "",
+                 wa=wa, waicon=ICON["whatsapp"], facts="".join(facts), down=down,
+                 dn="Day by day" if down == "#itinerary" else "The tour")
+
     def build_tours(self):
+        if self.site.map:
+            self.write_lines_map()
         for t in self.site.tours:
             self.current = t
             body, _ = markdown(t["body"])
             body = self.faq_details(body)
-            facts = '<p class="facts"><span>%s%s</span><span>%s%s</span><span>%sTailor-made</span></p>' % (
-                ICON["calendar"], esc(t.get("duration", "")), ICON["compass"], self.tour_type(t), ICON["users"])
             cats = [self.site.cat_by_slug[s] for s in tour_themes(t) if s in self.site.cat_by_slug]
-            # breadcrumb goes through the tour's first category, when it has one
-            crumbs = [("Tours", "/tours/")] + ([(cats[0]["name"], cats[0]["url"])] if cats else []) + [(t["title"], None)]
-            wa_text = quote("Hi Sunbird, I'm interested in the %s." % t["title"])
-            aside = (
-                '<aside class="tour-aside"><div class="box"><p class="kicker">Interested?</p><h3>{title}</h3>'
-                '<ul class="facts-list"><li>{cal}{dur}</li><li>{comp}{typ}</li>{best}</ul>{cats}'
-                '<a class="btn gold block" href="#enquire">Enquire about this tour</a>'
-                '<a class="btn outline block" href="https://wa.me/{wa}?text={txt}" target="_blank" rel="noopener">{waicon}Ask on WhatsApp</a>'
-                '<p class="muted small">Every tour can be changed to suit your dates, budget and interests.</p></div></aside>'
-            ).format(title=esc(t["title"]), cal=ICON["calendar"], dur=esc(t.get("duration")), comp=ICON["compass"],
-                     typ=self.tour_type(t), wa=esc(self.s.get("whatsapp")), txt=wa_text, waicon=ICON["whatsapp"],
-                     best=('<li>%sBest %s</li>' % (ICON["sun"], esc(str(t["best_months"]).replace("-", " – ")))) if t.get("best_months") else "",
-                     cats=('<p class="tour-cats">%s</p>' % "".join('<a href="%s">%s</a>' % (c["url"], esc(c["name"])) for c in cats)) if cats else "")
             # "You may also like": tours sharing the most categories with this one, then same-type tours to fill up
             mine = set(tour_themes(t))
             main = tour_themes(t)[0] if mine else None
@@ -1578,8 +1985,10 @@ class Builder:
             # the itinerary gets a band of its own between the intro (with the enquiry box) and the rest
             it = re.search(r"<h2>Itinerary</h2>(.*?)(?=<h2>|\Z)", body, flags=re.S)
             intro, days, rest = (body[:it.start()], self.day_by_day(it.group(1)), body[it.end():]) if it else (body, "", "")
-            html_ = (self.hero(t["title"], t.get("tagline"), t.get("image"), crumbs=crumbs, facts=facts)
-                     + '<section class="band"><div class="wrap tour-layout"><article class="prose">%s</article>%s</div></section>' % (intro, aside)
+            html_ = (self.tour_hero(t, cats, "#itinerary" if days else "#overview")
+                     + '<section class="band tour-open" id="overview"><div class="wrap to-grid"><div class="to-side">'
+                       '<p class="kicker to-k">The trip</p>%s</div><article class="prose to-text">%s</article></div></section>'
+                     % (self.tour_map(t), intro)
                      + days
                      + ('<section class="band tour-rest"><div class="wrap tour-layout"><article class="prose">%s</article></div></section>' % rest
                         if rest.strip() else "")

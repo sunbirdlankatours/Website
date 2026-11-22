@@ -11,6 +11,7 @@ best_months: "Dec-Apr"
 mixed_months: "Jul-Sep, Nov"
 duration: "10 days"
 image: "/img/tours/sunbird-lanka-tours-hill-country-tea-trails-4.jpg"
+hero_image: "/img/about/about-elephants.jpg"
 summary: "This 10-day family tour is crafted to delight both kids and adults with a perfect blend of culture, nature, and relaxation. From climbing the iconic Sigiriya Rock…"
 order: 4
 ---

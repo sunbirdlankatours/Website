@@ -10,6 +10,7 @@ best_months: "Dec-Apr"
 mixed_months: "Jul-Sep, Nov"
 duration: "10 days"
 image: "/img/tours/sunbird-lanka-tours-luxury-honeymoon-packages-8.jpg"
+hero_image: "/img/about/about-hills.jpg"
 summary: "Indulge in the ultimate Sri Lankan escape with our 10-Day Luxury Bespoke Tour — a seamless blend of culture, comfort, and curated experiences. From private helicopter…"
 order: 5
 ---
