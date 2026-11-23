@@ -1337,19 +1337,18 @@ class Builder:
         p = self.current
         base = 0.7   # how fast the trackside passes, in window heights a second; the rest move slower, as in the ride
         layers = (   # name, picture, width, height, top and height (in window heights), speed (share of the trackside's)
-            ("sky", "sky.webp", 2400, 1018, -0.06, 1.12, 0.012),
-            ("far", "far.webp", 2400, 1018, -0.07, 1.08, 0.06),
-            ("mid", "mid-home.webp", 1933, 820, 0.27, 0.96, 0.24),
+            ("sky", "sky-loop.webp", 1764, 1018, -0.06, 1.12, 0.012),
+            ("far", "far-loop.webp", 1733, 1018, -0.07, 1.08, 0.06),
+            ("mid", "mid-loop-home.webp", 1548, 820, 0.27, 0.96, 0.24),
             # the trackside starts above the window, so its trees and poles run off the top edge instead of ending in view
-            ("near", "near-blur.webp", 1600, 679, -0.1, 1.14, 1),
+            ("near", "near-loop-blur.webp", 1314, 679, -0.1, 1.14, 1),
         )
         view = []
         for name, src, w, h, top, hgt, k in layers:
-            # four copies end to end, every other one mirrored so the joins match; sliding the strip half its
-            # length brings it back to where it started
+            # four copies end to end (each picture is a seamless loop, so its end runs on into its start);
+            # sliding the strip half its length brings it back to where it started
             secs = 2 * hgt * w / h / (base * k)
-            imgs = "".join('<img data-src="/ella-train/img/%s" alt="" width="%d" height="%d"%s>'
-                           % (src, w, h, ' class="flip"' if i % 2 else "") for i in range(4))
+            imgs = "".join('<img data-src="/ella-train/img/%s" alt="" width="%d" height="%d">' % (src, w, h) for i in range(4))
             view.append('<div class="er-l er-%s" style="top:%.1f%%;height:%.1f%%"><div class="er-s" style="--d:%.1fs">%s</div></div>'
                         % (name, top * 100, hgt * 100, secs, imgs))
         stations = (("Kandy", .02), ("Hatton", .19), ("Nanu Oya", .38), ("Pattipola", .53), ("Haputale", .79), ("Ella", .965))
