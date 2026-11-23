@@ -2388,7 +2388,8 @@ def apply_base_path(base):
     if not base:
         return 0
     rules_html = [
-        re.compile(r'(\s(?:href|src|action|poster)=")/(?!/)'),
+        # data-src too: pictures that site.js loads later (the home train window) are named there
+        re.compile(r'(\s(?:href|src|data-src|action|poster)=")/(?!/)'),
         re.compile(r'(http-equiv="refresh" content="\d+;\s*url=)/(?!/)'),
         re.compile(r'(location\.replace\(")/(?!/)'),
     ]
