@@ -27,7 +27,7 @@ Embark on a 16-day journey through Sri Lanka where every moment is a blend of th
 - Colombo tuk-tuk ride: Independence Square, Galle Face, Gangaramaya Temple
 - Optional: Street food crawl or sunset cruise
 - Overnight in Colombo
-![](/img/tours/sunbird-lanka-airplane-runwayt.jpg) ![](/img/tours/colomno-01.jpg)
+![](/img/tours/sunbird-lanka-airplane-runwayt.jpg) ![](/img/tours/colomno-01.jpg) ![](/img/tours/bird-watching-01.jpg)
 
 ### Day 2 · Colombo → Kalpitiya · Kites and dolphins
 
