@@ -24,6 +24,33 @@ hero_facts:
   - "SLTDA | licensed tour operator"
 # Where the photo was taken (bottom right on big screens)
 hero_place: "Sigiriya · Cultural Triangle"
+# Short looping film over the photo (the photo shows first, and stays for people who turn motion off).
+# hero_video is for computers (wide), hero_video_phone for phones (tall). Clips: Pexels, free licence.
+hero_video: /video/home-hero.mp4
+hero_video_phone: /video/home-hero-phone.mp4
+# Smoother versions (60 frames a second, newer codecs: same picture in fewer megabytes). Each visitor's device
+# plays the first one in this list that it can play smoothly in hardware; if none, the two plain files above
+# (H.264 at 30 frames a second, which every device plays).
+# screen (wide = computers, tall = phones) | size | frames a second | codec | kbps | file
+hero_video_files:
+  - "wide | 1920x1080 | 59.94 | av01.0.09M.10 | 2524 | /video/home-hero-wide-av1.mp4"
+  - "wide | 1920x1080 | 59.94 | hvc1.2.4.L123.B0 | 3112 | /video/home-hero-wide-hevc.mp4"
+  - "tall | 810x1440 | 59.94 | av01.0.09M.10 | 1496 | /video/home-hero-tall-av1.mp4"
+  - "tall | 810x1440 | 59.94 | hvc1.2.4.L123.B0 | 1959 | /video/home-hero-tall-hevc.mp4"
+# The place name changes with the film:  second it starts | place
+hero_video_places:
+  - "0 | Sigiriya · Cultural Triangle"
+  - "3.2 | Ruwanwelisaya · Anuradhapura"
+  - "5.8 | Wild elephants"
+  - "8.4 | Paddy fields"
+  - "11 | Tea country · Nuwara Eliya"
+  - "13.6 | Waterfalls"
+  - "16.2 | Nine Arch Bridge · Ella"
+  - "18.8 | Fishing boats at dawn"
+  - "21.4 | Galle Fort · South coast"
+  - "24 | Mirissa · South coast"
+  - "26.6 | Sunset on the coast"
+  - "29.2 | Sigiriya · Cultural Triangle"
 # Old photo slider (not shown any more; put {{slider}} back in the text below to use it)
 slides:
   - "/img/site/sunbird-lanka-tours-hero-bg-1-1k.jpg | Feel the Heartbeat of Sri Lanka | Gentle Bond of Sri Lanka’s Giants | Explore Tours | /tours/"

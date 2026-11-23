@@ -1132,15 +1132,34 @@ class Builder:
         facts = "".join('<li><strong>%s</strong>%s</li>' % tuple(esc(x) for x in (split_row(r) + [""])[:2])
                         for r in (p.get("hero_facts") or []))
         place = p.get("hero_place")
+        # optional looping film over the photo: site.js picks the wide or tall file and starts it
+        video, places = "", ""
+        if p.get("hero_video"):
+            # better versions of the film (60 fps, newer codecs): site.js plays the first one this device says
+            # it can play smoothly, else hero_video / hero_video_phone
+            files = []
+            for r in (p.get("hero_video_files") or []):
+                screen, size, fps, codec, kbps, src = (split_row(r) + [""] * 6)[:6]
+                w, _, h = size.partition("x")
+                files.append([screen, int(w or 0), int(h or 0), float(fps or 30), codec, int(kbps or 0), src])
+            video = ('<video class="hh-video" muted loop playsinline preload="none" aria-hidden="true" tabindex="-1"'
+                     ' data-wide="%s" data-phone="%s"%s></video>' % (
+                         esc(p.get("hero_video")), esc(p.get("hero_video_phone") or p.get("hero_video")),
+                         " data-files='%s'" % esc(json.dumps(files)) if files else ""))
+            rows = [(split_row(r) + [""])[:2] for r in (p.get("hero_video_places") or [])]
+            if rows:
+                places = " data-places='%s'" % esc(json.dumps([[float(r[0] or 0), r[1]] for r in rows], ensure_ascii=False))
         foot = ""
         if facts or place:
             foot = '<div class="hh-foot">%s%s</div>' % (
                 '<ul class="hh-facts">%s</ul>' % facts if facts else "",
-                '<p class="hh-place">%s%s</p>' % (ICON["pin"], esc(place)) if place else "")
+                '<p class="hh-place"%s>%s<span>%s</span></p>' % (places, ICON["pin"], esc(place)) if place else "")
         wa = self.s.get("whatsapp")
         return (
             '<section class="hero-home" aria-label="Welcome">'
+            '<div class="hh-media">'
             '<picture>{wide_src}<img class="hh-photo" src="{img}" alt="{alt}" style="--focus:{focus};--focus-wide:{focus_wide}" fetchpriority="high" decoding="async"></picture>'
+            '{video}</div>'
             '<div class="hh-shade"></div>'
             '<div class="wrap hh-inner">'
             '<p class="hh-kicker">{kicker}</p>'
@@ -1160,7 +1179,7 @@ class Builder:
             arrow=ICON["arrow"],
             wa=('<a class="btn ghost" href="https://wa.me/%s" target="_blank" rel="noopener">%sWhatsApp us</a>'
                 % (esc(wa), ICON["whatsapp"])) if wa else "",
-            foot=foot,
+            foot=foot, video=video,
         )
 
     # ---------------------------------------------------------- weather: month question, monsoon dial, month guide
@@ -2371,6 +2390,11 @@ def apply_base_path(base):
         re.compile(r'(http-equiv="refresh" content="\d+;\s*url=)/(?!/)'),
         re.compile(r'(location\.replace\(")/(?!/)'),
     ]
+    # the home hero film: its files are named in data attributes that site.js reads
+    rules_html.append(re.compile(r'(\sdata-(?:wide|phone)=")/(?!/)'))
+    # ... and in a JSON list, where each address sits between &quot; marks
+    films = re.compile(r"(\sdata-files=')([^']*)(')")
+    one_film = lambda v: re.sub(r"(&quot;)/(?!/)", lambda m: m.group(1) + base + "/", v)
     # srcset holds a list ("/a.webp 480w, /b.webp 800w"): every address in it needs the start
     srcsets = re.compile(r'(\s(?:srcset|data-srcset)=")([^"]*)(")')
     one_set = lambda v: re.sub(r"(^|,\s*)/(?!/)", lambda m: m.group(1) + base + "/", v)
@@ -2388,6 +2412,7 @@ def apply_base_path(base):
                 for rx in rules_html:
                     new = rx.sub(lambda m: m.group(1) + base + "/", new)
                 new = srcsets.sub(lambda m: m.group(1) + one_set(m.group(2)) + m.group(3), new)
+                new = films.sub(lambda m: m.group(1) + one_film(m.group(2)) + m.group(3), new)
             if new != text:
                 with open(path, "w", encoding="utf-8") as f:
                     f.write(new)
