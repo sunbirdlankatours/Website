@@ -24,19 +24,19 @@ hero_facts:
   - "SLTDA | licensed tour operator"
 # Where the photo was taken (bottom right on big screens)
 hero_place: "Sigiriya · Cultural Triangle"
-# Short looping film over the photo (the photo shows first, and stays for people who turn motion off).
-# hero_video is for computers (wide), hero_video_phone for phones (tall). Clips: Pexels, free licence.
-hero_video: /video/home-hero.mp4
-hero_video_phone: /video/home-hero-phone.mp4
-# Smoother versions (60 frames a second, newer codecs: same picture in fewer megabytes). Each visitor's device
-# plays the first one in this list that it can play smoothly in hardware; if none, the two plain files above
-# (H.264 at 30 frames a second, which every device plays).
-# screen (wide = computers, tall = phones) | size | frames a second | codec | kbps | file
+# Short looping film over the photo (the photo shows first, and stays for people who turn motion off or are
+# on slow mobile data). Clips: Pexels, free licence. The film is cut in two parts: part 1 (the first 10.6 s)
+# downloads as soon as the page opens and starts playing; part 2 downloads while part 1 plays.
+# Each line is one version. A visitor's device plays the first line for its screen that it can play smoothly
+# in hardware; the last line for each screen (H.264 at 30 frames a second) is the one every device plays.
+# screen (wide = computers, tall = phones) | size | frames a second | codec | kbps | part 1 | part 2
 hero_video_files:
-  - "wide | 1920x1080 | 59.94 | av01.0.09M.10 | 2524 | /video/home-hero-wide-av1.mp4"
-  - "wide | 1920x1080 | 59.94 | hvc1.2.4.L123.B0 | 3112 | /video/home-hero-wide-hevc.mp4"
-  - "tall | 810x1440 | 59.94 | av01.0.09M.10 | 1496 | /video/home-hero-tall-av1.mp4"
-  - "tall | 810x1440 | 59.94 | hvc1.2.4.L123.B0 | 1959 | /video/home-hero-tall-hevc.mp4"
+  - "wide | 1920x1080 | 59.94 | av01.0.09M.10 | 2613 | /video/home-hero-wide-av1-1.mp4 | /video/home-hero-wide-av1-2.mp4"
+  - "wide | 1920x1080 | 59.94 | hvc1.2.4.L123.B0 | 3156 | /video/home-hero-wide-hevc-1.mp4 | /video/home-hero-wide-hevc-2.mp4"
+  - "wide | 1920x1080 | 29.97 | avc1.640028 | 2022 | /video/home-hero-wide-h264-1.mp4 | /video/home-hero-wide-h264-2.mp4"
+  - "tall | 810x1440 | 59.94 | av01.0.09M.10 | 1536 | /video/home-hero-tall-av1-1.mp4 | /video/home-hero-tall-av1-2.mp4"
+  - "tall | 810x1440 | 59.94 | hvc1.2.4.L123.B0 | 1989 | /video/home-hero-tall-hevc-1.mp4 | /video/home-hero-tall-hevc-2.mp4"
+  - "tall | 810x1440 | 29.97 | avc1.640028 | 1211 | /video/home-hero-tall-h264-1.mp4 | /video/home-hero-tall-h264-2.mp4"
 # The place name changes with the film:  second it starts | place
 hero_video_places:
   - "0 | Sigiriya · Cultural Triangle"
