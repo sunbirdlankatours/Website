@@ -481,7 +481,11 @@ ARRIVE_SCRIPT = (
 # circle, nor with the Back button or inside the admin's preview), a pale screen goes up at once and js/hello.js
 # puts the logo together on it, then flies it into the header. The full version plays once per visit (tab);
 # a reload gets a short one, and devices asking for less motion get a still logo that fades. Never stays up:
-# the screen comes down if hello.js can't load, and after 9 seconds whatever happens.
+# the screen comes down after 9 seconds whatever happens.
+# hello.js is written into every page right after this (hello_script), not loaded as a file: a script loaded
+# on its own could only run once the browser got round to it, which on a first visit was up to half a second
+# after the pale screen appeared (an empty screen that looked stuck). Written in, the logo is in the very
+# first picture. It does nothing on the pages where this script put no screen up.
 HELLO_SCRIPT = (
     '<script>(function(){try{var h=document.documentElement;if(h.classList.contains("arriving")||window.self!==window.top)return;'
     'var n=performance.getEntriesByType&&performance.getEntriesByType("navigation")[0];if(n&&n.type==="back_forward")return;'
@@ -489,13 +493,19 @@ HELLO_SCRIPT = (
     'var m=matchMedia("(prefers-reduced-motion: reduce)").matches?"calm":seen?"short":"full";window.SBhello={mode:m};'
     'h.classList.add("hl-on","hl-hold","hl-"+m);var o=document.createElement("div");o.className="hl";o.setAttribute("aria-hidden","true");'
     'o.innerHTML=\'<div class="hl-bg"></div>\';document.body.appendChild(o);'
-    'var off=function(){h.classList.remove("hl-on","hl-hold");if(o.parentNode)o.parentNode.removeChild(o)};'
-    # hello.js sits next to site.css, so take the folder from site.css's own link: that link gets the
-    # "/SunBird" prefix on the GitHub test site (apply_base_path), a script address in here would not
-    "var c=document.querySelector('link[href*=\"css/site.css\"]');"
-    'var s=document.createElement("script");s.src=(c?c.getAttribute("href").split("css/site.css")[0]:"/")+"js/hello.js?v={ver}";'
-    's.async=true;s.onerror=off;document.head.appendChild(s);'
+    'var off=function(){h.classList.remove("hl-on","hl-hold");if(o.parentNode)o.parentNode.removeChild(o);'
+    # (site.js holds the home film back until this, see "the opening screen" there)
+    'try{document.dispatchEvent(new Event("sbhello:gone"))}catch(x){}};'
     'setTimeout(off,9500)}catch(x){}})();</script>')
+
+
+def hello_script():
+    """HELLO_SCRIPT followed by js/hello.js itself."""
+    with open(os.path.join(STATIC, "js", "hello.js"), encoding="utf-8") as f:
+        code = f.read().strip()
+    if "</script" in code.lower():
+        raise ValueError("js/hello.js must not contain </script>: it is written into every page")
+    return HELLO_SCRIPT + "\n<script>" + code + "</script>"
 
 
 ICON = {
@@ -1851,7 +1861,7 @@ class Builder:
             noindex='<meta name="robots" content="noindex">\n' if noindex else "", site=esc(s.get("site_name")), ogimg=esc(og_img),
             ver=self.site.ver, layout=layout, pin=ICON["pin"], clock=ICON["clock"], waicon=ICON["whatsapp"],
             addr=esc(s.get("address")), hours=esc(s.get("hours")), wa=esc(s.get("whatsapp")), phone=esc(s.get("phone")),
-            nav=self.nav(), body=body, footer=self.footer(), arrive=ARRIVE_SCRIPT, hello=HELLO_SCRIPT.replace("{ver}", str(self.site.ver)),
+            nav=self.nav(), body=body, footer=self.footer(), arrive=ARRIVE_SCRIPT, hello=hello_script(),
             # smooth-scrolling library for the home page motion (see site.js)
             motion=('<script src="https://cdn.jsdelivr.net/npm/lenis@1.1.13/dist/lenis.min.js" defer></script>\n'
                     if layout == "home" else ""), cfg=json.dumps(cfg), langs=json.dumps(langs),
