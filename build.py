@@ -74,12 +74,20 @@ def split_row(s):
 
 
 def read_menu(path):
+    """content/menu.txt: "Label | link | note | photo" lines; an indented line goes in the sheet of the line above,
+    and an indented "@tour-categories" or "@regions" line fills that sheet from the site's own data."""
     items = []
     for l in read_lines(path):
-        if not l.strip() or l.lstrip().startswith("#") or "|" not in l:
+        s = l.strip()
+        if not s or s.startswith("#"):
             continue
-        label, link, note = ([c.strip() for c in l.split("|", 2)] + [""])[:3]
-        item = {"label": label, "link": link, "note": note, "children": []}
+        if s.startswith("@") and l.startswith(" ") and items:
+            items[-1]["children"].append({"auto": s[1:].strip().lower()})
+            continue
+        if "|" not in l:
+            continue
+        label, link, note, photo = ([c.strip() for c in l.split("|", 3)] + ["", ""])[:4]
+        item = {"label": label, "link": link, "note": note, "photo": photo, "children": []}
         if l.startswith(" ") and items:
             items[-1]["children"].append(item)
         else:
@@ -518,6 +526,7 @@ ICON = {
     "compass": '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2 5-5 2 2-5Z"/></svg>',
     "users": '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 7M21.5 20a6.5 6.5 0 0 0-4-6"/></svg>',
     "arrow": '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>',
+    "globe": '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.4 2.5 3.6 5.5 3.6 9s-1.2 6.5-3.6 9c-2.4-2.5-3.6-5.5-3.6-9S9.6 5.5 12 3Z"/></svg>',
     "sun": '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>',
     "chevron-up": '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 15 6-6 6 6"/></svg>',
     "chevron-down": '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>',
@@ -1755,18 +1764,95 @@ class Builder:
         }.get(kind, lambda: "<!-- unknown block %s -->" % esc(name))()
 
     # ---------------------------------------------------------- layout
-    def nav(self):
-        items = []
-        for it in self.site.menu:
-            if it["children"]:
-                sub = "".join('<li><a href="%s"><span class="sub-t">%s</span>%s</a></li>' % (
-                    esc(c["link"]), esc(c["label"]), '<span class="sub-d">%s</span>' % esc(c["note"]) if c["note"] else "")
-                    for c in it["children"])
-                items.append('<li class="has-sub"><a href="%s">%s</a><button class="sub-toggle" type="button" aria-label="Open %s menu" aria-expanded="false"></button><ul>%s</ul></li>'
-                             % (esc(it["link"]), esc(it["label"]), esc(it["label"]), sub))
+    def menu_sheet(self, item):
+        """The lines in one menu word's sheet, the "see all" link under them, and whether the photos are tall
+        (the place photos are small portraits). "@tour-categories" lists every tour category and "@regions" every
+        destination region; other lines come from menu.txt, each with its own photo or its page's photo."""
+        rows, more, tall = [], None, False
+        page_at = {p["url"]: p for p in self.site.pages}
+        for c in item["children"]:
+            auto = c.get("auto")
+            if auto in ("tour-categories", "categories"):
+                rows += [{"label": k["name"], "link": k["url"], "note": k.get("tagline", ""), "photo": k.get("image"),
+                          "focus": k.get("focus")} for k in self.site.cats]
+                more = ("All %d tours" % len(self.site.tours), item["link"])
+            elif auto in ("regions", "destinations"):
+                for region in self.regions():
+                    names = [p["name"] for p in self.site.places if p.get("region") == region]
+                    first = next(p for p in self.site.places if p.get("region") == region)
+                    note = ", ".join(names)   # every place by name: people search for places (Kandy, Yala, …)
+                    rows.append({"label": region, "link": "/destinations/#" + re.sub(r"[^a-z]+", "-", region.lower()).strip("-"),
+                                 "note": note, "photo": first.get("image")})
+                more = ("All %d places" % len(self.site.places), item["link"])
+                tall = True
+            elif auto:
+                print("Warning: menu.txt asks for @%s, which isn't a list the site knows (@tour-categories, @regions)" % auto)
             else:
-                items.append('<li><a href="%s">%s</a></li>' % (esc(it["link"]), esc(it["label"])))
-        return "<ul>%s</ul>" % "".join(items)
+                page = page_at.get(c["link"].split("#")[0]) or {}
+                rows.append({"label": c["label"], "link": c["link"], "note": c["note"], "photo": c.get("photo") or page.get("image")})
+        if not more and item.get("note"):
+            more = (item["note"], item["link"])
+        return rows, more, tall
+
+    def nav(self, url="", layout=""):
+        """The menu. Each menu word with lines under it in menu.txt opens a sheet under the header: numbered lines
+        in the big serif on the left, a photo for the line you point at on the right (site.js). On phones the
+        same lines fold open under each word. The menu word for the section you are in is marked "here"."""
+        if not hasattr(self, "_nav"):
+            s = self.s
+            wa = '<a class="mp-wa" href="https://wa.me/%s" target="_blank" rel="noopener">%s<span>Questions? Message us on WhatsApp</span></a>' % (
+                esc(s.get("whatsapp")), ICON["whatsapp"])
+            items, paths = [], []
+            for i, it in enumerate(self.site.menu):
+                own = [it["link"]]
+                if not it["children"]:
+                    items.append('<li data-nav="%d" style="--n:%d"><a class="top" href="%s">%s</a></li>' % (i, i, esc(it["link"]), esc(it["label"])))
+                    paths.append(own)
+                    continue
+                rows, more, tall = self.menu_sheet(it)
+                own += [r["link"].split("#")[0] for r in rows]
+                lines = "".join(
+                    '<li style="--i:{k}"><a class="mp-row{on}" href="{link}"><span class="mp-n">{n:02d}</span><span class="mp-t">{label}</span>'
+                    '{note}<span class="mp-go">{arrow}</span></a></li>'.format(
+                        k=k, on=" on" if k == 0 else "", link=esc(r["link"]), n=k + 1, label=esc(r["label"]), arrow=ICON["arrow"],
+                        note='<span class="mp-d">%s</span>' % esc(r["note"]) if r.get("note") else "")
+                    for k, r in enumerate(rows))
+                photos = "".join(
+                    '<img data-src="{src}" alt="" sizes="(min-width: 901px) 34vw, 1px" decoding="async"{cls}{focus}>'.format(
+                        src=esc(r["photo"]), cls=' class="on"' if k == 0 else "",
+                        focus=' style="object-position:%s"' % esc(r["focus"]) if r.get("focus") else "")
+                    if r.get("photo") else "<i></i>" for k, r in enumerate(rows))
+                items.append(
+                    '<li class="has-sub" data-nav="{i}" style="--n:{i}"><a class="top" href="{link}">{label}</a>'
+                    '<button class="sub-toggle" type="button" aria-label="Open the {label} menu" aria-expanded="false" aria-controls="mega-{i}"></button>'
+                    '<div class="mega-pg" id="mega-{i}"><div class="mp-clip"><div class="wrap mp-in">'
+                    '<ol class="mp-list">{lines}</ol><div class="mp-ph{tall}" aria-hidden="true">{photos}</div>'
+                    '<div class="mp-foot">{more}{wa}</div></div></div></div></li>'.format(
+                        i=i, link=esc(it["link"]), label=esc(it["label"]), lines=lines, photos=photos, tall=" tall" if tall else "",
+                        wa=wa, more='<a class="mp-all" href="%s">%s%s</a>' % (esc(more[1]), esc(more[0]), ICON["arrow"]) if more else ""))
+                paths.append(own)
+            foot = ('<div class="nav-foot"><a class="btn gold nav-cta" href="/contact-us/#plan">Plan my trip</a>'
+                    '<a class="nf-line" href="https://wa.me/{wa}" target="_blank" rel="noopener">{waicon}WhatsApp {phone}</a>'
+                    '<a class="nf-line" href="mailto:{mail}">{mailicon}{mail}</a></div>').format(
+                wa=esc(s.get("whatsapp")), waicon=ICON["whatsapp"], phone=esc(s.get("phone")),
+                mail=esc(s.get("email")), mailicon=ICON["mail"])
+            self._nav = (items, paths, foot)
+        items, paths, foot = self._nav
+        # the section this page is in: its own address or the start of it, or (tour pages, blog posts) by kind
+        here = -1
+        for i, own in enumerate(paths):
+            if any(p == url or (p.count("/") > 2 or p in ("/tours/", "/destinations/", "/blog/")) and url.startswith(p)
+                   for p in own if p and p != "/"):
+                here = i
+                break
+        if here < 0 and layout in ("tour", "post"):
+            want = "/tours/" if layout == "tour" else "/blog/"
+            here = next((i for i, own in enumerate(paths) if want in own), -1)
+        out = list(items)
+        if here >= 0:
+            out[here] = out[here].replace('<li class="has-sub" data-nav=', '<li class="has-sub here" data-nav=', 1).replace(
+                '<li data-nav=', '<li class="here" data-nav=', 1)
+        return "<ul>%s</ul>%s" % ("".join(out), foot)
 
     def footer(self):
         s = self.s
@@ -1783,10 +1869,12 @@ class Builder:
             '<li><a href="/cookie-policy/">Cookie policy</a></li></ul></div>'
             '<div><h3>Tours</h3><ul>{tours}</ul></div>'
             '<div><h3>Get in touch</h3><ul class="fcontact"><li>{phone}<a href="tel:{pl}">{p}</a></li><li>{phone}<a href="tel:{pl2}">{p2}</a></li>'
-            '<li>{mail}<a href="mailto:{e}">{e}</a></li><li>{mail}<a href="mailto:{e2}">{e2}</a></li><li>{pin}<span>{addr}</span></li></ul></div>'
+            '<li>{mail}<a href="mailto:{e}">{e}</a></li><li>{mail}<a href="mailto:{e2}">{e2}</a></li><li>{pin}<span>{addr}</span></li>'
+            '<li>{clock}<span>Open {hours}</span></li></ul></div>'
             '</div><div class="fbottom"><div class="wrap">© {year} {company}. All rights reserved.</div></div></footer>'
         ).format(name=esc(s.get("site_name")), ft=esc(s.get("footer_text")), social=social, tours=tours,
-                 phone=ICON["phone"], mail=ICON["mail"], pin=ICON["pin"], pl=esc(s.get("phone_link")), p=esc(s.get("phone")),
+                 phone=ICON["phone"], mail=ICON["mail"], pin=ICON["pin"], clock=ICON["clock"], hours=esc(s.get("hours")),
+                 pl=esc(s.get("phone_link")), p=esc(s.get("phone")),
                  pl2=esc(s.get("phone2_link")), p2=esc(s.get("phone2")), e=esc(s.get("email")), e2=esc(s.get("email2")),
                  addr=esc(s.get("address")), year=self.site.year, company=esc(s.get("company")))
 
@@ -1798,6 +1886,27 @@ class Builder:
                 ' <span>›</span> <a href="%s">%s</a>' % (u, esc(t)) if u else ' <span>›</span> <span>%s</span>' % esc(t) for t, u in crumbs)
         return '<section class="page-hero%s"%s><div class="wrap">%s<h1>%s</h1>%s%s</div></section>' % (
             "" if image else " plain", style, '<p class="kicker">%s</p>' % esc(tagline) if tagline else "", esc(title), facts or "", trail)
+
+    def screen_hero(self, title, tagline=None, image=None, back=None, facts=None, focus=None, down=("#page-start", "Explore")):
+        """The first screen of a page, like a tour page's: its photo across the whole screen under the see-through
+        header, the tagline in italics and the name big in the middle, and along the bottom a row of facts (if
+        any) and a round "scroll down" link. The photo and the words move at different speeds as you scroll
+        (site.js). back is (link, name) for the pill at the top left; facts are (label, html) pairs."""
+        row = "".join('<div class="th-fact"><dt>%s</dt><dd>%s</dd></div>' % (esc(k), v) for k, v in facts or [])
+        return (
+            '<section class="tour-hero page-top">'
+            '<div class="th-bg" aria-hidden="true"><img src="{img}" alt="" fetchpriority="high"{focus}><i class="th-dim"></i></div>'
+            '{back}<div class="wrap th-in">{tag}<h1 class="th-title{long}">{title}</h1></div>'
+            '<div class="wrap"><div class="th-foot{bare}">{facts}<a class="th-down" href="{du}"><span>{dn}</span><i>{arrow}</i></a></div></div>'
+            '</section>{anchor}'
+        ).format(img=esc(image), focus=' style="object-position:%s"' % esc(focus) if focus else "",
+                 back=('<div class="wrap th-top"><a class="th-back" href="%s">%s%s</a></div>' % (esc(back[0]), ICON["arrow"], esc(back[1]))
+                       if back else ""),
+                 tag=('<p class="th-tag">%s</p>' % esc(tagline)) if tagline else "", title=esc(title),
+                 long=" long" if len(title) > 34 else " mid" if len(title) > 20 else "",
+                 bare="" if row else " bare", facts=('<dl class="th-facts">%s</dl>' % row) if row else "",
+                 du=down[0], dn=esc(down[1]), arrow=ICON["arrow"],
+                 anchor='<span id="page-start" class="th-end"></span>' if down[0] == "#page-start" else "")
 
     def page(self, url, title, body, description="", image=None, layout="page", noindex=False):
         s = self.s
@@ -1832,20 +1941,19 @@ class Builder:
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Manrope:wght@600;700;800&family=Instrument+Serif:ital@0;1&display=swap">
 <link rel="stylesheet" href="/css/site.css?v={ver}">
 {gtag}</head>
-<body class="layout-{layout}">
+<body class="layout-{layout}{over}">
 {arrive}
 {hello}
 <a class="skip" href="#main">Skip to content</a>
-<div class="topbar"><div class="wrap">
-<span class="tb-item">{pin}{addr}</span><span class="tb-item tb-hours">{clock}{hours}</span>
-<span class="tb-right"><span class="gtranslate_wrapper"></span><a class="tb-item" href="https://wa.me/{wa}" target="_blank" rel="noopener">{waicon}{phone}</a></span>
-</div></div>
 <header class="site-header"><div class="wrap">
-<a class="logo" href="/"><img class="logo-dark" src="/img/logo.svg" alt="{site}" width="170" height="64"><img class="logo-light" src="/img/logo-white.svg" alt="{site}" width="170" height="64"></a>
-<nav id="nav" class="nav" aria-label="Main">{nav}<a class="btn gold nav-cta" href="/contact-us/#plan">Plan my trip</a></nav>
+<a class="logo" href="/"><img class="logo-dark" src="/img/logo.svg" alt="{site}" width="170" height="64"><img class="logo-light" src="/img/logo-white.svg" alt="" width="170" height="64"></a>
+<nav id="nav" class="nav" aria-label="Main">{nav}</nav>
+<div class="hd-tools"><a class="hd-ic hd-wa" href="https://wa.me/{wa}" target="_blank" rel="noopener" aria-label="WhatsApp {phone}" title="WhatsApp {phone}">{waicon}</a><span class="hd-ic lang" title="Language">{globe}<span class="lang-code notranslate" aria-hidden="true">EN</span><span class="gtranslate_wrapper"></span></span></div>
 <a class="btn gold header-cta" href="/contact-us/#plan">Plan my trip</a>
 <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="nav"><span class="bars"></span><span class="sr">Menu</span></button>
+<span class="nav-ink" aria-hidden="true"></span><span class="mega-bg" aria-hidden="true"></span>
 </div></header>
+<div class="mega-scrim" aria-hidden="true"></div>
 <main id="main">
 {body}
 </main>
@@ -1859,9 +1967,11 @@ class Builder:
 """.format(
             title=esc(full_title), desc=esc(description or s.get("description")), canon=esc(s.get("url", "") + quote(url, safe="/#")),
             noindex='<meta name="robots" content="noindex">\n' if noindex else "", site=esc(s.get("site_name")), ogimg=esc(og_img),
-            ver=self.site.ver, layout=layout, pin=ICON["pin"], clock=ICON["clock"], waicon=ICON["whatsapp"],
-            addr=esc(s.get("address")), hours=esc(s.get("hours")), wa=esc(s.get("whatsapp")), phone=esc(s.get("phone")),
-            nav=self.nav(), body=body, footer=self.footer(), arrive=ARRIVE_SCRIPT, hello=hello_script(),
+            ver=self.site.ver, layout=layout, waicon=ICON["whatsapp"], globe=ICON["globe"],
+            # pages that open on a full-screen photo get the see-through header (site.css "the header over a photo")
+            over=" over-photo" if body.lstrip().startswith('<section class="tour-hero') else "",
+            wa=esc(s.get("whatsapp")), phone=esc(s.get("phone")),
+            nav=self.nav(url, layout), body=body, footer=self.footer(), arrive=ARRIVE_SCRIPT, hello=hello_script(),
             # smooth-scrolling library for the home page motion (see site.js)
             motion=('<script src="https://cdn.jsdelivr.net/npm/lenis@1.1.13/dist/lenis.min.js" defer></script>\n'
                     if layout == "home" else ""), cfg=json.dumps(cfg), langs=json.dumps(langs),
@@ -1893,7 +2003,13 @@ class Builder:
             if p.get("layout") == "about":
                 body = self.about_open(p) + self.about_chapters(body)
             elif p.get("layout") not in ("home", "plain"):
-                body = self.hero(p["title"], p.get("tagline"), p.get("image"), crumbs=[(p["title"], None)]) + body
+                photo = p.get("hero_image") or p.get("image")
+                # a full-screen photo first, except on pages without a photo (the legal pages) and on /tours/,
+                # whose own full-screen sentence replaces the top (its banner stays only for the page's name)
+                if photo and "{{tour-finder}}" not in p["body"]:
+                    body = self.screen_hero(p["title"], p.get("tagline"), photo, focus=p.get("focus")) + body
+                else:
+                    body = self.hero(p["title"], p.get("tagline"), p.get("image"), crumbs=[(p["title"], None)]) + body
             self.page(p["url"], p["title"], body, p.get("description"), p.get("image"), p.get("layout", "page"),
                       noindex=bool(p.get("noindex")))
 
@@ -1994,7 +2110,7 @@ class Builder:
         facts.append(fact % ("Travel", "Private &amp; tailor-made"))
         return (
             '<section class="tour-hero">'
-            '<div class="th-bg" aria-hidden="true"><img src="{img}" alt="" fetchpriority="high"></div>'
+            '<div class="th-bg" aria-hidden="true"><img src="{img}" alt="" fetchpriority="high"><i class="th-dim"></i></div>'
             '<div class="wrap th-top"><a class="th-back" href="{bu}">{arrow}{bn}</a></div>'
             '<div class="wrap th-in">{tag}<h1 class="th-title">{title}</h1>{route}'
             '<p class="th-btns"><a class="btn gold" href="#enquire">Enquire about this tour{arrow}</a>'
@@ -2048,10 +2164,10 @@ class Builder:
             self.current = c
             intro, _ = markdown(c["body"])
             tours = self.tours_in(c["slug"])
-            facts = '<p class="facts"><span>%s%d tour%s</span><span>%sPrivate and tailor-made</span></p>' % (
-                ICON["compass"], len(tours), "" if len(tours) == 1 else "s", ICON["users"])
-            html_ = (self.hero(c["title"], c.get("tagline"), c.get("image"), crumbs=[("Tours", "/tours/"), (c["name"], None)], facts=facts,
-                               focus=c.get("focus"))
+            facts = [("Tours", "%d tour%s" % (len(tours), "" if len(tours) == 1 else "s")), ("Travel", "Private &amp; tailor-made"),
+                     ("Your own", "Driver-guide")]
+            html_ = (self.screen_hero(c["title"], c.get("tagline"), c.get("hero_image") or c.get("image"), back=("/tours/", "All tours"),
+                                      facts=facts, focus=c.get("focus"), down=("#cat-tours", "See the tours"))
                      + '<section class="band"><div class="wrap"><div class="cat-intro">%s</div>%s'
                        '<div class="grid cards3 tiles" id="cat-tours">%s</div></div></section>' % (
                          intro, self.month_bar(), "".join(self.card_tour(t) for t in tours))
@@ -2196,10 +2312,12 @@ class Builder:
         for n, p in enumerate(self.site.posts):
             self.current = p
             body, _ = markdown(p["body"])
-            meta = '<p class="facts"><span>%s%s</span>%s</p>' % (ICON["calendar"], self.nice_date(p["date"]),
-                                                                ('<span>%s</span>' % esc(p["category"])) if p.get("category") else "")
+            words = len(re.sub(r"<[^>]+>", " ", body).split())
+            meta = [("Published", self.nice_date(p["date"]))] + ([("Topic", esc(p["category"]))] if p.get("category") else []) + [
+                ("Reading time", "%d min" % max(1, round(words / 220)))]
             others = [o for o in self.site.posts if o is not p][:3]
-            html_ = (self.hero(p["title"], None, p.get("image"), crumbs=[("Blog", "/blog/"), (p["title"], None)], facts=meta)
+            html_ = (self.screen_hero(p["title"], None, p.get("hero_image") or p.get("image"), back=("/blog/", "Travel stories"), facts=meta,
+                                      focus=p.get("focus"), down=("#page-start", "Read on"))
                      + '<section class="band"><div class="wrap narrow"><article class="prose">%s</article>'
                        '<p class="post-cta"><a class="btn gold" href="/contact-us/#plan">Plan your Sri Lanka trip</a> <a class="btn outline" href="/blog/">All articles</a></p></div></section>' % body
                      + '<section class="band mist"><div class="wrap"><h2>More articles</h2><div class="grid cards3">%s</div></div></section>'

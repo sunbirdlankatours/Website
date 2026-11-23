@@ -3,6 +3,8 @@ title: "Contact Us"
 url: /contact-us/
 tagline: "Get in touch"
 image: "/img/site/sunbird-lanka-tours-about-01-01.jpg"
+# a wider photo for the full-screen top of the page (the one above is for link previews)
+hero_image: "/img/about/about-lighthouse-sunset.jpg"
 description: "Contact Sunbird Lanka Tours & Travels in Wattala, Sri Lanka by phone, WhatsApp or email, or send us your trip plan."
 ---
 

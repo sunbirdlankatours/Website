@@ -1,11 +1,18 @@
-# Main menu. Format:  Label | link | short note
-# Indent a line with two spaces to put it inside the item above (dropdown).
-# The note is optional: in a dropdown it shows in small letters under the name.
+# Main menu. Format:  Label | link | short note | photo
+# Indent a line with two spaces to put it in the sheet that opens under the word above.
+# In the sheet each line gets a number, its note in small letters and a photo that shows while you point at it.
+# The photo is optional: without one, the line uses the photo of the page it links to.
+# Two lines fill a sheet by themselves, so it never goes out of date:
+#   @tour-categories   every tour category (content/categories), with "All N tours" under them
+#   @regions           every destination region (content/destinations), with "All N places" under them
+# A note on a top line (not indented) becomes the "see all" link under its sheet.
 # Kept short on purpose: every other page is linked from the footer.
-# Contact is in the About us dropdown and behind the yellow "Plan my trip" button on every page.
+# Contact is in the About us sheet and behind the yellow "Plan my trip" button on every page.
 
 Tours | /tours/
+  @tour-categories
 Destinations | /destinations/
+  @regions
 Travel guide | /best-time-to-visit-sri-lanka/
   Best time to visit | /best-time-to-visit-sri-lanka/ | The weather, month by month
   Transport & stays | /transport-and-stays/ | Cars, drivers and hotels
@@ -13,4 +20,4 @@ Travel guide | /best-time-to-visit-sri-lanka/
 About us | /about-us/
   Our story | /about-us/ | Who we are and how we plan
   MICE & events | /mice/ | Meetings, incentives and groups
-  Contact us | /contact-us/ | Call, write or come and see us
+  Contact us | /contact-us/ | Call, write or come and see us | /img/about/about-galle-tuktuk.jpg
