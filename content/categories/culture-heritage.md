@@ -2,7 +2,7 @@
 # One tour category. Its page is /tours/culture-heritage/.
 # A tour joins this category when its file lists "culture-heritage" under themes:.
 name: "Culture & heritage"
-title: "Sri Lanka culture & heritage tours"
+title: "Sri Lanka Culture & Heritage Tours"
 word: "history"
 tagline: "Sigiriya, Kandy and the ancient cities"
 image: "/img/tours/sigiriya01.jpg"

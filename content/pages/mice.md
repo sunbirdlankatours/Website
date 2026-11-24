@@ -49,7 +49,7 @@ Our destinations offer the perfect mix of business and beauty — iconic landmar
 ::: band blue
 ## Let’s Plan Your Next Event
 
-No stress. No delays. Just extraordinary events. Book a consultation with our MICE experts and discover how we can turn your next meeting, incentive trip, conference, or event into a world-class experience.
+No stress. No delays. Just extraordinary events. Book a consultation with our MICE experts and discover how we can turn your next meeting, incentive trip, conference, or event into a world‑class experience.
 
 [Book a consultation](/contact-us/#plan){.btn .gold}
 :::

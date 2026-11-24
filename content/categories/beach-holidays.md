@@ -2,7 +2,7 @@
 # One tour category. Its page is /tours/beach-holidays/.
 # A tour joins this category when its file lists "beach-holidays" under themes:.
 name: "Beach holidays"
-title: "Sri Lanka beach holidays"
+title: "Sri Lanka Beach Holidays"
 word: "beaches"
 tagline: "Golden coasts in the south and the quiet east"
 image: "/img/tours/sport-based-trip-gallery01.jpg"

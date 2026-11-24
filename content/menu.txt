@@ -6,11 +6,13 @@
 #   @tour-categories   every tour category (content/categories), with "All N tours" under them
 #   @regions           every destination region (content/destinations), with "All N places" under them
 # A note on a top line (not indented) becomes the "see all" link under its sheet.
+# An indented "button: Label | link" line puts a blue button at the foot of the sheet, before the "see all" link.
 # Kept short on purpose: every other page is linked from the footer.
 # Contact is in the About us sheet and behind the yellow "Plan my trip" button on every page.
 
 Tours | /tours/
   @tour-categories
+  button: Find your tour | /tours/#find
 Destinations | /destinations/
   @regions
 Travel guide | /best-time-to-visit-sri-lanka/

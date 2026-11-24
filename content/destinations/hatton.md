@@ -29,4 +29,4 @@ Uncover Hatton’s timeless charm beyond the tea trails.
 
 **Where to eat:** From cozy hillside cafés to charming local diners, Hatton serves up a delightful mix of flavors. Top picks include Tea Hills, Railway Lodge, Zesta Tea Cup, and The Kiwis, offering everything from hearty local dishes to international bites. For scenic sips and satisfying meals, don’t miss Edinburgh Tea Train, Lake View Pub, or Hill Cool—each spot brings something special to the table.
 
-**Where to stay:** Ceylon Tea Trails · Camellia Hills · Camellia Hills
+**Where to stay:** Ceylon Tea Trails · Camellia Hills

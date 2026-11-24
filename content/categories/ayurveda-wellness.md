@@ -2,7 +2,7 @@
 # One tour category. Its page is /tours/ayurveda-wellness/.
 # A tour joins this category when its file lists "ayurveda-wellness" under themes:.
 name: "Ayurveda & wellness"
-title: "Sri Lanka Ayurveda & wellness tours"
+title: "Sri Lanka Ayurveda & Wellness Tours"
 word: "wellness"
 tagline: "Ayurveda, yoga and slow days"
 image: "/img/tours/wellness-trip-gallery-01.jpg"

@@ -2,7 +2,7 @@
 # One tour category. Its page is /tours/adventure-hiking/.
 # A tour joins this category when its file lists "adventure-hiking" under themes:.
 name: "Adventure & hiking"
-title: "Sri Lanka adventure & hiking tours"
+title: "Sri Lanka Adventure & Hiking Tours"
 word: "adventure"
 tagline: "Rafting, hiking and surfing"
 image: "/img/site/sunbird-lanka-tours-hero-bg-04-surffing-female.jpg"

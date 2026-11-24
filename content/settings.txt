@@ -29,15 +29,13 @@ web3forms_key: PASTE-YOUR-WEB3FORMS-KEY-HERE
 # Google tag (analytics) and Tawk.to live chat
 google_tag: GT-KV5H35VK
 tawk_chat: 6826d5949ff758190ef177e5/1irbr4js0
+# Our own chat box in the corner (on), or the Tawk.to bubble above (off)
+chat_box: on
 
 # Languages in the "Language" menu
 languages: en, fr, de, it, es, nl, pt, ru, ar, zh-CN
 
 footer_text: We turn your Sri Lanka journey into a soulful, joy-filled adventure with authentic moments and lasting memories.
-
-# Tours page, "Find your tour": while this says yes, the full-screen sentence shows every time the page opens,
-# with no answers remembered (for testing). Change it to no before the site goes live: then it shows once a visit.
-tour_finder_test: yes
 
 # Admin panel (/admin/): the GitHub repository it saves to when used on the live website
 admin_repo: vockshel-gif/SunBird

@@ -2,7 +2,7 @@
 # One tour category. Its page is /tours/family-holidays/.
 # A tour joins this category when its file lists "family-holidays" under themes:.
 name: "Family holidays"
-title: "Sri Lanka family holidays"
+title: "Sri Lanka Family Holidays"
 word: "family fun"
 tagline: "Elephants, train rides and beach days with kids"
 image: "/img/site/sunbird-lanka-tours-hero-bg-1-1k.jpg"

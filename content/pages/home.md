@@ -68,18 +68,20 @@ slides:
 wheel_kicker: "Tour categories"
 wheel_text: "I want a trip full of"
 wheel_all_link: /tours/
-# The monsoon map under the wheel (the {{island-dial}} line below). Its weather comes from best-time-to-visit.md.
-# On computers, scrolling over the map turns the months.
+# The monsoon map after the guests' words (the {{island-dial}} line below). Its weather and "What's on" (the
+# festivals and seasons of each month) come from best-time-to-visit.md. On computers, scrolling over the map turns the months.
 dial_kicker: "When to go"
 dial_title: "There is always a sunny side"
 dial_text: "Sri Lanka has two monsoons. Scroll over the map to move through the year and watch them cross the island."
 dial_text_phone: "Sri Lanka has two monsoons. Tap a month to see where the sun is."
-# The train window under the tours (the {{ella-ride}} line below): it leads to the scroll-by-scroll ride at /ella-train/.
+# The train window that ends the page (the {{ella-ride}} line below): it leads to the scroll-by-scroll ride at /ella-train/.
 # Words between *stars* in the title are set in italics. ride_time is the little label on the window.
 ride_kicker: "The hill country line"
 ride_title: "Take the train to *Ella*"
 ride_text: "About seven hours through tea country, mountains and misty tunnels. Ride it here first, one scroll at a time, then let us put the real one in your trip."
 ride_time: "Kandy → Ella · about 7 hours"
+# The last words on the page, under the train: title (*stars* = italics) | text | button | link
+ride_end: "Your Sri Lanka, *planned around you.* | Tell us when you’re coming and what you love. We’ll plan the rest, by hand. | Plan my trip | /contact-us/#plan"
 trip_wheel:
   - "beaches | /img/tours/sport-based-trip-gallery01.jpg | Golden coasts in the south and the quiet east · 7 to 10 days | /tours/beach-holidays/ | 50% 40% | Mirissa · Galle · Trincomalee"
   - "safaris | /img/tours/wilpattu-national-park-day-tour-slider-01.jpg | Leopards, elephants and whales · day trips to 16 days | /tours/safari-wildlife/ |  | Yala · Wilpattu · Udawalawe · Mirissa"
@@ -101,7 +103,7 @@ categories:
   - "/img/site/sunbird-lanka-tours-spiritual-pilgrimage-journeys-7.jpg | Spiritual | /pilgrimage-tour/"
   - "/img/site/sunbird-lanka-tours-luxury-honeymoon-packages-8.jpg | Luxury Bespoke | /luxury-bespoke-tour/"
   - "/img/site/sunbird-lanka-tours-eco-sustainable-tours9.jpg | Village & Home Stay | /village-based-home-stay-tour/"
-# Tours shown under "Best recommended trips" (file names in content/tours)
+# Tours shown under "Recommended trips" (file names in content/tours)
 featured_tours:
   - adventure-nature-based-tours
   - cultural-heritage-tour
@@ -109,23 +111,29 @@ featured_tours:
   - sports-based-tour
   - sustainable-tour-itinerary
   - wellness-tour-itinerary
-# Places shown under "Popular destinations" (file names in content/destinations)
-featured_places:
-  - mirissa
-  - yala
-  - kandy
-  - nuwara-eliya
-  - galle
-  - ella
-  - sigiriya
-  - jaffna
-# Numbers:  number | label
+# "Places our guests love" (the {{place-show}} line below): the main places, one at a time, full screen.
+# Words between *stars* in the title are set in italics.
+# Each line:  place (file name in content/destinations) | big wide photo behind it | which part of that photo to keep
+#             in view (optional) | the three photos fanned out in front, by their names under "Top attractions" in
+#             the place's file, back to front (optional: without them, its first three photos)
+# Use wide photos at least 1600 px across for the background; the fanned photos are the places' own small ones.
+place_show_title: "Places our guests *love*"
+place_show:
+  - "sigiriya | /img/about/about-open-sigiriya.jpg | | Sigiriya Frescoes, Boulder Garden, Water Gardens"
+  - "nuwara-eliya | /img/about/about-hills.jpg | | Horton Plain National Park, Hakgala Botanical Gardens, Lake Gregory"
+  - "ella | /img/about/about-nine-arches.jpg | | Ravana Falls, Ella Rock, Little Adams Peak"
+  - "yala | /img/tours/yala-national-park-day-tour-slider01.jpg | | Buduruwagala, Sithulpawwa, Yala National Park"
+  - "mirissa | /img/tours/whale-watching-day-tour-slider-01.jpg | | Parrot Rock Mirissa, Turtle Watching, Coconut Tree Hill"
+  - "galle | /img/about/about-lighthouse-sunset.jpg | | Old Gate, Dutch Reformed Church, Dutch Fort"
+# Numbers:  number | label. Not shown on the home page any more (the hero has its own facts); the About page
+# counts them up in its "since 2010" chapter. ({{stats}} still draws them as a blue strip.)
 stats:
   - "15+ | Years of experience"
   - "1500+ | Total tours"
   - "02+ | Awards won"
   - "20+ | MICE events"
-# Upcoming events:  photo | event | place
+# Old "Upcoming events" cards (not shown any more: what's on each month is now in the monsoon map, from
+# best-time-to-visit.md. Put an {{events}} line back in the text below to use them.)  photo | event | place
 events:
   - "/img/site/sunbird-lanka-tours-upevent-ella1.jpg | Harvest Celebration | Ella"
   - "/img/site/sunbird-lanka-tours-turtle-hatchling-release-2.jpg | Turtle Hatching | Southern Beach"
@@ -155,15 +163,13 @@ We plan private, tailor-made journeys across Sri Lanka for curious travellers. O
 
 {{trip-wheel}}
 
-{{island-dial}}
-
 ::: band trips
 <div class="tg-intro">
-~ Best Recommended Trips
+~ Recommended trips
 
-## Discover Sri Lanka Like Never Before
+## Start with a route, *make it yours.*
 
-From safaris to sacred cities, our top-recommended trips are crafted for unforgettable moments. Travel smart. Travel local. Travel Sunbird.
+A few of our favourite routes, from safaris to sacred cities. Each one is only a starting point: we change the days, the hotels and the pace until it fits you.
 
 [See all tours](/tours/){.btn .pill}
 </div>
@@ -171,44 +177,18 @@ From safaris to sacred cities, our top-recommended trips are crafted for unforge
 {{tours:featured}}
 :::
 
-{{ella-ride}}
+{{place-show}}
 
-::: band mist
-~ Top Destinations
+::: band guests
+~ Guests’ words
 
-## Popular Destinations
-
-{{places:featured}}
-
-[Explore Sri Lanka](/destinations/){.btn .pill}
-:::
-
-{{stats}}
-
-::: band
-~ Discover What’s Happening in Sri Lanka
-
-## Upcoming Events
-
-Sri Lanka is a land of vibrant festivals, ancient traditions, and unforgettable experiences. Our event-based tours let you celebrate with the community and witness moments you’ll never forget.
-
-{{events}}
-:::
-
-::: band mist
-~ Testimonials
-
-## What Our Guests Say
+## What our guests say
 
 {{testimonials}}
 
 {{partners}}
 :::
 
-::: band
-~ News & Articles
+{{island-dial}}
 
-## Latest from Our Blog
-
-{{posts:latest}}
-:::
+{{ella-ride}}

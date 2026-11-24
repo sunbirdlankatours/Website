@@ -60,10 +60,11 @@ Embark on a 16-day journey through Sri Lanka where every moment is a blend of th
 - Overnight in Jaffna
 ![](/img/tours/jaffna.jpg) ![](/img/tours/jaffna-nallur.jpg)
 
-### Day 6 · Jaffna · Delft and Neduntheevu islands
+### Day 6 · Jaffna · By boat to Delft Island
 
-- Scenic drive/train to Jaffna (5 hrs)
-- Visit Jaffna Fort, Nallur Temple, local markets
+- Early ferry out to Delft Island (Neduntheevu), about an hour by boat
+- Wild ponies, the giant baobab tree, coral-stone walls and the old Dutch fort
+- Optional: Stop at the island temples of Nainativu on the way back
 - Overnight in Jaffna
 ![](/img/tours/delfneduntheevut.jpg) ![](/img/tours/fox-hotel-jaffna.jpg)
 
@@ -93,7 +94,6 @@ Embark on a 16-day journey through Sri Lanka where every moment is a blend of th
 
 - Visit Dambulla Cave Temple
 - Optional ziplining or ATV ride near Kandalama
-- Optional: Pidurangala Rock at sunset
 - Continue to Kandy (2.5 hrs)
 - Evening cultural dance show
 - Overnight in Kandy

@@ -75,7 +75,8 @@ def split_row(s):
 
 def read_menu(path):
     """content/menu.txt: "Label | link | note | photo" lines; an indented line goes in the sheet of the line above,
-    and an indented "@tour-categories" or "@regions" line fills that sheet from the site's own data."""
+    an indented "@tour-categories" or "@regions" line fills that sheet from the site's own data, and an indented
+    "button: Label | link" line puts a blue button at the foot of that sheet."""
     items = []
     for l in read_lines(path):
         s = l.strip()
@@ -83,6 +84,11 @@ def read_menu(path):
             continue
         if s.startswith("@") and l.startswith(" ") and items:
             items[-1]["children"].append({"auto": s[1:].strip().lower()})
+            continue
+        if s.lower().startswith("button:") and l.startswith(" ") and items:
+            label, link = ([c.strip() for c in s[7:].split("|", 1)] + [""])[:2]
+            if label and link:
+                items[-1]["button"] = (label, link)
             continue
         if "|" not in l:
             continue
@@ -251,6 +257,22 @@ def tour_days(t):
     return int(m.group(0)) if m else 0
 
 
+def thin_run(pts, tol):
+    """Drop the points of a run [(x, value)] that a straight line would put back within tol (Ramer–Douglas–Peucker)."""
+    if len(pts) < 3:
+        return pts
+    (x0, w0), (x1, w1) = pts[0], pts[-1]
+    far, k = 0, 0
+    for j in range(1, len(pts) - 1):
+        x, w = pts[j]
+        off = abs(w - (w0 + (w1 - w0) * (x - x0) / ((x1 - x0) or 1)))
+        if off > far:
+            far, k = off, j
+    if far <= tol:
+        return [pts[0], pts[-1]]
+    return thin_run(pts[:k + 1], tol)[:-1] + thin_run(pts[k:], tol)
+
+
 def month_runs(code, ch="G"):
     """The months marked `ch` in a 12-letter season code as short ranges: "Jan – Mar", "Dec – Apr", "All year"."""
     if not code or ch not in code:
@@ -353,6 +375,10 @@ HILLS = [(6.95, 80.72, .26, .5), (7.00, 80.77, .07, .55), (6.80, 80.80, .06, .45
          (8.12, 80.65, .025, .3), (7.27, 80.62, .05, .2)]
 # the route map's frame, in the island map's units (the island is 563.5 × 1000): room around it for the names
 TMAP_VB = (-95, -20, 718.5, 1040)
+# the destinations map (write_ridge_map): how far the level lines rise over the highest hills (map units), and
+# the land's colours - the dry zone, the wet south-west, the tea slopes and the high forest
+RIDGE_LIFT = 62
+LAND_DRY, LAND_WET, LAND_TEA, LAND_HIGH = "#d2a24c", "#7cb36f", "#3d8a55", "#174f36"
 
 
 def parse_months(text, where=""):
@@ -478,7 +504,9 @@ ARRIVE_SCRIPT = (
     'sessionStorage.removeItem("sbTrip");if(!t||Date.now()-t.t>8000)return;'
     'document.documentElement.classList.add("arriving");'
     'var o=document.createElement("div");o.className="pt pt-in"+(t.kind?" pt-"+t.kind:"");o.setAttribute("aria-hidden","true");'
-    'if(t.img){var i=new Image();i.alt="";i.src=t.img;o.appendChild(i)}'
+    # (with a photo: "arriving-photo" keeps the page's own big photo still, so the two copies line up, see site.css)
+    'if(t.img){document.documentElement.classList.add("arriving-photo");'
+    'var i=new Image();i.alt="";i.decoding="sync";i.src=t.img;o.appendChild(i)}'
     'var s=document.createElement("div");s.className="pt-shade";o.appendChild(s);'
     'var p=document.createElement("p");p.className="pt-word";'
     'var a=document.createElement("small");a.textContent=t.lead||"";'
@@ -521,18 +549,23 @@ ICON = {
     "clock": '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
     "phone": '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></svg>',
     "mail": '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>',
-    "whatsapp": '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20l1.3-4A8 8 0 1 1 8 18.7Z"/><path d="M9 9.5c.3 2.3 2.2 4.2 4.5 4.5l1-1.3 2 .8v1.3a1 1 0 0 1-1 1A7 7 0 0 1 8.2 9a1 1 0 0 1 1-1h1.3l.8 2Z"/></svg>',
+    # the brand marks (WhatsApp, Facebook, Instagram, Tripadvisor) are the brands' own one-colour logos, unchanged:
+    # Simple Icons 13.21.0 (CC0), which takes each from the brand's official page (Meta brand resources, Tripadvisor
+    # logo guidelines). Their fill sits on the shape itself, so it wins over the outline style every svg gets.
+    "whatsapp": '<svg class="brand" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" stroke="none" d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>',
     "calendar": '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>',
     "compass": '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2 5-5 2 2-5Z"/></svg>',
     "users": '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 7M21.5 20a6.5 6.5 0 0 0-4-6"/></svg>',
     "arrow": '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>',
     "globe": '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.4 2.5 3.6 5.5 3.6 9s-1.2 6.5-3.6 9c-2.4-2.5-3.6-5.5-3.6-9S9.6 5.5 12 3Z"/></svg>',
     "sun": '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>',
+    "cloud-sun": '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 2v1.5M2.5 8.5H4M4.4 3.9l1.06 1.06M13.6 3.9l-1.06 1.06M6.4 11.3A3.6 3.6 0 1 1 12.4 7.4"/><path d="M9 20.5h8.5a3.5 3.5 0 0 0 .3-7 5 5 0 0 0-9.5 1.4A2.8 2.8 0 0 0 9 20.5Z"/></svg>',
+    "rain": '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 15h10a4 4 0 0 0 .4-8 6 6 0 0 0-11.5 1.8A3.2 3.2 0 0 0 7 15Z"/><path d="m8.5 18-1 3M12.5 18l-1 3M16.5 18l-1 3"/></svg>',
     "chevron-up": '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 15 6-6 6 6"/></svg>',
     "chevron-down": '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>',
-    "facebook": '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 8h3V4h-3a4 4 0 0 0-4 4v3H7v4h3v7h4v-7h3l1-4h-4V8Z"/></svg>',
-    "instagram": '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r=".8"/></svg>',
-    "tripadvisor": '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="7" cy="13" r="3.5"/><circle cx="17" cy="13" r="3.5"/><path d="M3 8.5h18M7 13h.01M17 13h.01M12 7l-2 3M12 7l2 3"/></svg>',
+    "facebook": '<svg class="brand" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" stroke="none" d="M9.101 23.691v-7.98H6.627v-3.667h2.474v-1.58c0-4.085 1.848-5.978 5.858-5.978.401 0 .955.042 1.468.103a8.68 8.68 0 0 1 1.141.195v3.325a8.623 8.623 0 0 0-.653-.036 26.805 26.805 0 0 0-.733-.009c-.707 0-1.259.096-1.675.309a1.686 1.686 0 0 0-.679.622c-.258.42-.374.995-.374 1.752v1.297h3.919l-.386 2.103-.287 1.564h-3.246v8.245C19.396 23.238 24 18.179 24 12.044c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.628 3.874 10.35 9.101 11.647Z"/></svg>',
+    "instagram": '<svg class="brand" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" stroke="none" d="M7.0301.084c-1.2768.0602-2.1487.264-2.911.5634-.7888.3075-1.4575.72-2.1228 1.3877-.6652.6677-1.075 1.3368-1.3802 2.127-.2954.7638-.4956 1.6365-.552 2.914-.0564 1.2775-.0689 1.6882-.0626 4.947.0062 3.2586.0206 3.6671.0825 4.9473.061 1.2765.264 2.1482.5635 2.9107.308.7889.72 1.4573 1.388 2.1228.6679.6655 1.3365 1.0743 2.1285 1.38.7632.295 1.6361.4961 2.9134.552 1.2773.056 1.6884.069 4.9462.0627 3.2578-.0062 3.668-.0207 4.9478-.0814 1.28-.0607 2.147-.2652 2.9098-.5633.7889-.3086 1.4578-.72 2.1228-1.3881.665-.6682 1.0745-1.3378 1.3795-2.1284.2957-.7632.4966-1.636.552-2.9124.056-1.2809.0692-1.6898.063-4.948-.0063-3.2583-.021-3.6668-.0817-4.9465-.0607-1.2797-.264-2.1487-.5633-2.9117-.3084-.7889-.72-1.4568-1.3876-2.1228C21.2982 1.33 20.628.9208 19.8378.6165 19.074.321 18.2017.1197 16.9244.0645 15.6471.0093 15.236-.005 11.977.0014 8.718.0076 8.31.0215 7.0301.0839m.1402 21.6932c-1.17-.0509-1.8053-.2453-2.2287-.408-.5606-.216-.96-.4771-1.3819-.895-.422-.4178-.6811-.8186-.9-1.378-.1644-.4234-.3624-1.058-.4171-2.228-.0595-1.2645-.072-1.6442-.079-4.848-.007-3.2037.0053-3.583.0607-4.848.05-1.169.2456-1.805.408-2.2282.216-.5613.4762-.96.895-1.3816.4188-.4217.8184-.6814 1.3783-.9003.423-.1651 1.0575-.3614 2.227-.4171 1.2655-.06 1.6447-.072 4.848-.079 3.2033-.007 3.5835.005 4.8495.0608 1.169.0508 1.8053.2445 2.228.408.5608.216.96.4754 1.3816.895.4217.4194.6816.8176.9005 1.3787.1653.4217.3617 1.056.4169 2.2263.0602 1.2655.0739 1.645.0796 4.848.0058 3.203-.0055 3.5834-.061 4.848-.051 1.17-.245 1.8055-.408 2.2294-.216.5604-.4763.96-.8954 1.3814-.419.4215-.8181.6811-1.3783.9-.4224.1649-1.0577.3617-2.2262.4174-1.2656.0595-1.6448.072-4.8493.079-3.2045.007-3.5825-.006-4.848-.0608M16.953 5.5864A1.44 1.44 0 1 0 18.39 4.144a1.44 1.44 0 0 0-1.437 1.4424M5.8385 12.012c.0067 3.4032 2.7706 6.1557 6.173 6.1493 3.4026-.0065 6.157-2.7701 6.1506-6.1733-.0065-3.4032-2.771-6.1565-6.174-6.1498-3.403.0067-6.156 2.771-6.1496 6.1738M8 12.0077a4 4 0 1 1 4.008 3.9921A3.9996 3.9996 0 0 1 8 12.0077"/></svg>',
+    "tripadvisor": '<svg class="brand" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" stroke="none" d="M12.006 4.295c-2.67 0-5.338.784-7.645 2.353H0l1.963 2.135a5.997 5.997 0 0 0 4.04 10.43 5.976 5.976 0 0 0 4.075-1.6L12 19.705l1.922-2.09a5.972 5.972 0 0 0 4.072 1.598 6 6 0 0 0 6-5.998 5.982 5.982 0 0 0-1.957-4.432L24 6.648h-4.35a13.573 13.573 0 0 0-7.644-2.353zM12 6.255c1.531 0 3.063.303 4.504.903C13.943 8.138 12 10.43 12 13.1c0-2.671-1.942-4.962-4.504-5.942A11.72 11.72 0 0 1 12 6.256zM6.002 9.157a4.059 4.059 0 1 1 0 8.118 4.059 4.059 0 0 1 0-8.118zm11.992.002a4.057 4.057 0 1 1 .003 8.115 4.057 4.057 0 0 1-.003-8.115zm-11.992 1.93a2.128 2.128 0 0 0 0 4.256 2.128 2.128 0 0 0 0-4.256zm11.992 0a2.128 2.128 0 0 0 0 4.256 2.128 2.128 0 0 0 0-4.256z"/></svg>',
 }
 
 
@@ -554,7 +587,7 @@ class Builder:
     def category_index(self, skip=None, kicker="", title="", text="", links="", hid=None):
         """Tour categories as an editorial index: numbered serif names in a list, with one large photo beside
         it that changes to the category you point at (site.js). On phones each row shows a small photo instead.
-        Used at the top of /tours/ and as 'Other tour categories' on each category page."""
+        Used under the tour list on /tours/ ({{tour-categories}}) and as 'Other tour categories' on each category page."""
         cats = [c for c in self.site.cats if c["slug"] != skip]
         if not cats:
             return ""
@@ -643,8 +676,9 @@ class Builder:
         words_of = lambda t: [self.site.cat_by_slug[s].get("word") for s in tour_themes(t) if s in self.site.cat_by_slug]
         cap = lambda w: w[:1].upper() + w[1:]
         data = {"words": [c.get("word") for c in self.site.cats if c.get("word")], "months": MONTHS,
+                # (the last one: the tour page's big photo, fetched as soon as a tour is clicked, see site.js)
                 "tours": [[t["title"], t["url"], t.get("image", ""), tour_days(t), t.get("duration", ""), words_of(t),
-                           t.get("season", ""), t.get("summary", "")] for t in tours],
+                           t.get("season", ""), t.get("summary", ""), t.get("hero_image") or t.get("image", "")] for t in tours],
                 # each trip word's photo (its category's), for the pills and behind the full-screen sentence
                 "photos": {c["word"]: [c.get("image", ""), c.get("focus", "")] for c in self.site.cats if c.get("word")}}
         rows, day_anchor = [], False
@@ -653,7 +687,7 @@ class Builder:
             if tour_days(t) == 1 and not day_anchor:   # the old "Day tours" link (/tours/#wildlife) lands here
                 rid, day_anchor = ' id="wildlife"', True
             rows.append(
-                '<li class="tl-row" data-i="{i}"{rid}><a class="tl-link" href="{url}">'
+                '<li class="tl-row" data-i="{i}"{rid}><a class="tl-link" href="{url}" data-pt-lead="{dur}">'
                 '<span class="tl-n">{n:02d}</span><img class="tl-thumb" src="{img}" alt="" loading="lazy">'
                 '<span class="tl-main"><span class="tl-t">{title}</span>'
                 '<span class="tl-why"><span>{dur}</span>{words}</span></span>'
@@ -666,19 +700,28 @@ class Builder:
                     strip="".join('<i class="%s">%s</i>' % (c, MONTHS[m][0]) for m, c in enumerate(t.get("season", ""))),
                     best=('<span class="tl-ms-best"><b>Best</b> %s</span>' % esc(month_runs(t["season"])))
                     if month_runs(t.get("season", "")) else "", arrow=ICON["arrow"]))
+        # the big photo beside the list: one per tour, stacked, each with its own WebP copies (srcset, added at the
+        # end of the build). Only the first loads with the page; the others load the first time a visitor points
+        # at their tour (site.js turns data-src / data-srcset into src / srcset).
+        pics = "".join('<img{on} {attr}="{img}" data-i="{i}" alt="" sizes="(min-width: 980px) 36vw, 100vw" decoding="async">'.format(
+            on=' class="on"' if i == 0 else "", attr="src" if i == 0 else "data-src", img=esc(t.get("image")), i=i)
+            for i, t in enumerate(tours))
         # the blanks are spans acting as buttons (not <button>s), so a long answer wraps with the sentence
         blank = '<span class="tf-b empty" role="button" tabindex="0" data-q="{q}" aria-label="{label}">{ph}</span>'
-        # testing switch in settings.txt: the full-screen sentence every time, starting empty
-        test = str(self.s.get("tour_finder_test", "")).strip().lower() in ("yes", "true", "on", "1")
         first = tours[0]
         return (
-            '<div class="tf" data-tf{fresh}>'
+            '<div class="tf" data-tf>'
             # the first time on this page in a visit, the sentence fills the screen by itself, over blurred trip
             # photos, before any tour shows (site.js lifts it away on "Show my tours"). This runs before the page
-            # is drawn, so the list never flashes up first. The old "Day tours" link (#wildlife) goes straight to
-            # the list; if site.js doesn't arrive, the normal page comes back after a few seconds.
-            # With "tour_finder_test: yes" in settings.txt it shows every time, with no answers remembered.
-            '<script>(function(){{try{{if(location.hash==="#wildlife"||({seen}sessionStorage.getItem("sbTf")))return;'
+            # is drawn, so the list never flashes up first. Coming back to the page (Back from a tour, or Tours in
+            # the menu) keeps the answers and goes straight to the list. Reloading the page starts again: the
+            # answers and the month are wiped and the sentence shows, empty. The old "Day tours" link (#wildlife)
+            # goes straight to the list; if site.js doesn't arrive, the normal page comes back after a few seconds.
+            '<script>(function(){{try{{var ss=sessionStorage,'
+            'nv=performance.getEntriesByType&&performance.getEntriesByType("navigation")[0];'
+            'if(nv?nv.type==="reload":performance.navigation&&performance.navigation.type===1)'
+            '["sbTf","sbTfS","sbMonth"].forEach(function(k){{ss.removeItem(k)}});'
+            'if(location.hash==="#wildlife"||ss.getItem("sbTf"))return;'
             'var h=document.documentElement;h.classList.add("tf-intro","tf-dark");'
             '"scrollRestoration" in history&&(history.scrollRestoration="manual");'
             'setTimeout(function(){{if(!window.sbTfReady)h.classList.remove("tf-intro","tf-dark")}},6000)}}catch(e){{}}}})();</script>'
@@ -696,7 +739,7 @@ class Builder:
             '</div>'
             '<div class="tl" id="bespoke">'
             '<aside class="tl-side" aria-hidden="true"><figure class="tl-photo"><div class="tl-frame">'
-            '<img class="on" src="{img0}" alt=""><img src="{img0}" alt=""></div>'
+            '{pics}</div>'
             '<figcaption><span class="tl-cap-t">{t0}</span><span class="tl-cap-s">{s0}</span></figcaption></figure></aside>'
             '<div class="tl-col">'
             '<div class="tl-head"><p class="tf-count" aria-live="polite">All {n} tours</p>'
@@ -704,17 +747,14 @@ class Builder:
             '<ol class="tl-list">{rows}<li class="tl-sep" hidden>Possible with a few changes</li></ol>'
             '<div class="tl-end"><p class="tl-end-say">Not quite it? Every trip we plan is made for the people going.</p>'
             '<a class="btn gold tf-go" href="/contact-us/#plan">Send us your sentence{arrow}</a></div>'
-            '<p class="tl-cats">Read about each kind of trip: {cats}</p>'
             '</div></div>'
             '<script type="application/json" class="tf-data">{data}</script></div>'
-        ).format(fresh=' data-fresh' if test else "", seen="false&&" if test else "",
-                 b0=blank.format(q=0, label="Who’s coming", ph="who?"),
+        ).format(b0=blank.format(q=0, label="Who’s coming", ph="who?"),
                  b1=blank.format(q=1, label="When you’re travelling", ph="when?"),
                  b2=blank.format(q=2, label="How long you have", ph="how long?"),
                  b3=blank.format(q=3, label="What you’d love", ph="what?"),
-                 arrow=ICON["arrow"], img0=esc(first.get("image")), t0=esc(first["title"]), s0=esc(first.get("summary", "")),
+                 arrow=ICON["arrow"], pics=pics, t0=esc(first["title"]), s0=esc(first.get("summary", "")),
                  n=len(tours), rows="".join(rows),
-                 cats=" · ".join('<a href="%s">%s</a>' % (c["url"], esc(c["name"])) for c in self.site.cats),
                  data=json.dumps(data, ensure_ascii=False).replace("</", "<\\/"))
 
     def place_cards(self, which):
@@ -737,6 +777,8 @@ class Builder:
                     id=re.sub(r"[^a-z]+", "-", region.lower()).strip("-"), name=esc(region), n=len(ps),
                     s="" if len(ps) == 1 else "s", best=('<span>%sBest %s</span>' % (ICON["sun"], best)) if best else "",
                     cards="".join(self.place_card(p) for p in ps)))
+        if which == "list":   # {{places:list}}: the groups alone, under the big map ({{place-map}})
+            return '<div class="dest-index solo"><div class="di-regions">%s</div></div>' % "".join(groups)
         return ('<div class="dest-index"><div class="di-map">%s</div><div class="di-regions">%s</div></div>'
                 % (self.isle(), "".join(groups)))
 
@@ -749,6 +791,73 @@ class Builder:
             if p.get("region") and p["region"] not in out:
                 out.append(p["region"])
         return sorted(out, key=lambda r: REGION_ORDER.index(r) if r in REGION_ORDER else len(REGION_ORDER))
+
+    def place_show(self):
+        """{{place-show}} on the home page: the main places, one at a time, full screen. Each has its own big wide
+        photo behind, its name in the big serif over a fan of three of its attraction photos (small portraits,
+        404 x 536, shown about that size, like prints), and its tagline and best months under them. It is built as
+        a 3D scene: the photo far behind, the prints at different depths and the name floating in front, all
+        inside a "camera" (.sx-cam) that site.js turns with the pointer, drifts when idle and moves in as you
+        scroll; a change of place flies the camera through the scene. The places
+        are named along the bottom; site.js changes place from those, the arrows, a swipe or the keyboard, and
+        moves on by itself every few seconds while the section is on screen. "See all destinations" sits on the
+        right. Everything is set in content/pages/home.md (place_show and place_show_title)."""
+        p = self.current
+        by = {q["slug"]: q for q in self.site.places}
+        shows = []
+        for row in p.get("place_show") or []:
+            slug, bg, focus, cards = (split_row(row) + [""] * 4)[:4]
+            q = by.get(slug)
+            if not q:
+                print("Warning: home.md place_show names a place that isn't in content/destinations: %s" % slug)
+                continue
+            photos = re.findall(r"!\[([^\]]*)\]\(([^)\s]+)", q.get("body", ""))   # the Top attractions photos: (name, file)
+            want = [c.strip().lower() for c in cards.split(",") if c.strip()]
+            picked = [ph for w in want for ph in photos if ph[0].lower() == w][:3]
+            for ph in photos:   # fewer than three named (or a name not found): the first ones fill in
+                if len(picked) >= 3:
+                    break
+                if ph not in picked:
+                    picked.append(ph)
+            shows.append((q, bg or q.get("image"), focus, picked))
+        if not shows:
+            return ""
+        n = len(shows)
+        bgs, slides, tabs = [], [], []
+        for k, (q, bg, focus, picked) in enumerate(shows):
+            best = month_runs(q["season"]) if q.get("season") else ""
+            pos = ' style="object-position:%s"' % esc(focus) if focus else ""
+            # only the first place's photos load with the page; site.js loads the others once the section is near
+            bgs.append('<img %s="%s" alt=""%s%s>' % ("src" if k == 0 else "data-src", esc(bg), ' class="on" loading="lazy"' if k == 0 else "", pos))
+            # each print has a glare that slides across it as the camera turns
+            cards = "".join('<span class="sx-card" style="--c:%d"><img %s="%s" alt="%s" width="404" height="536"%s><i class="sx-glare"></i></span>' % (
+                c, "src" if k == 0 else "data-src", esc(src), esc(name), ' loading="lazy"' if k == 0 else "")
+                for c, (name, src) in enumerate(picked))
+            # the name letter by letter, so it can come into focus one letter after another
+            letters = "".join('<span style="--i:%d">%s</span>' % (j, "&nbsp;" if ch == " " else esc(ch)) for j, ch in enumerate(q["name"]))
+            slides.append(
+                '<a class="sx-slide{on}" href="{url}" data-k="{k}" aria-label="{name}: {tag}"{hid}>'
+                '<span class="sx-cards">{cards}</span><h3 class="sx-name" aria-label="{name}"><span aria-hidden="true">{letters}</span></h3>'
+                '<span class="sx-line"><em>{tag}</em>{best}</span></a>'.format(
+                    on=" on" if k == 0 else "", url=q["url"], k=k, name=esc(q["name"]), tag=esc(q.get("tagline", "")),
+                    hid="" if k == 0 else ' aria-hidden="true" tabindex="-1"', cards=cards, letters=letters,
+                    best=('<span>%sBest %s</span>' % (ICON["sun"], esc(best))) if best else ""))
+            tabs.append('<li><button type="button" class="sx-tab{on}" data-k="{k}"{cur}><span class="sx-n">{n:02d}</span>{name}</button></li>'.format(
+                on=" on" if k == 0 else "", k=k, n=k + 1, name=esc(q["name"]), cur=' aria-current="true"' if k == 0 else ""))
+        title = p.get("place_show_title") or "Places our guests love"
+        return (
+            '<section class="place-show" aria-roledescription="carousel" aria-labelledby="sx-title" data-sx>'
+            '<div class="sx-bgs" aria-hidden="true">{bgs}</div><div class="sx-shade" aria-hidden="true"></div>'
+            '<div class="wrap sx-head"><h2 class="sx-title" id="sx-title"><span class="sx-k">Destinations</span>{title}</h2>'
+            '<p class="sx-count" aria-hidden="true"><b>01</b> / {total:02d}</p></div>'
+            '<div class="sx-stage"><div class="sx-cam">{slides}</div></div>'
+            '<div class="wrap sx-bar"><ol class="sx-tabs" style="--n:{n}">{tabs}</ol>'
+            '<div class="sx-nav"><button type="button" class="sx-prev" aria-label="Previous place">{arrow}</button>'
+            '<button type="button" class="sx-next" aria-label="Next place">{arrow}</button>'
+            '<a class="btn ghost sx-all" href="/destinations/">See all {count} destinations</a></div></div>'
+            '</section>'
+        ).format(bgs="".join(bgs), title=inline(title), total=n, slides="".join(slides), n=n, tabs="".join(tabs),
+                 arrow=ICON["arrow"], count=len(self.site.places))
 
     def place_card(self, p):
         return ('<a class="place-card" href="{url}" data-slug="{slug}"><img src="{img}" alt="" loading="lazy">'
@@ -785,6 +894,23 @@ class Builder:
 
     def place_match(self, p, text):
         return re.search(r"(?<![\w-])%s(?![\w-])" % re.escape(p["short"]), text, flags=re.I) is not None
+
+    def place_links(self, text, skip=()):
+        """A day's place as written in its heading ("Kandy", "Kandy or Ella", "Trincomalee"), with every name that
+        has a destination page made a link to it, except pages in skip (already linked on an earlier day). Names
+        without a page stay plain words. site.js remembers the tour on the click, so the place's page can lead back."""
+        hits = []
+        for p in self.site.places:
+            if p["url"] in skip:
+                continue
+            m = re.search(r"(?<![\w-])%s(?![\w-])" % re.escape(p["short"]), text, flags=re.I)
+            if m and not any(m.start() < e and s < m.end() for s, e, _ in hits):
+                hits.append((m.start(), m.end(), p["url"]))
+        out, at = [], 0
+        for s, e, url in sorted(hits):
+            out.append(text[at:s] + '<a class="day-place" href="%s">%s</a>' % (url, text[s:e]))
+            at = e
+        return "".join(out) + text[at:]
 
     # ---------------------------------------------------------- the route map beside a tour's opening words
     def map_xy(self, ll):
@@ -877,17 +1003,12 @@ class Builder:
                     break
         return route
 
-    def write_lines_map(self):
-        """The island drawn as fine engraved lines, shared by every tour's map: /img/sri-lanka-lines.svg in blues
-        (deep blue in the hills, pale toward the coast, with pale lines rippling out into the sea) and
-        /img/sri-lanka-lines-sun.svg, the same island in yellows, which shows through where the pointer is.
-        Each line is a thin ribbon cut to the coast: it swells where the land rises and tapers to a point at
-        both ends, the way an engraver's line does."""
-        mp = self.site.map
-        vx, vy, vw, vh = TMAP_VB
-        # the coast and the district borders as rings of points (the district shapes are "M x y l dx dy ..." paths)
+    def coast_rings(self):
+        """The coast and the district borders as rings of points (the district shapes are "M x y l dx dy ..." paths)."""
+        if hasattr(self, "_rings"):
+            return self._rings
         rings = []
-        for dist in mp["districts"]:
+        for dist in self.site.map["districts"]:
             ring, x, y, cmd = [], 0.0, 0.0, "M"
             toks = re.findall(r"[MmLlHhVvZz]|-?(?:\d+\.?\d*|\.\d+)(?:e-?\d+)?", dist["d"])
             i = 0
@@ -916,44 +1037,130 @@ class Builder:
                 ring.append((x, y))
             if len(ring) > 2:
                 rings.append(ring)
-        # how high the land is (0 the plains .. 1 the highest hills), from the soft bumps in HILLS
-        bumps = [(self.map_xy((lat, lon)), s * mp["projection"]["scale"], a) for lat, lon, s, a in HILLS]
+        self._rings = rings
+        return rings
 
-        def height(x, y):
-            return min(1.0, sum(a * math.exp(-((x - p[0]) ** 2 + (y - p[1]) ** 2) / (2 * s * s)) for p, s, a in bumps))
+    def land_spans(self, y):
+        """Where a level line across the map at height y is on land, west to east, as [a, b] pairs: where it
+        crosses the coast, pairs of crossings per ring, joined across district borders."""
+        spans = []
+        for ring in self.coast_rings():
+            xs = sorted(p[0] + (y - p[1]) * (q[0] - p[0]) / (q[1] - p[1])
+                        for p, q in zip(ring, ring[1:] + ring[:1]) if (p[1] <= y < q[1]) or (q[1] <= y < p[1]))
+            spans += list(zip(xs[0::2], xs[1::2]))
+        spans.sort()
+        joined = []
+        for a, b in spans:
+            if joined and a <= joined[-1][1] + 1.5:
+                joined[-1][1] = max(joined[-1][1], b)
+            else:
+                joined.append([a, b])
+        return joined
 
-        def simplify(pts, tol):   # drop points a straight line would put back within tol (Ramer–Douglas–Peucker)
-            if len(pts) < 3:
-                return pts
-            (x0, w0), (x1, w1) = pts[0], pts[-1]
-            far, k = 0, 0
-            for j in range(1, len(pts) - 1):
-                x, w = pts[j]
-                off = abs(w - (w0 + (w1 - w0) * (x - x0) / ((x1 - x0) or 1)))
-                if off > far:
-                    far, k = off, j
-            if far <= tol:
-                return [pts[0], pts[-1]]
-            return simplify(pts[:k + 1], tol)[:-1] + simplify(pts[k:], tol)
+    def land_height(self, x, y):
+        """How high the land is at a point of the map (0 the plains .. 1 the highest hills), from the soft bumps in HILLS."""
+        if not hasattr(self, "_bumps"):
+            self._bumps = [(self.map_xy((lat, lon)), s * self.site.map["projection"]["scale"], a) for lat, lon, s, a in HILLS]
+        return min(1.0, sum(a * math.exp(-((x - p[0]) ** 2 + (y - p[1]) ** 2) / (2 * s * s)) for p, s, a in self._bumps))
+
+    def land_colour(self, x, y):
+        """The island's colour at a point of the map, as (r, g, b): warm sand in the dry north and east, fresh green
+        in the wet south-west (roughly south-west of a line from Chilaw to Tangalle), then tea green and deep
+        forest green as the land rises into the hills."""
+        pr = self.site.map["projection"]
+        lat, lon = pr["lat1"] - y / pr["scale"], x / (pr["cos"] * pr["scale"]) + pr["lon0"]
+
+        def smooth(v, lo, hi):
+            t = max(0.0, min(1.0, (v - lo) / (hi - lo)))
+            return t * t * (3 - 2 * t)
+
+        def mix(c1, c2, t):
+            return tuple(c1[i] + (c2[i] - c1[i]) * t for i in range(3))
+
+        dry, wet, tea, high = [tuple(int(c[i:i + 2], 16) for i in (1, 3, 5)) for c in (LAND_DRY, LAND_WET, LAND_TEA, LAND_HIGH)]
+        h = self.land_height(x, y)
+        c = mix(dry, wet, smooth((7.6 - lat) * .8 + (80.6 - lon) * 1.6, .3, 1.4))
+        c = mix(c, tea, smooth(h, .12, .38))
+        return mix(c, high, smooth(h, .38, .75))
+
+    def ridge_lift(self, x, y):
+        """Where a point of the island shows on the ridge map (write_ridge_map): raised by the land's height."""
+        return x, y - self.land_height(x, y) * RIDGE_LIFT
+
+    def write_ridge_map(self):
+        """The island for the destinations map ({{place-map}}): level lines that rise where the land rises
+        (RIDGE_LIFT at the highest hills), each nearer line hiding the ones behind it, so the hill country stands
+        up out of the plains. Each line takes the land's colours along it (land_colour), and pale lines ripple out
+        into the sea as on the tour maps. /img/sri-lanka-ridges.svg, and /img/sri-lanka-ridges-sun.svg: the same
+        lines in yellows, which show through around the place being pointed at or chosen (site.js)."""
+        mp = self.site.map
+        vx, vy, vw, vh = TMAP_VB
+        gap = 8.0
+        fills, lines, grads = [], [], []
+        y = gap / 2
+        while y < mp["height"]:
+            for a, b in self.land_spans(y):
+                if b - a < 4:
+                    continue
+                n = max(2, int((b - a) / 3) + 1)
+                pts = thin_run([self.ridge_lift(a + (b - a) * j / (n - 1), y) for j in range(n)], .12)
+                line = " ".join("%.1f %.1f" % p for p in pts)
+                # behind the line, down to where it would lie flat: paper, hiding the lines further back
+                fills.append("M%sL%.1f %.1fL%.1f %.1fZ" % (line, b, y + 1, a, y + 1))
+                # the line's colours: sampled along it, keeping only the stops a straight blend can't put back
+                k = max(2, int((b - a) / 14) + 1)
+                xs = [a + (b - a) * j / (k - 1) for j in range(k)]
+                cols = [self.land_colour(x, y) for x in xs]
+                keep = {0, k - 1}
+                for ch in range(3):   # red, green, blue
+                    keep |= {xs.index(x) for x, _ in thin_run([(x, c[ch]) for x, c in zip(xs, cols)], 4)}
+                keep = sorted(keep)
+                gid = "r%d" % len(grads)
+                grads.append('<linearGradient id="%s" gradientUnits="userSpaceOnUse" x1="%.1f" x2="%.1f" y1="0" y2="0">%s</linearGradient>' % (
+                    gid, a, b, "".join('<stop offset="%.3f" stop-color="#%02x%02x%02x"/>' % (
+                        (xs[j] - a) / (b - a), *(int(round(v)) for v in cols[j])) for j in keep)))
+                lines.append((gid, line))
+            y += gap
+        cx, cy = self.map_xy((6.95, 80.75))
+        sea_x, sea_y = mp["width"] / 2, mp["height"] / 2
+        sea = (
+            '<radialGradient id="f"><stop offset="0" stop-color="#fff"/><stop offset=".55" stop-color="#fff" stop-opacity=".7"/>'
+            '<stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>'
+            '<mask id="m" maskUnits="userSpaceOnUse" x="{x}" y="{y}" width="{w}" height="{h}">'
+            '<ellipse cx="{ex}" cy="{ey}" rx="{rx}" ry="{ry}" fill="url(#f)"/></mask>'
+        ).format(x=vx, y=vy, w=vw, h=vh, ex=sea_x, ey=sea_y, rx=sea_x + 120, ry=sea_y + 90)
+        sea_lines = '<path d="%s" stroke="#29abe2" stroke-width="1" stroke-opacity=".24" mask="url(#m)"/>' % "".join(
+            "M%g %.1fH%g" % (vx, gap / 2 + k * gap, vx + vw) for k in range(int(vy / gap) - 1, int((vy + vh) / gap) + 1))
+        # each line is drawn after the paper behind it, row by row from the north, so a nearer line hides the far ones
+        rows = "".join('<path fill="#fff" stroke="none" d="%s"/><path stroke="url(#%s)" d="M%s"/>' % (f, g, l)
+                       for f, (g, l) in zip(fills, lines))
+        rows_sun = "".join('<path fill="#fff" stroke="none" d="%s"/><path d="M%s"/>' % (f, l) for f, (_, l) in zip(fills, lines))
+        head = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="%g %g %g %g">' % TMAP_VB
+        with open(os.path.join(OUT, "img", "sri-lanka-ridges.svg"), "w", encoding="utf-8") as f:
+            f.write(head + '<defs>%s%s</defs>%s<g fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">%s</g></svg>'
+                    % (sea, "".join(grads), sea_lines, rows))
+        with open(os.path.join(OUT, "img", "sri-lanka-ridges-sun.svg"), "w", encoding="utf-8") as f:
+            f.write(head + '<defs><radialGradient id="s" gradientUnits="userSpaceOnUse" cx="%.0f" cy="%.0f" r="560">'
+                    '<stop offset="0" stop-color="#d27400"/><stop offset=".3" stop-color="#e59406"/><stop offset=".62" stop-color="#f0b414"/>'
+                    '<stop offset="1" stop-color="#f6c62a"/></radialGradient></defs>'
+                    '<g fill="none" stroke="url(#s)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">%s</g></svg>'
+                    % (cx, cy, rows_sun))
+
+    def write_lines_map(self):
+        """The island drawn as fine engraved lines, shared by every tour's map: /img/sri-lanka-lines.svg in blues
+        (deep blue in the hills, pale toward the coast, with pale lines rippling out into the sea) and
+        /img/sri-lanka-lines-sun.svg, the same island in yellows, which shows through where the pointer is.
+        Each line is a thin ribbon cut to the coast: it swells where the land rises and tapers to a point at
+        both ends, the way an engraver's line does."""
+        mp = self.site.map
+        vx, vy, vw, vh = TMAP_VB
+        height = self.land_height
 
         gap, thin, thick = 7.0, 2.1, 5.8
         ribbons = []
         y = gap / 2
         while y < mp["height"]:
-            # where this line crosses the coast: pairs of crossings per ring, joined across district borders
-            spans = []
-            for ring in rings:
-                xs = sorted(p[0] + (y - p[1]) * (q[0] - p[0]) / (q[1] - p[1])
-                            for p, q in zip(ring, ring[1:] + ring[:1]) if (p[1] <= y < q[1]) or (q[1] <= y < p[1]))
-                spans += list(zip(xs[0::2], xs[1::2]))
-            spans.sort()
-            joined = []
-            for a, b in spans:
-                if joined and a <= joined[-1][1] + 1.5:
-                    joined[-1][1] = max(joined[-1][1], b)
-                else:
-                    joined.append([a, b])
-            for a, b in joined:
+            for a, b in self.land_spans(y):
                 if b - a < 4:
                     continue
                 n = max(2, int((b - a) / 4) + 1)
@@ -962,7 +1169,7 @@ class Builder:
                     x = a + (b - a) * j / (n - 1)
                     taper = min(1.0, (x - a) / 4, (b - x) / 4)
                     pts.append((x, (thin + (thick - thin) * height(x, y)) * (.5 + .5 * taper)))
-                pts = simplify(pts, .05)
+                pts = thin_run(pts, .05)
                 top = " ".join("%.1f %.2f" % (x, y - w / 2) for x, w in pts)
                 bottom = " ".join("%.1f %.2f" % (x, y + w / 2) for x, w in reversed(pts))
                 ribbons.append("M%sL%sZ" % (top, bottom))
@@ -1031,42 +1238,19 @@ class Builder:
                 path += "C%.1f %.1f %.1f %.1f %.1f %.1f" % (p1[0] + a[0], p1[1] + a[1], p2[0] - b[0], p2[1] - b[1], p2[0], p2[1])
                 along.append(along[-1] + hop)
         total = along[-1] or 1
-        # one dot and name per place, at its first visit; a name tries the side out to sea first, then the
-        # other side, above, below and the corners, and takes the first spot that doesn't cover another name or dot
+        # one dot and name per place, at its first visit
         stops, seen = [], set()
         for (name, key), i in zip(route, at):
             if key not in seen:
                 seen.add(key)
                 stops.append((name, spots[key][0], spots[key][1], along[i] / total))
-        boxes = [(x - 9, y - 9, x + 9, y + 9) for _, x, y, _ in stops]
+        names = self.name_spots([(name.upper(), x, y) for name, x, y, _ in stops], fs, ls)
         marks = []
-        for k, (name, x, y, d) in enumerate(stops):
-            txt = name.upper()
-            w, g = len(txt) * (0.66 * fs + ls), 13
-            sides = [(x + g, y + fs * .36, "start"), (x - g, y + fs * .36, "end")]
-            if x < W * .4:
-                sides.reverse()
-            cands = sides + [(x, y - g - 2, "middle"), (x, y + g + fs * .78, "middle"), (x + g, y - fs * .55, "start"),
-                             (x + g, y + fs * 1.15, "start"), (x - g, y - fs * .55, "end"), (x - g, y + fs * 1.15, "end")]
-
-            def box(c):
-                x0 = c[0] if c[2] == "start" else c[0] - w if c[2] == "end" else c[0] - w / 2
-                return (x0 - 3, c[1] - fs * .8, x0 + w + 3, c[1] + fs * .15)
-
-            def cost(b):
-                c = 0 if vx <= b[0] and b[2] <= vx + vw and vy <= b[1] and b[3] <= vy + vh else 1e6
-                for q in boxes:
-                    ox, oy = min(b[2], q[2]) - max(b[0], q[0]), min(b[3], q[3]) - max(b[1], q[1])
-                    if ox > 0 and oy > 0:
-                        c += ox * oy
-                return c
-
-            best = min(cands, key=lambda c: cost(box(c)))
-            boxes.append(box(best))
+        for k, ((name, x, y, d), best) in enumerate(zip(stops, names)):
             marks.append('<g class="tm-stop{start}" style="--d:{d:.3f}"><circle cx="{x:.1f}" cy="{y:.1f}" r="{r}"/>'
                          '<text x="{tx:.1f}" y="{ty:.1f}" text-anchor="{a}">{txt}</text></g>'.format(
                              start=" start" if k == 0 else "", d=d, x=x, y=y, r=8 if k == 0 else 6.5,
-                             tx=best[0], ty=best[1], a=best[2], txt=esc(txt)))
+                             tx=best[0], ty=best[1], a=best[2], txt=esc(name.upper())))
         # a small north arrow in the sea at the bottom right
         north = ('<g class="tm-north" transform="translate(%g %g)"><path d="M0 -26 7 4 0 -2 -7 4Z"/><text y="22" text-anchor="middle">N</text></g>'
                  % (W + 10, mp["height"] - 30))
@@ -1083,6 +1267,172 @@ class Builder:
         ).format(vb="%g %g %g %g" % TMAP_VB, label=esc(label), vx=vx, vy=vy, vw=vw, vh=vh, marks="".join(marks), north=north,
                  line=('<path class="tm-edge" d="%s" pathLength="1"/><path class="tm-line" d="%s" pathLength="1"/>' % (path, path))
                  if path else "", credit=esc(mp.get("credit", "")))
+
+    def name_spots(self, dots, fs, ls=1.2, cw=.66, g=13, room=0, keep=9, clear=False):
+        """Where to write each name beside its dot on the engraved island, as (x, y, text-anchor) in TMAP_VB units.
+        A name tries the side out to sea first, then the other side, above, below and the corners, and takes the
+        first spot that doesn't cover another name or dot. dots: [(name as written, x, y)]; cw: a letter's width
+        as a share of the font size (.66 for capitals); room: how far past the map's sides a name may reach;
+        keep: how far a name stays from the other dots. clear: for crowded maps - the most crowded places choose
+        first, and a name whose nearest dot isn't its own (so it could be read as another place's) is avoided."""
+        vx, vy, vw, vh = TMAP_VB
+        vx, vw = vx - room, vw + 2 * room
+        W = self.site.map["width"]
+        boxes = [(x - keep, y - keep, x + keep, y + keep) for _, x, y in dots]
+        out = [None] * len(dots)
+        order = list(range(len(dots)))
+        if clear:
+            order.sort(key=lambda k: -sum(math.hypot(x - dots[k][1], y - dots[k][2]) < 90 for _, x, y in dots))
+
+        def gap_to(b, px, py):   # how far a point is from a name's box
+            return math.hypot(max(b[0] - px, 0, px - b[2]), max(b[1] - py, 0, py - b[3]))
+
+        for k in order:
+            txt, x, y = dots[k]
+            w = len(txt) * (cw * fs + ls)
+            sides = [(x + g, y + fs * .36, "start"), (x - g, y + fs * .36, "end")]
+            if x < W * .4:
+                sides.reverse()
+            cands = sides + [(x, y - g - 2, "middle"), (x, y + g + fs * .78, "middle"), (x + g, y - fs * .55, "start"),
+                             (x + g, y + fs * 1.15, "start"), (x - g, y - fs * .55, "end"), (x - g, y + fs * 1.15, "end")]
+
+            def box(c):
+                x0 = c[0] if c[2] == "start" else c[0] - w if c[2] == "end" else c[0] - w / 2
+                return (x0 - 3, c[1] - fs * .8, x0 + w + 3, c[1] + fs * .15)
+
+            def cost(b):
+                c = 0 if vx <= b[0] and b[2] <= vx + vw and vy <= b[1] and b[3] <= vy + vh else 1e6
+                for j, q in enumerate(boxes):
+                    if j == k:   # its own dot: just not on top of it
+                        q = (x - 9, y - 9, x + 9, y + 9)
+                    ox, oy = min(b[2], q[2]) - max(b[0], q[0]), min(b[3], q[3]) - max(b[1], q[1])
+                    if ox > 0 and oy > 0:
+                        c += ox * oy
+                if clear:
+                    own = gap_to(b, x, y)
+                    c += sum(400 for j, (_, ox, oy) in enumerate(dots) if j != k and gap_to(b, ox, oy) < own + 8)
+                return c
+
+            best = min(cands, key=lambda c: cost(box(c)))
+            boxes.append(box(best))
+            out[k] = best
+        return out
+
+    def place_blurb(self, p, most=200):
+        """The first sentence (or two, when the first is short) of a place's opening words, as plain text."""
+        para = next((x for x in re.split(r"\n\s*\n", p.get("body", "").strip())
+                     if x.strip() and not x.lstrip().startswith(("[", "!", "*", "-", "#", ":"))), "")
+        text = re.sub(r"\[([^\]]*)\]\([^)]*\)(\{[^}]*\})?", r"\1", para)
+        text = " ".join(re.sub(r"[*_]", "", text).split())
+        out = ""
+        for s in re.findall(r"[^.!?]+[.!?]+(?=\s|$)", text):
+            if out and len(out) + len(s) > most:
+                break
+            out += s
+            if len(out) >= 90:
+                break
+        return out.strip() or text[:most]
+
+    def place_map(self):
+        """{{place-map}} on /destinations/: every destination on the ridge-lines island (write_ridge_map). Pointing at
+        a place lights it up, and the island turns yellow around it; choosing it (a click or a tap) shows its card
+        beside the map: photo, a few words, best months, three sights, the tours that stop there and the places
+        close by. On phones the card is a sheet from the bottom. Without JavaScript the pins and the list beside
+        the map are plain links to the place pages (site.js)."""
+        mp = self.site.map
+        if not mp:
+            return ""
+        vx, vy, vw, vh = TMAP_VB
+        places = [p for p in self.site.places if p["ll"]]
+        real = [self.map_xy(p["ll"]) for p in places]
+        # pins where the places are (not raised with the hills: raised, the hill towns crowd together and their names
+        # get muddled), pushed apart a little where two would sit on top of each other (Weligama and Mirissa are 4 km apart)
+        pts, apart = [list(xy) for xy in real], 26
+        for _ in range(60):
+            for i in range(len(pts)):
+                for j in range(i + 1, len(pts)):
+                    dx, dy = pts[j][0] - pts[i][0], pts[j][1] - pts[i][1]
+                    dist = math.hypot(dx, dy) or .01
+                    if dist < apart:
+                        k = (apart - dist) / 2 / dist
+                        pts[i][0] -= dx * k
+                        pts[i][1] -= dy * k
+                        pts[j][0] += dx * k
+                        pts[j][1] += dy * k
+        # names: capitals on big screens, and bigger plain names on phones, where the map is small
+        big = self.name_spots([(p["short"].upper(), x, y) for p, (x, y) in zip(places, pts)], 18, room=60, keep=14, clear=True)
+        small = self.name_spots([(p["short"], x, y) for p, (x, y) in zip(places, pts)], 30, 0, .56, 15, room=36, keep=18, clear=True)
+        pins = []
+        for p, (x, y), a, b in zip(places, pts, big, small):
+            pins.append(
+                '<a class="pm-pin" href="{url}" data-slug="{slug}" data-x="{x:.1f}" data-y="{y:.1f}" aria-label="{name}" data-pt="{name}">'
+                '<circle class="pm-hit" cx="{x:.1f}" cy="{y:.1f}" r="20"/><circle class="pm-ring" cx="{x:.1f}" cy="{y:.1f}" r="8"/>'
+                '<circle class="pm-dot" cx="{x:.1f}" cy="{y:.1f}" r="7.5"/>'
+                '<text class="pm-big" x="{ax:.1f}" y="{ay:.1f}" text-anchor="{aa}">{up}</text>'
+                '<text class="pm-small" x="{bx:.1f}" y="{by:.1f}" text-anchor="{ba}">{short}</text></a>'.format(
+                    url=p["url"], slug=p["slug"], x=x, y=y, name=esc(p["name"]), ax=a[0], ay=a[1], aa=a[2],
+                    up=esc(p["short"].upper()), bx=b[0], by=b[1], ba=b[2], short=esc(p["short"])))
+        north = ('<g class="tm-north" transform="translate(%g %g)"><path d="M0 -26 7 4 0 -2 -7 4Z"/><text y="22" text-anchor="middle">N</text></g>'
+                 % (mp["width"] + 10, mp["height"] - 30))
+        # beside the map: the places by region (before anything is chosen), and one card per place
+        start = "".join(
+            '<div class="pm-reg"><p class="pm-reg-n">{r}</p><ul>{items}</ul></div>'.format(r=esc(region), items="".join(
+                '<li><a href="{url}" data-slug="{slug}">{name}</a></li>'.format(url=p["url"], slug=p["slug"], name=esc(p["short"]))
+                for p in places if p.get("region") == region))
+            for region in self.regions())
+        cards = []
+        for p, xy in zip(places, real):
+            main = p.get("image")
+            sights = [(esc(alt or "").strip(), src) for alt, src in re.findall(r"!\[([^\]]*)\]\(([^)\s]+)", p.get("body", "")) if src != main][:3]
+            tours = self.place_tours(p)
+            near = sorted((math.dist(xy, q_xy), q) for q, q_xy in zip(places, real) if q is not p)
+            near = [q for dist, q in near[:3] if dist < 130]
+            best = month_runs(p["season"]) if p["season"] else ""
+            cards.append(
+                '<article class="pm-place" data-slug="{slug}" aria-labelledby="pm-{slug}">'
+                '<button type="button" class="pm-back" aria-label="Back to all places"><span class="pm-back-t">{arrow}All places</span>'
+                '<span class="pm-x" aria-hidden="true">×</span></button>'
+                '<div class="pm-top"><span class="pm-ph"><img src="{img}" alt="" loading="lazy"></span>'
+                '<div class="pm-head"><p class="pm-kick">{region}</p><h3 class="pm-name" id="pm-{slug}">{name}</h3>'
+                '<p class="pm-tag">{tag}</p>{best}</div></div>'
+                '<p class="pm-say">{say}</p>'
+                '{sights}{tours}'
+                '<div class="pm-end"><p class="pm-go"><a class="btn" href="{url}">Explore {name}{arrow}</a></p>'
+                '{near}</div></article>'.format(
+                    slug=p["slug"], url=p["url"], img=esc(main), region=esc(p.get("region", "")), name=esc(p["name"]),
+                    tag=esc(p.get("tagline", "")), arrow=ICON["arrow"], say=esc(self.place_blurb(p)),
+                    best=('<p class="pm-best">%sBest %s</p>' % (ICON["sun"], best)) if best else "",
+                    sights=('<div class="pm-block"><p class="pm-label">Top sights</p><ul class="pm-sights">%s</ul></div>' % "".join(
+                        '<li><span class="pm-sph"><img src="%s" alt="" loading="lazy"></span><span class="pm-sn">%s</span></li>'
+                        % (esc(src), alt) for alt, src in sights)) if sights else "",
+                    tours=('<div class="pm-block"><p class="pm-label">{n} tour{s} stop{s2} here</p><ul class="pm-tours">{rows}</ul>{more}</div>'.format(
+                        n=len(tours), s="" if len(tours) == 1 else "s", s2="s" if len(tours) == 1 else "",
+                        rows="".join('<li><a href="{u}"><span class="pm-tt">{t}</span><span class="pm-td">{d}</span></a></li>'.format(
+                            u=t["url"], t=esc(t["title"]), d="Day trip" if tour_days(t) == 1 else esc(t.get("duration", "")))
+                            for t in tours[:3]),
+                        # (the page-change screen names where it goes, "Tours that visit / Kandy", not "and 2 more")
+                        more=('<a class="pm-more" href="%s#tours" data-pt-lead="Tours that visit" data-pt="%s">and %d more</a>'
+                              % (p["url"], esc(p["name"]), len(tours) - 3)) if len(tours) > 3 else ""))
+                    if tours else '<div class="pm-block"><p class="pm-label">Tours</p><p class="pm-none">No set tour stops here yet. '
+                                  'We can plan the days around it.</p></div>',
+                    near=('<p class="pm-near"><span>Close by</span>%s</p>' % "".join(
+                        '<button type="button" data-go="%s">%s</button>' % (q["slug"], esc(q["short"])) for q in near)) if near else ""))
+        return (
+            '<div class="pmap">'
+            '<figure class="pm-map"><svg viewBox="{vb}" role="group" aria-label="Map of Sri Lanka with our {n} destinations">'
+            '<defs><radialGradient id="pm-glow"><stop offset="0" stop-color="#fff"/><stop offset=".45" stop-color="#fff"/>'
+            '<stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>'
+            '<mask id="pm-mask" maskUnits="userSpaceOnUse" x="{vx}" y="{vy}" width="{vw}" height="{vh}">'
+            '<circle class="pm-spot" cx="0" cy="0" r="0" fill="url(#pm-glow)"/></mask></defs>'
+            '<image class="pm-art" href="/img/sri-lanka-ridges.svg" x="{vx}" y="{vy}" width="{vw}" height="{vh}"/>'
+            '<image class="pm-art" href="/img/sri-lanka-ridges-sun.svg" x="{vx}" y="{vy}" width="{vw}" height="{vh}" mask="url(#pm-mask)"/>'
+            '<g class="pm-pins">{pins}</g>{north}</svg>'
+            '<figcaption class="tm-credit">{credit}</figcaption></figure>'
+            '<div class="pm-side"><div class="pm-start"><p class="pm-hint"><span class="pm-hint-dot" aria-hidden="true"></span>'
+            'Choose a place on the map</p><div class="pm-regions">{start}</div></div>{cards}</div>'
+            '</div>'
+        ).format(vb="%g %g %g %g" % TMAP_VB, n=len(places), vx=vx, vy=vy, vw=vw, vh=vh, pins="".join(pins), north=north,
+                 credit=esc(mp.get("credit", "")), start=start, cards="".join(cards))
 
     def place_tours(self, p):
         """Tours that stop at place p: a day heading names it ("Day 4 · Kandy → Ella · …"); for tours without
@@ -1214,11 +1564,6 @@ class Builder:
         return '<script type="application/json" id="sb-weather">%s</script>' % (
             json.dumps(data, ensure_ascii=False).replace("</", "<\\/"))
 
-    @staticmethod
-    def month_buttons(cls, pressed=False):
-        return "".join('<button type="button" class="%s" data-m="%d" aria-label="%s"%s>%s</button>'
-                       % (cls, i, m, ' aria-pressed="false"' if pressed else "", m[:3]) for i, m in enumerate(MONTHS))
-
     def tours_for(self, m, limit):
         """Tours at their best in month m (multi-day tours first, as in the tour order)."""
         return [t for t in self.site.tours if t.get("season") and t["season"][m] == "G"][:limit]
@@ -1227,36 +1572,79 @@ class Builder:
         sunny = [r["name"] for r in self.site.weather["regions"] if r["code"][m] == "G"]
         return "Sunniest: " + ", ".join(sunny) if sunny else "Showers almost everywhere"
 
-    def month_bar(self):
-        """Slim 'When are you travelling?' bar above a category's tours: a month puts the tours that suit it first."""
+    @staticmethod
+    def month_scores(tours):
+        """Each month for a group of tours: G (at least half of them are at their best then), R (most are in their
+        rainy months) or M (in between), how many are at their best, and how many of the tours have months at all."""
+        seasons = [t["season"] for t in tours if t.get("season")]
+        n, out = len(seasons), []
+        for i in range(12):
+            g = sum(1 for s in seasons if s[i] == "G")
+            r = sum(1 for s in seasons if s[i] == "R")
+            out.append(("M" if not n else "G" if g * 2 >= n else "R" if r * 2 > n else "M", g, n))
+        return out
+
+    def month_bar(self, tours):
+        """'When are you travelling?' above a category's tours, as a season strip: the twelve months side by side,
+        each in the weather colours of the tour list (gold: at least half of these tours are at their best then;
+        blue: most of them are in their rainy months; sand: in between). Picking a month puts the tours that suit
+        it first (site.js); a yellow sun glides to it. "Any month" puts the tours back in their usual order."""
         if not self.site.weather:
             return ""
+        scores = self.month_scores(tours)
+        n = scores[0][2]
+        cells = []
+        for i, m in enumerate(MONTHS):
+            code, g, _ = scores[i]
+            best = ("%d of %d tours at their best" % (g, n)) if n else ""
+            cells.append('<button type="button" class="mb-m %s" data-m="%d" data-g="%d" aria-pressed="false" aria-label="%s%s">'
+                         '<span class="mb-l">%s</span><span class="mb-s" aria-hidden="true">%s</span></button>'
+                         % (code, i, g, m, (": " + best) if best else "", m[:3], m[0]))
         return (
-            '<div class="month-bar" data-grid="#cat-tours">'
+            '<div class="month-bar" data-grid="#cat-tours" data-n="{n}">'
             '<div class="mb-head"><p class="mb-ask">When are you travelling?</p>'
+            '<button type="button" class="mb-any" data-m="-1" aria-pressed="true">Any month</button>'
             '<a class="mb-guide" href="{url}">Month-by-month guide{arrow}</a></div>'
-            '<div class="mb-months" role="group" aria-label="Travel month">'
-            '<button type="button" class="mb-m" data-m="-1" aria-pressed="true">Any month</button>{months}</div>'
-            '<p class="mb-note" aria-live="polite">Pick your month and we will put the tours that suit it first.</p></div>'
-        ).format(url=self.site.weather["url"], arrow=ICON["arrow"], months=self.month_buttons("mb-m", pressed=True))
+            '<div class="mb-strip" role="group" aria-label="Travel month">{cells}<span class="mb-sun" aria-hidden="true"></span></div>'
+            '<div class="mb-foot"><p class="mb-note" aria-live="polite">Pick your month and we’ll put the tours that suit it first.</p>'
+            '<p class="mb-key" aria-hidden="true"><span class="G">Best for these tours</span><span class="M">Mixed</span><span class="R">Rainy</span></p></div>'
+            '</div>'
+        ).format(url=self.site.weather["url"], arrow=ICON["arrow"], n=n, cells="".join(cells))
 
     def month_ask(self, c):
         """Full-screen 'When are you travelling?' on the category's own photo. site.js opens it only when the visitor
         has just clicked through from another page of this site and hasn't picked a month yet - never for someone
-        arriving straight from Google (search engines penalise pages that open with a pop-up)."""
+        arriving straight from Google (search engines penalise pages that open with a pop-up).
+        The twelve months stand in one row of glass tiles, each with the weather these tours have then (a sun: at
+        least half of them are at their best; a sun behind a cloud: mixed; rain: most are in their rainy months).
+        Pointing at a month says how many of the tours are at their best and which parts of the island are sunniest
+        (site.js); picking one lights it up, then the question lifts away and the tours below are sorted for it."""
         if not self.site.weather:
             return ""
         focus = ' style="object-position:%s"' % esc(c["focus"]) if c.get("focus") else ""
+        scores = self.month_scores(self.tours_in(c["slug"]))
+        n = scores[0][2]
+        words = {"G": "Best", "M": "Mixed", "R": "Rainy"}
+        icons = {"G": ICON["sun"], "M": ICON["cloud-sun"], "R": ICON["rain"]}
+        cells = "".join(
+            '<button type="button" class="ma-m {code}" data-m="{i}" data-g="{g}" style="--i:{i}" aria-label="{label}">'
+            '<span class="ma-ic">{icon}</span><span class="ma-l">{short}</span><span class="ma-w">{word}</span></button>'.format(
+                code=code, i=i, g=g, icon=icons[code], short=MONTHS[i][:3], word=words[code],
+                label="%s: %s%s" % (MONTHS[i], words[code].lower(), ", %d of %d tours at their best" % (g, n) if n else ""))
+            for i, (code, g, _) in enumerate(scores))
+        say = ("The sun marks the best months for %s." % ("this tour" if n == 1 else "these %d tours" % n)
+               if n else "Pick your month and we will put the tours that suit it first.")
         return (
-            '<div class="month-ask" role="dialog" aria-modal="true" aria-labelledby="ma-title" hidden>'
+            '<div class="month-ask" role="dialog" aria-modal="true" aria-labelledby="ma-title" data-n="{n}" hidden>'
             '<img class="ma-photo" src="{img}" alt=""{focus}><div class="ma-shade"></div>'
             '<div class="ma-box"><p class="ma-kicker">{name}</p>'
             '<h2 class="ma-title" id="ma-title">When are you <em>travelling?</em></h2>'
             '<p class="ma-text">Sri Lanka has two monsoons, so one side of the island is always sunny. '
             'Pick your month and we will put the tours that suit it first.</p>'
-            '<div class="ma-months">{months}</div>'
+            '<div class="ma-months" role="group" aria-label="Travel month">{cells}</div>'
+            '<p class="ma-say">{say}</p>'
             '<p class="ma-foot"><button type="button" class="ma-skip">Not sure yet</button></p></div></div>'
-        ).format(img=esc(c.get("image")), focus=focus, name=esc(c.get("name")), months=self.month_buttons("ma-m"))
+        ).format(n=n, img=esc(c.get("image")), focus=focus, name=esc(c.get("name")), cells=cells, say=esc(say))
 
     def dial_info(self, m):
         """The changing part of the panel beside the monsoon map for month m (site.js redraws it the same way)."""
@@ -1372,6 +1760,13 @@ class Builder:
                         % (name, top * 100, hgt * 100, secs, imgs))
         stations = (("Kandy", .02), ("Hatton", .19), ("Nanu Oya", .38), ("Pattipola", .53), ("Haputale", .79), ("Ella", .965))
         route = "".join('<li style="left:%.1f%%">%s</li>' % ((at - .02) / (.965 - .02) * 100, esc(n)) for n, at in stations)
+        # the train ends the home page, so the page's last words and its "Plan my trip" sit under it (ride_end)
+        end = ""
+        if p.get("ride_end"):
+            e_title, e_text, e_btn, e_link = (split_row(p["ride_end"]) + [""] * 4)[:4]
+            end = ('<div class="er-end"><h2>{t}</h2>{x}<p><a class="btn gold" href="{l}">{b}</a></p></div>').format(
+                t=inline(e_title), x=('<p>%s</p>' % esc(e_text)) if e_text else "",
+                l=esc(e_link or "/contact-us/#plan"), b=esc(e_btn or "Plan my trip"))
         return (
             '<section class="band ella-ride" aria-labelledby="er-title"><div class="wrap">'
             '<div class="er-win"><div class="er-scene" aria-hidden="true">{view}</div><span class="er-glass"></span>'
@@ -1380,8 +1775,8 @@ class Builder:
             '<a class="btn ghost" href="/destinations/ella/">Explore Ella</a></p></div>'
             '<span class="er-chip">{time}</span></div>'
             '<div class="er-route" aria-hidden="true"><span class="er-track"><i class="er-loco"></i></span><ol>{route}</ol></div>'
-            '</div></section>'
-        ).format(kicker=esc(p.get("ride_kicker") or "The hill country line"),
+            '{end}</div></section>'
+        ).format(end=end, kicker=esc(p.get("ride_kicker") or "The hill country line"),
                  title=inline(p.get("ride_title") or "Take the train to *Ella*"),
                  text=esc(p.get("ride_text") or ""), time=esc(p.get("ride_time") or "Kandy → Ella"),
                  view="".join(view), route=route)
@@ -1745,13 +2140,18 @@ class Builder:
             "monsoon-dial": lambda: self.monsoon_dial(),
             "island-dial": lambda: self.island_dial(),
             "ella-ride": lambda: self.ella_ride(),
+            "place-show": lambda: self.place_show(),
             "month-guide": lambda: self.month_guide(),
             "trip-wheel": lambda: self.trip_wheel(),
             "island": lambda: self.island(),
             "tours": lambda: self.tour_grid(arg or "all"),
             "tour-finder": lambda: self.tour_finder(),
+            "tour-categories": lambda: self.category_index(
+                kicker="Tour categories", title="Or choose a kind of trip", hid="categories",
+                text="Each one has its own page, with its tours and the months they are best in."),
             "about-since": lambda: self.about_since(),
             "places": lambda: self.place_cards(arg or "all"),
+            "place-map": lambda: self.place_map(),
             "posts": lambda: self.post_cards(arg or "all"),
             "stats": lambda: self.stats(),
             "events": lambda: self.events(),
@@ -1827,9 +2227,12 @@ class Builder:
                     '<button class="sub-toggle" type="button" aria-label="Open the {label} menu" aria-expanded="false" aria-controls="mega-{i}"></button>'
                     '<div class="mega-pg" id="mega-{i}"><div class="mp-clip"><div class="wrap mp-in">'
                     '<ol class="mp-list">{lines}</ol><div class="mp-ph{tall}" aria-hidden="true">{photos}</div>'
-                    '<div class="mp-foot">{more}{wa}</div></div></div></div></li>'.format(
+                    '<div class="mp-foot">{cta}{more}{wa}</div></div></div></div></li>'.format(
                         i=i, link=esc(it["link"]), label=esc(it["label"]), lines=lines, photos=photos, tall=" tall" if tall else "",
-                        wa=wa, more='<a class="mp-all" href="%s">%s%s</a>' % (esc(more[1]), esc(more[0]), ICON["arrow"]) if more else ""))
+                        wa=wa, more='<a class="mp-all" href="%s">%s%s</a>' % (esc(more[1]), esc(more[0]), ICON["arrow"]) if more else "",
+                        # menu.txt "button:" line: the blue sun pill, first in the foot (Tours: into the tour finder)
+                        cta='<a class="btn gold blue mp-cta" href="%s">%s</a>' % (esc(it["button"][1]), esc(it["button"][0]))
+                        if it.get("button") else ""))
                 paths.append(own)
             foot = ('<div class="nav-foot"><a class="btn gold nav-cta" href="/contact-us/#plan">Plan my trip</a>'
                     '<a class="nf-line" href="https://wa.me/{wa}" target="_blank" rel="noopener">{waicon}WhatsApp {phone}</a>'
@@ -1855,28 +2258,100 @@ class Builder:
         return "<ul>%s</ul>%s" % ("".join(out), foot)
 
     def footer(self):
+        """The footer on every page, in two halves. On the left, in logo blue, "Talk to a person": WhatsApp, the
+        phone and the email in big type, with the office address and hours under them. On the right, three short
+        columns of links (Plan · Tours · Sunbird); the Tours column lists the tour categories, so it never goes
+        out of date. Phones: the two halves stack."""
         s = self.s
-        tours = "".join('<li><a href="%s">%s</a></li>' % (t["url"], esc(t["title"])) for t in self.site.tours if t.get("category") == "bespoke")
+        li = lambda href, text: '<li><a href="%s">%s</a></li>' % (esc(href), esc(text))
+        plan = "".join([li("/contact-us/#plan", "Plan my trip"), li("/tours/#find", "Find your tour")]
+                       + ([li(self.site.weather["url"], "Best time to visit")] if self.site.weather else [])
+                       + [li("/transport-and-stays/", "Cars, drivers & stays"), li("/mice/", "MICE & events")])
+        tours = "".join([li(c["url"], c.get("name", "")) for c in self.site.cats]
+                        + [li("/tours/#wildlife", "Day tours"), li("/tours/", "All %d tours" % len(self.site.tours))])
+        sunbird = "".join([li("/about-us/", "Our story"), li("/destinations/", "Destinations"), li("/blog/", "Travel stories"),
+                           li("/contact-us/", "Contact us"), li("/booking-terms-conditions/", "Booking terms"),
+                           li("/cookie-policy/", "Cookie policy")])
         social = "".join('<a href="%s" target="_blank" rel="noopener" aria-label="%s">%s</a>' % (esc(s[k]), k.title(), ICON[k])
                          for k in ("facebook", "instagram", "tripadvisor") if s.get(k))
+        more = " · ".join('<a href="%s">%s</a>' % (esc(h), esc(t)) for h, t in
+                          (("tel:" + (s.get("phone2_link") or ""), s.get("phone2")), ("mailto:" + (s.get("email2") or ""), s.get("email2"))) if t)
         return (
-            '<footer class="site-footer"><div class="wrap fcols">'
-            '<div class="fabout"><img src="/img/logo-white.png" alt="{name}" width="190" loading="lazy"><p>{ft}</p><p class="social">{social}</p></div>'
-            '<div><h3>Explore</h3><ul><li><a href="/tours/">All tours</a></li><li><a href="/tours/#wildlife">Day tours</a></li><li><a href="/destinations/">Destinations</a></li>'
-            + ('<li><a href="%s">Best time to visit</a></li>' % self.site.weather["url"] if self.site.weather else "") +
-            '<li><a href="/mice/">MICE</a></li><li><a href="/transport-and-stays/">Vehicle hire & stays</a></li><li><a href="/about-us/">About us</a></li>'
-            '<li><a href="/blog/">Blog</a></li><li><a href="/contact-us/">Contact us</a></li><li><a href="/booking-terms-conditions/">Booking terms</a></li>'
-            '<li><a href="/cookie-policy/">Cookie policy</a></li></ul></div>'
-            '<div><h3>Tours</h3><ul>{tours}</ul></div>'
-            '<div><h3>Get in touch</h3><ul class="fcontact"><li>{phone}<a href="tel:{pl}">{p}</a></li><li>{phone}<a href="tel:{pl2}">{p2}</a></li>'
-            '<li>{mail}<a href="mailto:{e}">{e}</a></li><li>{mail}<a href="mailto:{e2}">{e2}</a></li><li>{pin}<span>{addr}</span></li>'
-            '<li>{clock}<span>Open {hours}</span></li></ul></div>'
-            '</div><div class="fbottom"><div class="wrap">© {year} {company}. All rights reserved.</div></div></footer>'
-        ).format(name=esc(s.get("site_name")), ft=esc(s.get("footer_text")), social=social, tours=tours,
-                 phone=ICON["phone"], mail=ICON["mail"], pin=ICON["pin"], clock=ICON["clock"], hours=esc(s.get("hours")),
-                 pl=esc(s.get("phone_link")), p=esc(s.get("phone")),
-                 pl2=esc(s.get("phone2_link")), p2=esc(s.get("phone2")), e=esc(s.get("email")), e2=esc(s.get("email2")),
+            '<footer class="site-footer"><div class="ft">'
+            '<div class="ft-talk"><div class="ft-in">'
+            '<img class="ft-logo" src="/img/logo-white.png" alt="{name}" width="170" loading="lazy">'
+            '<p class="ft-k">Talk to a person</p>'
+            '<p class="ft-say">Our own team in Sri Lanka plans every trip, <em>from the first message to the flight home.</em></p>'
+            '{wa}'
+            '<ul class="ft-big"><li><a href="tel:{pl}">{phone}<span>{p}</span></a></li><li><a href="mailto:{e}">{mail}<span>{e}</span></a></li></ul>'
+            '{more}'
+            '<p class="ft-where">{pin}<span>{addr}<br>Open {hours}</span></p>'
+            '</div></div>'
+            '<div class="ft-links"><div class="ft-in">'
+            '<nav class="ft-cols" aria-label="Footer">'
+            '<div><p class="ft-h">Plan</p><ul>{plan}</ul></div>'
+            '<div><p class="ft-h">Tours</p><ul>{tours}</ul></div>'
+            '<div><p class="ft-h">Sunbird</p><ul>{sunbird}</ul></div></nav>'
+            '<div class="ft-end"><p class="ft-social">{social}</p>'
+            '<p class="ft-copy">© {year} {company}. All rights reserved.</p></div>'
+            '</div></div></div></footer>'
+        ).format(name=esc(s.get("site_name")), plan=plan, tours=tours, sunbird=sunbird, social=social,
+                 wa=('<p class="ft-wa"><a class="btn gold" href="https://wa.me/%s" target="_blank" rel="noopener">Message us on WhatsApp</a></p>'
+                     % esc(s.get("whatsapp"))) if s.get("whatsapp") else "",
+                 phone=ICON["phone"], mail=ICON["mail"], pin=ICON["pin"], hours=esc(s.get("hours")),
+                 pl=esc(s.get("phone_link")), p=esc(s.get("phone")), e=esc(s.get("email")),
+                 more=('<p class="ft-more">Also %s</p>' % more) if more else "",
                  addr=esc(s.get("address")), year=self.site.year, company=esc(s.get("company")))
+
+    def chat_box(self):
+        """Our own chat box (settings "chat_box: on"), in place of the Tawk.to bubble. In the bottom corner sits a
+        yellow "Chat with us" sun pill; it opens a paper card (a sheet from the bottom on phones). The card's blue top
+        has the logo mark, "Ayubowan." and a line that says whether the team is in, with the time in Sri Lanka (the
+        office hours from settings "hours"). Under it: a hello from the team, a few starting questions as chips, the
+        messages, and a box to write in with a yellow sun to send. Only the look and feel is built: site.js shows the
+        messages and offers window.SunbirdChat for sending them for real later."""
+        s = self.s
+        m = re.findall(r"(\d{1,2})[.:]?(\d{2})?\s*([AP])\.?\s*M", s.get("hours", "").upper())
+        hrs = [(int(h) % 12) + (12 if ap == "P" else 0) for h, _, ap in m]
+        opens, closes = (hrs[0], hrs[1]) if len(hrs) == 2 and hrs[0] < hrs[1] else (8, 17)
+        chips = ["Help me plan a trip", "How much does a tour cost?", "When's the best time to go?", "A question about a tour"]
+        wa = s.get("whatsapp")
+        return (
+            '<div class="cb" data-open="{o}" data-close="{c}"{wa_attr}>'
+            '<section class="cb-card" id="cb-card" role="dialog" aria-labelledby="cb-hi" hidden>'
+            '<header class="cb-head">'
+            '<span class="cb-mark" aria-hidden="true"><img src="/img/logo.svg" alt="" width="106" height="40"></span>'
+            '<div class="cb-who"><p class="cb-kick">{name}</p><h2 class="cb-hi" id="cb-hi">Ayubowan.</h2>'
+            '<p class="cb-state"><span class="cb-dot" aria-hidden="true"></span><span class="cb-when">Our team in Sri Lanka</span></p></div>'
+            '<button class="cb-x" type="button" aria-label="Close the chat"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>'
+            '</header>'
+            '<div class="cb-log" role="log" aria-live="polite" aria-label="Messages">'
+            '<p class="cb-day">Today</p>'
+            '<div class="cb-msg them"><p>Hello and welcome. Ask us anything about Sri Lanka or your trip, and someone from our team will write back to you here.</p>'
+            '<span class="cb-by">Sunbird team</span></div>'
+            '<div class="cb-chips">{chips}</div>'
+            '</div>'
+            '<form class="cb-write" action="#" autocomplete="off">'
+            '<label class="sr" for="cb-text">Your message</label>'
+            '<textarea id="cb-text" rows="1" maxlength="2000" placeholder="Write a message" enterkeyhint="send"></textarea>'
+            '<button class="cb-send" type="submit" aria-label="Send"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>'
+            '</form>'
+            '{wa_line}'
+            '</section>'
+            '<button class="cb-open" type="button" aria-controls="cb-card" aria-expanded="false">'
+            '<span class="cb-label">Chat with us</span>'
+            '<span class="cb-sun" aria-hidden="true">'
+            '<svg class="cb-i-chat" viewBox="0 0 24 24"><path d="M4.5 18.5 5.6 15A7.5 7.5 0 1 1 9 18.4Z"/><path d="M9 11h.01M12 11h.01M15 11h.01"/></svg>'
+            '<svg class="cb-i-x" viewBox="0 0 24 24"><path d="M7 7l10 10M17 7 7 17"/></svg>'
+            '<span class="cb-ping"></span></span>'
+            '</button>'
+            '</div>\n'
+        ).format(
+            o=opens, c=closes, name=esc(s.get("site_name")),
+            wa_attr=' data-wa="%s"' % esc(wa) if wa else "",
+            chips="".join('<button type="button" class="cb-chip">%s</button>' % esc(c) for c in chips),
+            wa_line=('<p class="cb-alt"><a href="https://wa.me/%s" target="_blank" rel="noopener">%s<span>Prefer WhatsApp? Message us there</span></a></p>'
+                     % (esc(wa), ICON["whatsapp"])) if wa else "")
 
     def hero(self, title, tagline=None, image=None, crumbs=None, facts=None, focus=None):
         style = ' style="background-image:url(\'%s\')%s"' % (esc(image), ";background-position:%s" % esc(focus) if focus else "") if image else ""
@@ -1914,8 +2389,9 @@ class Builder:
         og_img = (s.get("url") + image) if image and image.startswith("/") else (s.get("url") + "/img/logo.png")
         langs = [l.strip() for l in s.get("languages", "en").split(",") if l.strip()]
         gt = s.get("google_tag")
-        tawk = s.get("tawk_chat")
-        cfg = {"key": s.get("web3forms_key", ""), "email": s.get("email", ""), "whatsapp": s.get("whatsapp", "")}
+        own_chat = s.get("chat_box", "").strip().lower() in ("on", "yes", "true", "1")
+        tawk = None if own_chat else s.get("tawk_chat")
+        cfg ={"key": s.get("web3forms_key", ""), "email": s.get("email", ""), "whatsapp": s.get("whatsapp", "")}
         if INQUIRY_API:
             base = os.environ.get("SITE_BASE_PATH", "").strip("/")
             cfg["api"] = ("/" + base if base and INQUIRY_API.startswith("/") else "") + INQUIRY_API
@@ -1958,7 +2434,7 @@ class Builder:
 {body}
 </main>
 {footer}
-<script>window.SB={cfg};</script>
+{chat}<script>window.SB={cfg};</script>
 {motion}<script src="/js/site.js?v={ver}" defer></script>
 <script>window.gtranslateSettings={{"default_language":"en","languages":{langs},"wrapper_selector":".gtranslate_wrapper","flag_style":"2d"}};</script>
 <script src="https://cdn.gtranslate.net/widgets/latest/dropdown.js" defer></script>
@@ -1972,6 +2448,7 @@ class Builder:
             over=" over-photo" if body.lstrip().startswith('<section class="tour-hero') else "",
             wa=esc(s.get("whatsapp")), phone=esc(s.get("phone")),
             nav=self.nav(url, layout), body=body, footer=self.footer(), arrive=ARRIVE_SCRIPT, hello=hello_script(),
+            chat=self.chat_box() if own_chat else "",
             # smooth-scrolling library for the home page motion (see site.js)
             motion=('<script src="https://cdn.jsdelivr.net/npm/lenis@1.1.13/dist/lenis.min.js" defer></script>\n'
                     if layout == "home" else ""), cfg=json.dumps(cfg), langs=json.dumps(langs),
@@ -2004,9 +2481,10 @@ class Builder:
                 body = self.about_open(p) + self.about_chapters(body)
             elif p.get("layout") not in ("home", "plain"):
                 photo = p.get("hero_image") or p.get("image")
-                # a full-screen photo first, except on pages without a photo (the legal pages) and on /tours/,
-                # whose own full-screen sentence replaces the top (its banner stays only for the page's name)
-                if photo and "{{tour-finder}}" not in p["body"]:
+                # a full-screen photo first, except on pages without a photo (the legal pages). On /tours/ the first
+                # visit opens on the finder's own full-screen sentence instead, which hides this photo (site.css
+                # "tf-intro"); coming back, the page opens on the photo like every other page
+                if photo:
                     body = self.screen_hero(p["title"], p.get("tagline"), photo, focus=p.get("focus")) + body
                 else:
                     body = self.hero(p["title"], p.get("tagline"), p.get("image"), crumbs=[(p["title"], None)]) + body
@@ -2020,6 +2498,7 @@ class Builder:
         lead, h3, rest = html_.partition("<h3>")
         days = re.findall(r"<h3>(.*?)</h3>(.*?)(?=<h3>|\Z)", h3 + rest, flags=re.S)
         rows, stops, pics, caps = [], [], [], []
+        linked = set()   # each place is a link once in the itinerary: on the first day it comes up
         for head, text in days:
             parts = [p.strip() for p in head.split(" · ")]
             label, title = parts[0], parts[-1]
@@ -2028,12 +2507,15 @@ class Builder:
             num = m.group(0) if m else str(len(rows) + 1)
             imgs = re.findall(r'<img src="([^"]+)" alt="([^"]*)"', text)
             text = re.sub(r'<div class="gallery[^"]*">.*?</div>', "", text, flags=re.S).strip()   # photos are shown apart
-            # the day's places that have a destination page get a link under the day's text
+            # the day's places that have a destination page get a link under the day's text, on the first day only
+            # (Kandy on days 1, 2 and 3 linked once, not three times); the names in the heading follow the same rule
             dests = []
             for w in places:
                 for d in self.site.places:
-                    if d not in dests and self.place_match(d, w):
+                    if d not in dests and d["url"] not in linked and self.place_match(d, w):
                         dests.append(d)
+            heads = ['<span>%s</span>' % self.place_links(p, linked) for p in places]
+            linked.update(d["url"] for d in dests)
             if dests:
                 text += '<p class="day-go">%s</p>' % "".join(
                     '<a href="%s">About %s%s</a>' % (d["url"], esc(d["short"]), ICON["arrow"]) for d in dests)
@@ -2042,8 +2524,8 @@ class Builder:
                     stops.append((p, num))
             pics.append(imgs)
             caps.append((label, " → ".join(places)))
-            where = ('<span class="day-where">%s%s</span>' % (ICON["pin"], ('<i aria-hidden="true">%s</i>' % ICON["arrow"]).join(
-                '<span>%s</span>' % p for p in places))) if places else ""
+            where = ('<span class="day-where">%s%s</span>' % (ICON["pin"], ('<i aria-hidden="true">%s</i>' % ICON["arrow"]).join(heads))
+                     if places else "")
             rows.append(
                 '<details class="day" id="day-{n}"{data}><summary>'
                 '<span class="day-stop" aria-hidden="true"></span>'
@@ -2170,7 +2652,7 @@ class Builder:
                                       facts=facts, focus=c.get("focus"), down=("#cat-tours", "See the tours"))
                      + '<section class="band"><div class="wrap"><div class="cat-intro">%s</div>%s'
                        '<div class="grid cards3 tiles" id="cat-tours">%s</div></div></section>' % (
-                         intro, self.month_bar(), "".join(self.card_tour(t) for t in tours))
+                         intro, self.month_bar(tours), "".join(self.card_tour(t) for t in tours))
                      + self.month_ask(c) + (self.weather_data() if self.site.weather else "")
                      + '<section class="band mist"><div class="wrap">%s</div></section>' % self.category_index(
                          skip=c["slug"], kicker="More ways to travel", title="Other tour categories",
@@ -2186,6 +2668,7 @@ class Builder:
         mp = self.site.map
         if mp:
             os.makedirs(os.path.join(OUT, "img"), exist_ok=True)
+            self.write_ridge_map()
             with open(os.path.join(OUT, "img", "sri-lanka.svg"), "w", encoding="utf-8") as f:
                 f.write('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {w} {h}"><g fill="#d3e4ec" stroke="#f6fafc" '
                         'stroke-width="1.4" stroke-linejoin="round">{d}</g></svg>'.format(

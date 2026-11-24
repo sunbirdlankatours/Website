@@ -2,7 +2,7 @@
 # One tour category. Its page is /tours/honeymoon-luxury/.
 # A tour joins this category when its file lists "honeymoon-luxury" under themes:.
 name: "Honeymoon & luxury"
-title: "Sri Lanka honeymoon & luxury tours"
+title: "Sri Lanka Honeymoon & Luxury Tours"
 word: "romance"
 tagline: "Honeymoons and luxury stays for two"
 image: "/img/tours/romantic-north-east-trip-gallery-01.jpg"

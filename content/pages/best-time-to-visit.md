@@ -1,5 +1,5 @@
 ---
-title: "Best time to visit Sri Lanka"
+title: "Best Time to Visit Sri Lanka"
 url: /best-time-to-visit-sri-lanka/
 tagline: "When to go, month by month"
 image: "/img/tours/sustainable-trip-gallery-01.jpg"
@@ -24,8 +24,8 @@ weather_events:
   - "Kandy Esala Perahera (July or August) · the Elephant Gathering begins at Minneriya"
   - "Kandy Esala Perahera · the Elephant Gathering at its peak"
   - "The Elephant Gathering at Minneriya · Yala often closes for a few weeks"
-  - "Short, heavy afternoon storms almost everywhere · quiet roads and lower prices"
-  - "The south coast season starts late in the month · quiet and good value"
+  - "Short, heavy afternoon storms almost everywhere · Deepavali, the festival of lights (October or November) · quiet roads and lower prices"
+  - "The south coast season starts late in the month · Deepavali, the festival of lights · quiet and good value"
   - "South and west beaches open up · whale season begins off Mirissa · Adam’s Peak season opens"
 ---
 

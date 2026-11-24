@@ -2,7 +2,7 @@
 # One tour category. Its page is /tours/safari-wildlife/.
 # A tour joins this category when its file lists "safari-wildlife" under themes:.
 name: "Safari & wildlife"
-title: "Sri Lanka safari & wildlife tours"
+title: "Sri Lanka Safari & Wildlife Tours"
 word: "safaris"
 tagline: "Leopards, elephants and whales"
 image: "/img/tours/wilpattu-national-park-day-tour-slider-01.jpg"

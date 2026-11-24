@@ -60,10 +60,10 @@ Indulge in the ultimate Sri Lankan escape with our 10-Day Luxury Bespoke Tour �
 
 ### Day 6 · Kandy → Nuwara Eliya · First class to tea country
 
-- Private car to Nanu Oya or scenic 1st class observation train ride through the mountains
-- Tea plantation & factory (short kid-friendly version)
-- Gregory Lake – paddle boats, pony rides, bicycle rentals
-- Stay in a colonial-style family lodge or resort
+- Private car to Nanu Oya, or a scenic 1st class observation train ride through the mountains
+- Private tour of a working tea estate and factory, with a tasting of its finest leaf
+- Afternoon high tea at the Grand Hotel or a quiet stroll around Gregory Lake
+- Check-in at Heritance Tea Factory or a restored colonial tea planter’s bungalow
 ![](/img/tours/luxury-tain-inside.jpg) ![](/img/tours/tea-trails.jpg)
 
 ### Day 7 · Nuwara Eliya · Slow days in the highlands

@@ -8,7 +8,7 @@ district: "Jaffna"
 map: "9.6615, 80.0255"
 ---
 
-Tucked in Sri Lanka’s highlands, Hatton is a dreamy escape wrapped in emerald tea fields, misty mornings, and colonial charm. From the spiritual climb to Adam’s Peak to scenic strolls by Castlereigh Reservoir, every view is postcard-perfect. With iconic estates like Bogawantalawa and Maskeliya, this is the heart of Ceylon tea country—serene, scenic, and steeped in legacy.
+Out on Sri Lanka’s northern tip, Jaffna is the proud heart of the island’s Tamil culture—a flat, sunlit land of palmyra palms, lagoons and quiet islands. Join the evening puja at the golden Nallur Kandaswamy Kovil, walk the star-shaped ramparts of the old Dutch fort, and take a boat out to the island temples of Nainativu. With fiery crab curry, sweet Jaffna mangoes and an unhurried pace, the north feels like a world of its own—warm, welcoming and still wonderfully uncrowded.
 
 **Hidden gems**
 

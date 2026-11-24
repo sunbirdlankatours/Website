@@ -107,7 +107,7 @@
 /destinations/arugambay/ -> /destinations/arugambay/
 /destinations/bentota/ -> /destinations/bentota/
 /destinations/beruwala/ -> /destinations/
-/destinations/colombo/ -> /destinations/
+/destinations/colombo/ -> /destinations/colombo/
 /destinations/dambulla/ -> /destinations/dambulla/
 /destinations/ella/ -> /destinations/ella/
 /destinations/galle/ -> /destinations/galle/
@@ -118,10 +118,10 @@
 /destinations/mirissa/ -> /destinations/mirissa/
 /destinations/negombo/ -> /destinations/negombo/
 /destinations/nuwara-eliya/ -> /destinations/nuwara-eliya/
-/destinations/pasikuda/ -> /destinations/
+/destinations/pasikuda/ -> /destinations/pasikudah/
 /destinations/sigiriya/ -> /destinations/sigiriya/
 /destinations/sri-lanka/ -> /destinations/
-/destinations/udawalawe/ -> /destinations/
+/destinations/udawalawe/ -> /destinations/udawalawe-national-park/
 /destinations/wilpattu-national-park/ -> /destinations/wilpattu-national-park/
 /destinations/yala/ -> /destinations/yala/
 /tag/best-island-to-visit-2025/ -> /blog/
