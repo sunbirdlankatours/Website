@@ -10,9 +10,17 @@ What it does:
   page they're writing from. Closed chats are under **Closed**.
 - **A chat:** the messages, a reply box (your first name is shown to the traveller), "typing…" both ways, and
   buttons to email or WhatsApp the traveller if they left an address. Close, open again, or delete it.
-- **Ringing:** a new chat rings like a phone call until someone looks; after two minutes it turns into a
-  quiet reminder. More messages give a short sound. When someone opens or answers a chat, the other phones
-  stop ringing for it. Each sound can be changed in Android's settings (menu → **Ring sound**).
+- **Ringing like a call:** a new chat rings like a phone call. A locked or sleeping phone wakes up to the call
+  screen (the traveller's name, country, email or WhatsApp, their message and the page they're on); a phone
+  in use shows Android's call banner with **Answer** and **Decline**; with the app open, the call screen
+  appears inside it. On the call screen, **swipe the yellow bubble up** to open the chat (a tap only makes
+  it hop, so a pocket can't answer). If the phone has a PIN, pattern or fingerprint lock, Android asks for
+  it first, so travellers' details stay private; with a plain swipe lock it goes straight in. **Later** (or
+  Decline) stops only your phone; the others keep ringing, and after two minutes the ring turns into a quiet
+  reminder. When someone opens or answers a chat, the other phones stop ringing and their call screens close.
+  More messages give a short sound. Each sound can be changed in Android's settings (menu → **Ring sound**).
+- **Opening the app:** the logo's emblem builds itself (only the round symbol: no motto, no words). Coming in
+  from a ring, or opening the app while a chat is ringing, skips that and goes straight to the chat.
 
 ## Putting it on a phone
 
@@ -21,8 +29,9 @@ What it does:
 3. Google Play Protect may say it doesn't recognise the app, because it isn't from the Play Store. Choose
    **More details → Install anyway**.
 4. Open **Sunbird Team** and sign in with your admin panel email and password.
-5. Allow notifications when asked.
-6. Menu (three dots) → **Send a test ring**. It should ring.
+5. Allow notifications when asked. If a yellow note asks to **Allow full-screen calls** (some phones on
+   Android 14 and later), tap it and switch it on, so a new chat can wake the phone like a call.
+6. Menu (three dots) → **Send a test ring**. The call screen should appear and ring.
 
 A new version installs over the old one the same way (it must be signed with the same key, see below).
 

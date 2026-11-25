@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- One part of the emblem for the app's opening animation (all parts share the emblem's square canvas).
+     Made from static/img/logo.svg (the user's own logo, logo/Logo1 .svg): only the emblem, no motto, no words. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="73dp" android:height="73dp"
+    android:viewportWidth="73" android:viewportHeight="73">
+  <group android:translateX="0.81" android:translateY="-4.61">
+      <path android:fillColor="#FF2BAAE2" android:fillType="evenOdd" android:pathData="M40.19,69.25Q30.39,67.87,27.1,76a35.74,35.74,0,0,0,8.58,1,36.13,36.13,0,0,0,6.87-.66A14.69,14.69,0,0,1,40.19,69.25ZM63,18c4,6.14,2.06,15.37-2.28,22.21,3.37.37,6.08.09,7.49.22,1.84.16,2.94.67-.11,1.51a37.43,37.43,0,0,1-9.79,1.51c-.4.47-.82.92-1.25,1.35-.22.24-.43.49-.64.74a26.14,26.14,0,0,0-5.87,12.2A33.68,33.68,0,0,0,52.15,73,36,36,0,0,0,63,18Z" />
+  </group>
+</vector>

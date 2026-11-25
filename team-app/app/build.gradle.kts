@@ -49,8 +49,8 @@ android {
         applicationId = "lk.sunbirdtours.team"
         minSdk = 26
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 3
+        versionName = "1.2"
         buildConfigField("String", "API_BASE", "\"$apiBase\"")
         for (k in listOf("FB_APP_ID", "FB_API_KEY", "FB_PROJECT_ID", "FB_SENDER_ID")) {
             buildConfigField("String", k, "\"${firebase[k] ?: ""}\"")

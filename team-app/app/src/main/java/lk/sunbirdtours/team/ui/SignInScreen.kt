@@ -1,6 +1,6 @@
 package lk.sunbirdtours.team.ui
 
-import androidx.compose.foundation.background
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -35,8 +34,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -45,6 +44,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import lk.sunbirdtours.team.R
 
 @Composable
 fun SignInScreen(m: TeamModel, bar: SnackbarHostState) {
@@ -63,10 +63,13 @@ fun SignInScreen(m: TeamModel, bar: SnackbarHostState) {
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {
-                Box(Modifier.size(84.dp).clip(CircleShape).background(Blue), contentAlignment = Alignment.Center) {
-                    Sun(56.dp)
-                }
-                Text("Sunbird Team", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.SemiBold, color = Navy)
+                // only the emblem (the user's wish: no motto, no lettering from the logo), the name in plain text
+                Image(painterResource(R.drawable.logo_emblem), contentDescription = null, Modifier.size(112.dp))
+                Text(
+                    "Sunbird Lanka Tours", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold,
+                    color = Navy, textAlign = TextAlign.Center,
+                )
+                Text("Team app", fontSize = 13.sp, letterSpacing = 1.6.sp, fontWeight = FontWeight.Medium, color = Blue)
                 Text(
                     "Chats with travellers from the website. Sign in with the same email and password as the admin panel.",
                     style = MaterialTheme.typography.bodyMedium, color = Muted, textAlign = TextAlign.Center,

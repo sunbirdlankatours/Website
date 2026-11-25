@@ -2,10 +2,12 @@ package lk.sunbirdtours.team.ui
 
 import android.Manifest
 import android.content.Intent
+import android.net.Uri
 import android.os.Build
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -54,9 +56,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -68,6 +72,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.delay
+import lk.sunbirdtours.team.R
 import lk.sunbirdtours.team.TeamApp
 import lk.sunbirdtours.team.data.Chat
 import lk.sunbirdtours.team.ring.Rings
@@ -84,7 +89,12 @@ fun ChatsScreen(m: TeamModel, bar: SnackbarHostState) {
     val ask = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
         allowed = NotificationManagerCompat.from(ctx).areNotificationsEnabled()
     }
-    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { allowed = NotificationManagerCompat.from(ctx).areNotificationsEnabled() }
+    // and on Android 14 and later, a ring may take over the screen like a call only if allowed
+    var fullScreen by remember { mutableStateOf(Rings.canTakeOverScreen(ctx)) }
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        allowed = NotificationManagerCompat.from(ctx).areNotificationsEnabled()
+        fullScreen = Rings.canTakeOverScreen(ctx)
+    }
     LaunchedEffect(Unit) {
         if (!allowed && Build.VERSION.SDK_INT >= 33) ask.launch(Manifest.permission.POST_NOTIFICATIONS)
     }
@@ -132,6 +142,9 @@ fun ChatsScreen(m: TeamModel, bar: SnackbarHostState) {
             if (!allowed) Note(
                 "Notifications are off, so chats can't ring on this phone.", "Turn on",
             ) { if (Build.VERSION.SDK_INT >= 33) ask.launch(Manifest.permission.POST_NOTIFICATIONS) else openSettings() }
+            if (allowed && !fullScreen) Note("Allow full-screen calls, so a new chat shows like a phone call even when the phone is locked.", "Allow") {
+                ctx.startActivity(Intent(Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT, Uri.parse("package:" + ctx.packageName)))
+            }
             if (!team.ringsBuilt) Note("This version of the app can't ring yet: it was built before Firebase was set up.", null) {}
             if (down) Note("Not connected to the inquiry box. Pull down to try again.", null) {}
 
@@ -221,7 +234,7 @@ private fun Empty(closed: Boolean) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        Sun(56.dp, color = Color(0xFFE8D98A))
+        Image(painterResource(R.drawable.logo_emblem), contentDescription = null, Modifier.size(64.dp).alpha(0.45f))
         Text(if (closed) "No closed chats" else "No open chats", fontWeight = FontWeight.SemiBold, color = Navy, fontSize = 17.sp)
         Text(
             if (closed) "Chats you close show here. They open again if the traveller writes."

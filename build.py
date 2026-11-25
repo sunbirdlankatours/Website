@@ -2310,8 +2310,9 @@ class Builder:
         has the logo mark, "Ayubowan." and a line that says whether the team is in, with the time in Sri Lanka (the
         office hours from settings "hours"). Under it: a hello from the team, a few starting questions as chips, the
         messages, and a box to write in with a yellow sun to send. When the inquiry box is set (inquiry_api), the card
-        is live: site.js sends the messages there (data-api) and the team answers in the Sunbird team app. Without
-        it, the card says the chat isn't live yet and offers WhatsApp."""
+        is live: it first asks for a name and an email or WhatsApp number (the cb-you form), then site.js sends the
+        messages there (data-api) and the team answers in the Sunbird team app. Without it, the card says the chat
+        isn't live yet and offers WhatsApp."""
         s = self.s
         m = re.findall(r"(\d{1,2})[.:]?(\d{2})?\s*([AP])\.?\s*M", s.get("hours", "").upper())
         hrs = [(int(h) % 12) + (12 if ap == "P" else 0) for h, _, ap in m]
@@ -2331,6 +2332,7 @@ class Builder:
             '<p class="cb-day">Today</p>'
             '<div class="cb-msg them"><p>Hello and welcome. Ask us anything about Sri Lanka or your trip, and someone from our team will write back to you here.</p>'
             '<span class="cb-by">Sunbird team</span></div>'
+            '{who}'
             '<div class="cb-chips">{chips}</div>'
             '</div>'
             '<form class="cb-write" action="#" autocomplete="off">'
@@ -2352,6 +2354,16 @@ class Builder:
             o=opens, c=closes, name=esc(s.get("site_name")),
             wa_attr=' data-wa="%s"' % esc(wa) if wa else "",
             api_attr=' data-api="%s"' % esc(inquiry_api(s)) if inquiry_api(s) else "",
+            # a live chat starts with who they are, so the team can answer even after they've left (site.js)
+            who=('<form class="cb-you" novalidate>'
+                 '<p class="cb-you-t">First, tell us who you are, so we can answer you even if you leave this page.</p>'
+                 '<label for="cb-name">Your name</label>'
+                 '<input id="cb-name" name="name" autocomplete="name" autocapitalize="words" maxlength="80">'
+                 '<label for="cb-reach">Email or WhatsApp number</label>'
+                 '<input id="cb-reach" name="contact" autocomplete="email" inputmode="email" maxlength="120" placeholder="name@gmail.com">'
+                 '<p class="cb-you-no" role="alert" hidden></p>'
+                 '<button type="submit">Start chat</button>'
+                 '</form>') if inquiry_api(s) else "",
             chips="".join('<button type="button" class="cb-chip">%s</button>' % esc(c) for c in chips),
             wa_line=('<p class="cb-alt"><a href="https://wa.me/%s" target="_blank" rel="noopener">%s<span>Prefer WhatsApp? Message us there</span></a></p>'
                      % (esc(wa), ICON["whatsapp"])) if wa else "")

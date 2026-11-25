@@ -4,8 +4,9 @@
    news every few seconds instead.
 
    The traveller (the chat card). After the first message, with "Authorization: Chat <id>.<key>":
-     POST   /api/chat               {text, page}   a message. Without a working key it starts a new chat
-                                    and answers with the chat's key: {chat, key, message}
+     POST   /api/chat               {text, page}   a message. Without a working key it starts a new chat,
+                                    which needs {name, contact} too (an email or WhatsApp number), and
+                                    answers with the chat's key: {chat, key, message}
      GET    /api/chat?after=<id>    the messages after that one: {chat: {status, answering}, messages}
      PATCH  /api/chat               {contact, name?}   an email or WhatsApp number, for if they leave
    The team (Authorization: Bearer <pass>):
@@ -91,6 +92,22 @@ function cleanText(v) {
   return s;
 }
 
+// an email address or a WhatsApp number, as typed: {email} or {whatsapp}, or a stop that says what's wrong
+function contactOf(v) {
+  const raw = String(v == null ? "" : v).trim().slice(0, 200);
+  if (!raw) stop(400, "Type your email address or WhatsApp number.", { need: "contact" });
+  if (raw.includes("@")) {
+    const email = cleanEmail(raw);
+    if (!email) stop(400, "That email address doesn't look right.", { need: "contact" });
+    return { email, whatsapp: "" };
+  }
+  const digits = raw.replace(/\D/g, "");
+  if (digits.length < 7 || digits.length > 15) {
+    stop(400, "Type an email address, or a WhatsApp number with its country code.", { need: "contact" });
+  }
+  return { email: "", whatsapp: (raw.startsWith("+") || raw.startsWith("00") ? "+" : "") + digits.replace(/^00/, "") };
+}
+
 // the page they wrote from, as a path on the site ("/tours/ella/")
 function cleanPage(v) {
   const s = String(v == null ? "" : v).trim().slice(0, 300);
@@ -150,7 +167,10 @@ export async function visitorSend(c) {
   const now = iso();
   let row = await visitorChat(c);
   let key = "", kind = "ding", to = "all";
-  if (!row) { // a new chat
+  if (!row) { // a new chat: who they are and how to reach them come first
+    const name = cleanName(b.name);
+    if (!name) stop(400, "Type your name first.", { need: "name" });
+    const reach = contactOf(b.contact);
     const sender = await senderOf(request, env);
     const [mine, all] = await Promise.all([
       db.prepare("SELECT COUNT(*) AS n FROM chats WHERE sender = ? AND created > ?").bind(sender, iso(3600e3)).first(),
@@ -161,8 +181,9 @@ export async function visitorSend(c) {
     }
     await forgetOld(db);
     key = randomPass();
-    const r = await db.prepare("INSERT INTO chats (created, updated, key, page, country, sender) VALUES (?, ?, ?, ?, ?, ?)")
-      .bind(now, now, await sha256hex(key), page, (request.cf && request.cf.country) || "", sender).run();
+    const r = await db.prepare(
+      "INSERT INTO chats (created, updated, key, name, email, whatsapp, page, country, sender) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
+    ).bind(now, now, await sha256hex(key), name, reach.email, reach.whatsapp, page, (request.cf && request.cf.country) || "", sender).run();
     row = { id: r.meta.last_row_id, status: "open", member: 0 };
     kind = "ring";
   } else {
@@ -203,16 +224,7 @@ export async function visitorContact(c) {
   const row = await visitorChat(c);
   if (!row) stop(404, "That chat isn't there any more.", { gone: true });
   const b = await readJson(request);
-  const raw = String(b.contact == null ? "" : b.contact).trim().slice(0, 200);
-  let email = "", whatsapp = "";
-  if (raw.includes("@")) {
-    email = cleanEmail(raw);
-    if (!email) stop(400, "That email address doesn't look right.");
-  } else {
-    const digits = raw.replace(/\D/g, "");
-    if (digits.length < 7 || digits.length > 15) stop(400, "Type an email address, or a WhatsApp number with its country code.");
-    whatsapp = (raw.startsWith("+") || raw.startsWith("00") ? "+" : "") + digits.replace(/^00/, "");
-  }
+  const { email, whatsapp } = contactOf(b.contact);
   const name = b.name == null ? null : cleanName(b.name) || null;
   await db.prepare("UPDATE chats SET email = CASE WHEN ? = '' THEN email ELSE ? END, "
     + "whatsapp = CASE WHEN ? = '' THEN whatsapp ELSE ? END, name = COALESCE(?, name) WHERE id = ?")

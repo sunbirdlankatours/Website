@@ -3383,8 +3383,9 @@
   // It's live when the card has data-api (the inquiry box, settings inquiry_api): each message goes to the inquiry
   // box (worker/src/chat.js), the team's phones ring, and their answers come back at once on a live line (a
   // WebSocket), or by asking every few seconds when one can't open. The chat's key is kept for 7 days in
-  // localStorage "sbChatId", so an answer that comes later still shows on the next visit. If nobody is in, or
-  // nobody has answered after 3 minutes, the card asks for an email or WhatsApp number to answer at.
+  // localStorage "sbChatId", so an answer that comes later still shows on the next visit. A new chat first asks for a
+  // name and an email or WhatsApp number (the cb-you form); if nobody is in, or nobody has answered after 3 minutes,
+  // a note says the answer will reach them there.
   // window.SunbirdChat: reply("text", "Name"), typing(true / false), open(), close(); and onSend(text), called
   // with each message on a card without data-api. With neither, a note under the visitor's first message says the
   // chat isn't live yet and offers to send the same words on WhatsApp, so nothing typed is lost.
@@ -3481,6 +3482,7 @@
     var send = function (text) {
       text = (text || "").trim();
       if (!text) { box.focus(); return; }
+      if (asking()) { askWho(true); return; }   // who they are comes first
       var m = { w: "me", t: text, at: stamp(), ts: Date.now() };
       if (live) m.p = 1;
       msgs.push(m);
@@ -3508,9 +3510,9 @@
       if (!isOpen) cb.classList.add("news");
     };
 
-    // ---- live: the inquiry box (data-api). chat: {id, key, until, asked?, contact?} in localStorage "sbChatId".
+    // ---- live: the inquiry box (data-api). chat: {id, key, until, told?} in localStorage "sbChatId".
     var LS = "sbChatId", chat = null, last = 0, sock = null, tries = 0, pollT = 0, pingT = 0, reT = 0, typT = 0,
-      sentTyping = 0, syncing = null, ask = null, askT = 0;
+      sentTyping = 0, syncing = null, askT = 0;
     var ls = function (v) {
       try {
         if (v === undefined) return JSON.parse(localStorage.getItem(LS) || "null");
@@ -3527,7 +3529,7 @@
       return fetch(base + path, { method: method, headers: h, body: body ? JSON.stringify(body) : undefined, credentials: "omit", cache: "no-store" })
         .then(function (r) {
           return r.json().catch(function () { return {}; }).then(function (data) {
-            if (!r.ok) { var e = new Error(data.error || "No answer"); e.status = r.status; throw e; }
+            if (!r.ok) { var e = new Error(data.error || "No answer"); e.status = r.status; e.need = data.need; throw e; }
             return data;
           });
         });
@@ -3545,14 +3547,23 @@
       var el = m.el;
       m.p = 1;
       if (el) { el.classList.remove("failed"); el.classList.add("sending"); }
-      call("POST", "/api/chat", { text: m.t, page: location.pathname }).then(function (r) {
+      var body = { text: m.t, page: location.pathname };
+      if (!chat && who) { body.name = who.name; body.contact = who.contact; }   // a new chat says who it is
+      call("POST", "/api/chat", body).then(function (r) {
         if (r.key) chat = { id: r.chat, key: r.key };   // the first message: a new chat
         keep();
         sent(m, r.message.id);
         if (note && note.parentNode) note.parentNode.removeChild(note);
         connect();
         awaySoon();
-      }, function (e) { failed(m, e); });
+      }, function (e) {
+        failed(m, e.need ? null : e);
+        if (e.need) {   // the inquiry box wants a name or contact it didn't get: ask again, then "Try again" sends it
+          who = null;
+          try { localStorage.removeItem(WHO); } catch (err) { /* private mode */ }
+          askWho(true, e.message);
+        }
+      });
     };
     var sent = function (m, id) {
       m.id = id;
@@ -3674,52 +3685,68 @@
       try { sock.send(JSON.stringify({ t: "typing", on: on })); } catch (err) { /* closing */ }
     };
 
-    // ---- if nobody is in, or nobody has answered after 3 minutes: an email or WhatsApp number to answer at
+    // ---- who they are, before a new chat (the cb-you form, build.py): a name and an email or WhatsApp number, so the
+    // team can answer even after the visitor has left. The write box and the starting questions wait until it's
+    // filled in (".ask-who", site.css). Kept for 7 days in localStorage "sbChatWho"; the first message carries it.
+    var WHO = "sbChatWho", who = null, whoForm = cb.querySelector(".cb-you"), as = null;
+    try { who = JSON.parse(localStorage.getItem(WHO) || "null"); if (!who || !who.name || !(who.until > Date.now())) who = null; } catch (err) { who = null; }
+    var asking = function () { return live && !!whoForm && !chat && !who; };
+    var askWho = function (on, why) {
+      cb.classList.toggle("ask-who", on);
+      if (whoForm) {
+        var no = whoForm.querySelector(".cb-you-no");
+        no.hidden = !why;
+        no.textContent = why || "";
+      }
+      if (as) as.textContent = !on && who ? "Chatting as " + who.name + " · " + who.contact : "";
+      grow();
+    };
+    if (whoForm) {
+      var nameIn = whoForm.querySelector("#cb-name"), reachIn = whoForm.querySelector("#cb-reach");
+      as = d.createElement("p");
+      as.className = "cb-as";
+      whoForm.parentNode.insertBefore(as, whoForm.nextSibling);
+      var digits = function (v) { return v.replace(/\D/g, "").length; };
+      whoForm.addEventListener("submit", function (e) {
+        e.preventDefault();
+        var n = nameIn.value.replace(/\s+/g, " ").trim(), c = reachIn.value.trim();
+        var wrong = !n ? [nameIn, "Type your name first."]
+          : !c ? [reachIn, "Type your email address or WhatsApp number."]
+          : c.indexOf("@") > -1 ? (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(c) ? null : [reachIn, "That email address doesn't look right."])
+          : digits(c) < 7 || digits(c) > 15 ? [reachIn, "Type a WhatsApp number with its country code, like +44 7700 900123."] : null;
+        if (wrong) { askWho(true, wrong[1]); wrong[0].focus(); return; }
+        who = { name: n.slice(0, 80), contact: c.slice(0, 120), until: Date.now() + 7 * 864e5 };
+        try { localStorage.setItem(WHO, JSON.stringify(who)); } catch (err) { /* private mode: for this page only */ }
+        askWho(false);
+        box.focus({ preventScroll: true });
+      });
+      [nameIn, reachIn].forEach(function (i) { i.addEventListener("input", function () { whoForm.querySelector(".cb-you-no").hidden = true; }); });
+      if (who) { nameIn.value = who.name; reachIn.value = who.contact; }
+    }
+
+    // ---- if nobody is in, or nobody has answered after 3 minutes: a word that the answer will reach them anyway
     var awaySoon = function () {
       clearTimeout(askT);
-      if (!chat || chat.contact || (ask && ask.parentNode)) return;
-      if (chat.asked) { askFor(true, chat.asked); return; }   // asked on an earlier page: still in the thread
+      if (!chat || chat.told) return;
       var t = new Date(Date.now() + 330 * 60000), h = t.getUTCHours();
-      if (h < opens || h >= closes) { askT = setTimeout(function () { askFor(false, "out"); }, 1400); return; }
+      if (h < opens || h >= closes) { askT = setTimeout(function () { tellAway("out"); }, 1400); return; }
       // the first of the visitor's messages since the team last wrote
       var since = 0;
       for (var i = msgs.length - 1; i >= 0 && msgs[i].w === "me"; i--) if (msgs[i].id) since = msgs[i].ts;
-      if (since) askT = setTimeout(function () { askFor(false, "slow"); }, Math.max(0, since + 180000 - Date.now()));
+      if (since) askT = setTimeout(function () { tellAway("slow"); }, Math.max(0, since + 180000 - Date.now()));
     };
-    var askFor = function (quiet, why) {
-      if (!chat || chat.contact || (ask && ask.parentNode)) return;
-      var t = new Date(Date.now() + 330 * 60000);
-      ask = d.createElement("div");
-      ask.className = "cb-note cb-ask";
-      if (quiet) ask.style.animation = "none";
-      ask.innerHTML = '<p></p><form class="cb-ask-f" novalidate><label class="sr" for="cb-ask-in">Your email or WhatsApp number</label>' +
-        '<input id="cb-ask-in" type="text" inputmode="email" autocomplete="email" maxlength="120" placeholder="Email or WhatsApp">' +
-        '<button type="submit">Save</button></form><p class="cb-ask-no" role="alert" hidden></p>';
-      ask.firstChild.textContent = why === "out"
-        ? "We're out of the office right now (it's " + clock(t.getUTCHours(), t.getUTCMinutes()) + " in Sri Lanka). Leave your email or " +
-          "WhatsApp number and we'll answer you there as soon as we're back."
-        : "Sorry, this is taking us a little longer than usual. If you have to go, leave your email or WhatsApp number and " +
-          "we'll answer you there.";
-      var f = ask.querySelector("form"), inp = f.querySelector("input"), no = ask.querySelector(".cb-ask-no");
-      f.addEventListener("submit", function (e) {
-        e.preventDefault();
-        var v = inp.value.trim();
-        if (!v) { inp.focus(); return; }
-        f.classList.add("busy");
-        no.hidden = true;
-        call("PATCH", "/api/chat", { contact: v }).then(function (r) {
-          chat.contact = r.email || r.whatsapp || v;
-          keep();
-          ask.innerHTML = "<p></p>";
-          ask.firstChild.textContent = "Thanks. We'll answer you here, and at " + chat.contact + " if you've gone.";
-        }, function (err) {
-          f.classList.remove("busy");
-          no.hidden = false;
-          no.textContent = err.status === 400 ? err.message : "That didn't save. Please try again.";
-        });
-      });
-      log.insertBefore(ask, typingEl && typingEl.parentNode === log ? typingEl : null);
-      if (chat.asked !== why) { chat.asked = why; keep(); }
+    var tellAway = function (why) {
+      if (!chat || chat.told) return;
+      var t = new Date(Date.now() + 330 * 60000), at = who ? ", or at " + who.contact + "," : "";
+      var n = d.createElement("div"), p = d.createElement("p");
+      n.className = "cb-note";
+      p.textContent = why === "out"
+        ? "We're out of the office right now (it's " + clock(t.getUTCHours(), t.getUTCMinutes()) + " in Sri Lanka). We'll answer you here" + at + " as soon as we're back."
+        : "Thanks for waiting. We'll answer you here" + at + " even if you need to go.";
+      n.appendChild(p);
+      log.insertBefore(n, typingEl && typingEl.parentNode === log ? typingEl : null);
+      chat.told = why;
+      keep();
       down();
     };
 
@@ -3881,6 +3908,7 @@
     // live: catch up with the inquiry box (answers that came while away), then a line while it's lively. A message
     // still on its way when the page changed either got there (it comes back in the news) or is marked not sent.
     var unsent = function () { msgs.forEach(function (m) { if (m.p) failed(m); }); };
+    if (live) askWho(asking());   // a new visitor starts with the form
     if (live && chat) sync().then(function () { unsent(); connect(); poll(); awaySoon(); });
     else if (live) unsent();
   })();

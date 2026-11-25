@@ -4,6 +4,8 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.VIBRATE" />
+    <!-- a new chat shows like a phone call over the lock screen (Android 14+ may ask the team to allow it once) -->
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
 
     <!-- allowBackup off: the sign-in pass stays on this phone only -->
     <application
@@ -27,6 +29,17 @@
             </intent-filter>
         </activity>
 
+        <!-- the call screen: a new chat, over the lock screen -->
+        <activity
+            android:name=".ui.CallActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:launchMode="singleTop"
+            android:showWhenLocked="true"
+            android:taskAffinity="lk.sunbirdtours.team.call"
+            android:theme="@style/Theme.Sunbird.Call"
+            android:turnScreenOn="true" />
+
         <!-- Firebase wakes the phone here when the inquiry box rings it -->
         <service
             android:name=".ring.RingService"
@@ -39,6 +52,11 @@
         <!-- after two minutes of ringing, the ring becomes a quiet reminder -->
         <receiver
             android:name=".ring.QuietReceiver"
+            android:exported="false" />
+
+        <!-- "Decline" on the call banner: this phone stops ringing -->
+        <receiver
+            android:name=".ring.LaterReceiver"
             android:exported="false" />
 
         <meta-data

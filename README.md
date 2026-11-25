@@ -144,16 +144,18 @@ when `inquiry_api:` is set: travellers' messages go to the inquiry box, the team
 team answers in the Sunbird team app (Android). The code is `worker/src/chat.js`, `desk.js` and `ring.js`,
 and the card's side is in `static/js/site.js`.
 
-- **A traveller writes.** The first message starts a chat. Their browser keeps the chat's key for
-  7 days, so an answer that comes later still shows when they come back.
-- **The phones ring.** A new chat rings every team phone until someone picks it up. More messages
+- **A traveller writes.** First they give their name and an email or WhatsApp number (the chat
+  server refuses a new chat without them). The first message starts the chat. Their browser keeps the
+  chat's key for 7 days, so an answer that comes later still shows when they come back.
+- **The phones ring like a call.** A new chat rings every team phone, with a full call screen, until
+  someone picks it up. More messages
   before anyone answers give a short ding; once someone answers, only their phone dings. Opening or
   answering a chat stops the other phones ringing. Only "ring, chat 12" goes through Google
   (Firebase); the words stay in our own database.
 - **Answers arrive at once** on a live line (the "doorbell", a Cloudflare Durable Object). If a live
   line can't open, the card asks for news every 4 seconds while it is open.
 - **Nobody in?** Outside office hours (`hours:` in settings), or when nobody has answered after
-  3 minutes, the card asks for an email or WhatsApp number so the team can answer there.
+  3 minutes, the card says the answer will also reach their email or WhatsApp.
 - **Limits:** 1,000 characters a message; 3 new chats an hour from one connection (60 from everyone);
   40 messages in 10 minutes in one chat. Only the site's own addresses can use it. Chats are deleted
   a year after their last message.
