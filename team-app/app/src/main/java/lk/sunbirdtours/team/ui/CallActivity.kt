@@ -226,18 +226,12 @@ private fun CallScreen(call: Call, tries: Int, onAnswer: () -> Unit, onLater: ()
                 Spacer(Modifier.weight(1f))
             }
 
-            // Later on the left, the swipe-up bubble in the middle, like an incoming phone call
-            Row(Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 22.dp), verticalAlignment = Alignment.Bottom) {
-                Box(Modifier.weight(1f).padding(bottom = 6.dp), contentAlignment = Alignment.BottomCenter) {
-                    CallButton("Later", onClick = onLater)
-                }
-                SwipeUp(
-                    hint = if (test) "Swipe up to stop the test" else "Swipe up to open the chat",
-                    action = if (test) "Stop the test ring" else "Open the chat",
-                    tries = tries, onDone = onAnswer,
-                )
-                Spacer(Modifier.weight(1f))
-            }
+            // the swipe-up bubble in the middle and Later on the left, like an incoming phone call
+            SwipeUp(
+                hint = if (test) "Swipe up to stop the test" else "Swipe up to open the chat",
+                action = if (test) "Stop the test ring" else "Open the chat",
+                tries = tries, onDone = onAnswer, modifier = Modifier.padding(top = 8.dp, bottom = 14.dp),
+            ) { CallButton("Later", onClick = onLater) }
         }
     }
 }
@@ -245,10 +239,14 @@ private fun CallScreen(call: Call, tries: Int, onAnswer: () -> Unit, onLater: ()
 /**
  * Swipe up to open the chat, like answering a phone call. The yellow bubble hops up now and then; drag it up past
  * the line and the chat opens, let go early and it drops back. A plain tap only makes it hop (so a pocket can't
- * answer); with TalkBack, a double-tap opens the chat.
+ * answer); with TalkBack, a double-tap opens the chat. [side] (Later) sits on the left, its circle level with the
+ * bubble.
  */
 @Composable
-private fun SwipeUp(hint: String, action: String, tries: Int, onDone: () -> Unit) {
+private fun SwipeUp(
+    hint: String, action: String, tries: Int, onDone: () -> Unit, modifier: Modifier = Modifier,
+    side: @Composable () -> Unit,
+) {
     val density = LocalDensity.current
     val reach = with(density) { 170.dp.toPx() } // the furthest the bubble goes
     val enough = reach * 0.55f                    // let go above this and the chat opens
@@ -276,65 +274,76 @@ private fun SwipeUp(hint: String, action: String, tries: Int, onDone: () -> Unit
     }
     val gone = (lift / enough).coerceIn(0f, 1f) // the hint and arrows fade as the bubble rises
 
-    Column(Modifier.width(150.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+    Column(modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
-            hint, color = Color(0xFFB5D4F4), fontSize = 13.sp, textAlign = TextAlign.Center, maxLines = 2,
+            hint, color = Color(0xFFB5D4F4), fontSize = 14.sp, textAlign = TextAlign.Center, maxLines = 1,
             modifier = Modifier.graphicsLayer { alpha = 1f - gone },
         )
         Spacer(Modifier.height(6.dp))
-        // three arrows, lighting up from the bottom, showing the way
-        Canvas(Modifier.size(28.dp, 46.dp)) {
-            val line = Stroke(width = 2.4.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round)
-            for (k in 0..2) {
-                val y = size.height - 8.dp.toPx() - k * 14.dp.toPx()
-                val near = 1f - (abs(beat - 0.04f - k * 0.08f) / 0.14f).coerceIn(0f, 1f)
-                val arrow = Path().apply {
-                    moveTo(size.width * 0.18f, y + 4.dp.toPx()); lineTo(size.width / 2, y - 4.dp.toPx()); lineTo(size.width * 0.82f, y + 4.dp.toPx())
-                }
-                drawPath(arrow, Yellow.copy(alpha = (0.22f + 0.78f * near) * (1f - gone)), style = line)
-            }
-        }
-        Spacer(Modifier.height(4.dp))
-        Box(
-            Modifier
-                .graphicsLayer {
-                    val rest = if (held || done || lift > 0f) 0f else bob(beat) * 12.dp.toPx()
-                    translationY = -(lift + rest + hop.value * 34.dp.toPx())
-                    val grow = 1f + 0.1f * (lift / reach)
-                    scaleX = grow; scaleY = grow
-                }
-                .size(80.dp).clip(CircleShape).background(Yellow)
-                .draggable(
-                    drag, Orientation.Vertical, enabled = !done,
-                    onDragStarted = { held = true },
-                    onDragStopped = { speed ->
-                        held = false
-                        // far enough, or flicked up hard from part way
-                        if (lift >= enough || (speed < -1800f && lift > reach * 0.25f)) {
-                            done = true
-                            animate(lift, reach, animationSpec = tween(140)) { v, _ -> lift = v }
-                            onDone()
-                        } else {
-                            animate(lift, 0f, animationSpec = spring(0.45f, Spring.StiffnessMediumLow)) { v, _ -> lift = v }
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
+            Box(Modifier.weight(1f), contentAlignment = Alignment.BottomCenter) { side() }
+            Column(Modifier.width(96.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                // three arrows, lighting up from the bottom, showing the way
+                Canvas(Modifier.size(28.dp, 46.dp)) {
+                    val line = Stroke(width = 2.4.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round)
+                    for (k in 0..2) {
+                        val y = size.height - 8.dp.toPx() - k * 14.dp.toPx()
+                        val near = 1f - (abs(beat - 0.04f - k * 0.08f) / 0.14f).coerceIn(0f, 1f)
+                        val arrow = Path().apply {
+                            moveTo(size.width * 0.18f, y + 4.dp.toPx()); lineTo(size.width / 2, y - 4.dp.toPx()); lineTo(size.width * 0.82f, y + 4.dp.toPx())
                         }
-                    },
-                )
-                .pointerInput(Unit) {
-                    detectTapGestures {
-                        scope.launch {
-                            hop.animateTo(1f, tween(150, easing = FastOutSlowInEasing))
-                            hop.animateTo(0f, spring(0.35f, Spring.StiffnessMediumLow))
-                        }
+                        drawPath(arrow, Yellow.copy(alpha = (0.22f + 0.78f * near) * (1f - gone)), style = line)
                     }
                 }
-                .semantics {
-                    role = Role.Button
-                    contentDescription = action
-                    onClick(label = action) { onDone(); true }
-                },
-            contentAlignment = Alignment.Center,
-        ) { BubbleIcon(Navy) }
+                Spacer(Modifier.height(4.dp))
+                SwipeBubble(
+                    Modifier
+                        .graphicsLayer {
+                            val rest = if (held || done || lift > 0f) 0f else bob(beat) * 12.dp.toPx()
+                            translationY = -(lift + rest + hop.value * 34.dp.toPx())
+                            val grow = 1f + 0.1f * (lift / reach)
+                            scaleX = grow; scaleY = grow
+                        }
+                        .draggable(
+                            drag, Orientation.Vertical, enabled = !done,
+                            onDragStarted = { held = true },
+                            onDragStopped = { speed ->
+                                held = false
+                                // far enough, or flicked up hard from part way
+                                if (lift >= enough || (speed < -1800f && lift > reach * 0.25f)) {
+                                    done = true
+                                    animate(lift, reach, animationSpec = tween(140)) { v, _ -> lift = v }
+                                    onDone()
+                                } else {
+                                    animate(lift, 0f, animationSpec = spring(0.45f, Spring.StiffnessMediumLow)) { v, _ -> lift = v }
+                                }
+                            },
+                        )
+                        .pointerInput(Unit) {
+                            detectTapGestures {
+                                scope.launch {
+                                    hop.animateTo(1f, tween(150, easing = FastOutSlowInEasing))
+                                    hop.animateTo(0f, spring(0.35f, Spring.StiffnessMediumLow))
+                                }
+                            }
+                        }
+                        .semantics {
+                            role = Role.Button
+                            contentDescription = action
+                            onClick(label = action) { onDone(); true }
+                        },
+                )
+                Spacer(Modifier.height(20.dp)) // level with Later's circle, whose word hangs below it
+            }
+            Spacer(Modifier.weight(1f))
+        }
     }
+}
+
+/** the yellow bubble itself */
+@Composable
+private fun SwipeBubble(modifier: Modifier) {
+    Box(modifier.size(80.dp).clip(CircleShape).background(Yellow), contentAlignment = Alignment.Center) { BubbleIcon(Navy) }
 }
 
 /** the idle hop: up, down, a small second hop, then rest (t from 0 to 1 over one beat) */
