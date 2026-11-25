@@ -141,8 +141,9 @@ so phones download phone-sized photos. The text files keep using the normal `/im
 
 The chat card on every page (the sun in the corner, `chat_box: on` in `content/settings.txt`) is live
 when `inquiry_api:` is set: travellers' messages go to the inquiry box, the team's phones ring, and the
-team answers in the Sunbird team app (Android). The code is `worker/src/chat.js`, `desk.js` and `ring.js`,
-and the card's side is in `static/js/site.js`.
+team answers in the SunBird app (Android, `team-app/`). The code is `worker/src/chat.js`, `desk.js` and
+`ring.js`, and the card's side is in `static/js/site.js`. Trip letters and enquiry forms show in the app too:
+a new one gives every team phone a notification, and the number on the app icon counts those still marked New.
 
 - **A traveller writes.** First they give their name and an email or WhatsApp number (the chat
   server refuses a new chat without them). The first message starts the chat. Their browser keeps the

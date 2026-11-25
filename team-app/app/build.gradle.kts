@@ -49,9 +49,11 @@ android {
         applicationId = "lk.sunbirdtours.team"
         minSdk = 26
         targetSdk = 36
-        versionCode = 3
-        versionName = "1.2"
+        versionCode = 4
+        versionName = "1.3"
         buildConfigField("String", "API_BASE", "\"$apiBase\"")
+        // -Psunbird.autostart shows the phone-maker auto-start step on any phone (for trying it on the emulator)
+        buildConfigField("boolean", "SHOW_AUTOSTART", if (findProperty("sunbird.autostart") != null) "true" else "false")
         for (k in listOf("FB_APP_ID", "FB_API_KEY", "FB_PROJECT_ID", "FB_SENDER_ID")) {
             buildConfigField("String", k, "\"${firebase[k] ?: ""}\"")
         }

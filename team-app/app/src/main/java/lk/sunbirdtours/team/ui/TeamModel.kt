@@ -12,6 +12,7 @@ import kotlinx.coroutines.launch
 import lk.sunbirdtours.team.TeamApp
 import lk.sunbirdtours.team.data.ApiError
 import lk.sunbirdtours.team.data.Chat
+import lk.sunbirdtours.team.data.Inquiry
 import lk.sunbirdtours.team.data.Live
 import lk.sunbirdtours.team.data.Me
 import lk.sunbirdtours.team.data.Message
@@ -34,6 +35,18 @@ class TeamModel(application: Application) : AndroidViewModel(application) {
     var typing by mutableStateOf<Map<Long, String>>(emptyMap()); private set
     val liveOpen = live.open
 
+    // the two tabs at the bottom
+    var tab by mutableStateOf(Tab.CHATS)
+
+    // inquiries from the website (the admin panel's Inquiries)
+    var inquiries by mutableStateOf<List<Inquiry>>(emptyList()); private set
+    var inquiryCounts by mutableStateOf<Map<String, Int>>(emptyMap()); private set
+    val newInquiries: Int get() = inquiryCounts["new"] ?: 0
+    var inquiryFilter by mutableStateOf("new")
+    var inquiriesLoading by mutableStateOf(false); private set
+    var inquiryId by mutableStateOf(0L); private set
+    val inquiry: Inquiry? get() = inquiries.find { it.id == inquiryId }
+
     // the chat on screen
     var openId by mutableStateOf(0L); private set
     var open by mutableStateOf<Chat?>(null); private set
@@ -47,6 +60,8 @@ class TeamModel(application: Application) : AndroidViewModel(application) {
 
     init {
         viewModelScope.launch { live.events.collect { heard(it) } }
+        // a new or changed inquiry while the app is open: fetch them again
+        viewModelScope.launch { Rings.inquiriesChanged.collect { if (front && me != null) refreshInquiries() } }
     }
 
     // ------------------------------------------------------------------ signing in and out
@@ -59,6 +74,7 @@ class TeamModel(application: Application) : AndroidViewModel(application) {
                 team.registerPhone()
                 if (front) live.start()
                 refresh()
+                refreshInquiries()
             } catch (e: Exception) {
                 problem = e.message
             } finally {
@@ -79,6 +95,11 @@ class TeamModel(application: Application) : AndroidViewModel(application) {
         team.store.clear()
         me = null
         chats = emptyList()
+        inquiries = emptyList()
+        inquiryCounts = emptyMap()
+        inquiryId = 0L
+        tab = Tab.CHATS
+        Rings.clearBadge(team)
         closeChat()
     }
 
@@ -88,9 +109,75 @@ class TeamModel(application: Application) : AndroidViewModel(application) {
         TeamApp.inFront = on
         if (!on) { live.stop(); return }
         if (me == null) return
+        team.registerPhone() // every time: if the inquiry box ever forgot this phone, it rings again from now on
         live.start()
         refresh()
+        refreshInquiries()
         if (openId != 0L) reload()
+    }
+
+    // ------------------------------------------------------------------ inquiries
+    fun refreshInquiries() {
+        if (me == null) return
+        viewModelScope.launch {
+            inquiriesLoading = true
+            try {
+                val list = api.inquiries()
+                inquiries = list.items
+                inquiryCounts = list.counts
+                Rings.badge(team, list) // the number on the app icon follows
+            } catch (e: Exception) {
+                trouble(e)
+            } finally {
+                inquiriesLoading = false
+            }
+        }
+    }
+
+    /** the Inquiries tab, at one inquiry (or the list, with 0): from the notification, or a tap */
+    fun openInquiry(id: Long) {
+        tab = Tab.INQUIRIES
+        inquiryId = id
+        if (id != 0L && inquiries.none { it.id == id }) refreshInquiries()
+    }
+
+    fun closeInquiry() {
+        inquiryId = 0L
+    }
+
+    fun markInquiry(status: String) {
+        val it = inquiry ?: return
+        if (it.status == status) return
+        val before = inquiries
+        val counts = inquiryCounts
+        inquiries = inquiries.map { x -> if (x.id == it.id) x.copy(status = status) else x }
+        inquiryCounts = counts.toMutableMap().apply {
+            put(it.status, ((get(it.status) ?: 1) - 1).coerceAtLeast(0))
+            put(status, (get(status) ?: 0) + 1)
+        }
+        viewModelScope.launch {
+            try {
+                api.changeInquiry(it.id, status = status)
+                refreshInquiries()
+            } catch (e: Exception) {
+                inquiries = before
+                inquiryCounts = counts
+                trouble(e)
+            }
+        }
+    }
+
+    fun saveInquiryNote(note: String) {
+        val id = inquiryId
+        viewModelScope.launch {
+            try {
+                api.changeInquiry(id, note = note)
+                inquiries = inquiries.map { x -> if (x.id == id) x.copy(note = note, updatedBy = me?.name ?: x.updatedBy) else x }
+                problem = "Note saved."
+            } catch (e: Exception) {
+                trouble(e)
+            }
+        }
     }
 
     // ------------------------------------------------------------------ the list
@@ -228,11 +315,16 @@ class TeamModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun testRing() {
+    /** [wait] seconds: a test with the app closed (swipe it away and lock the phone, then it rings) */
+    fun testRing(wait: Int = 0) {
         viewModelScope.launch {
             try {
-                val n = api.testRing()
-                problem = if (n == 1) "Test ring sent. Your phone should ring now." else "Test ring sent to your $n phones."
+                val n = api.testRing(wait)
+                problem = when {
+                    wait > 0 -> "Now swipe SunBird away from your recent apps and lock the phone. A test ring comes in $wait seconds."
+                    n == 1 -> "Test ring sent. Your phone should ring now."
+                    else -> "Test ring sent to your $n phones."
+                }
             } catch (e: Exception) {
                 trouble(e)
             }
@@ -290,3 +382,5 @@ class TeamModel(application: Application) : AndroidViewModel(application) {
         }
     }
 }
+
+enum class Tab { CHATS, INQUIRIES }

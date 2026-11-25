@@ -1,12 +1,5 @@
 package lk.sunbirdtours.team.ui
 
-import android.Manifest
-import android.content.Intent
-import android.net.Uri
-import android.os.Build
-import android.provider.Settings
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -16,6 +9,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -67,15 +61,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.app.NotificationManagerCompat
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.delay
 import lk.sunbirdtours.team.R
 import lk.sunbirdtours.team.TeamApp
 import lk.sunbirdtours.team.data.Chat
-import lk.sunbirdtours.team.ring.Rings
+import lk.sunbirdtours.team.ring.Phone
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -84,24 +75,6 @@ fun ChatsScreen(m: TeamModel, bar: SnackbarHostState) {
     val team = TeamApp.of(ctx)
     var menu by remember { mutableStateOf(false) }
 
-    // notifications must be allowed, or nothing can ring
-    var allowed by remember { mutableStateOf(NotificationManagerCompat.from(ctx).areNotificationsEnabled()) }
-    val ask = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
-        allowed = NotificationManagerCompat.from(ctx).areNotificationsEnabled()
-    }
-    // and on Android 14 and later, a ring may take over the screen like a call only if allowed
-    var fullScreen by remember { mutableStateOf(Rings.canTakeOverScreen(ctx)) }
-    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
-        allowed = NotificationManagerCompat.from(ctx).areNotificationsEnabled()
-        fullScreen = Rings.canTakeOverScreen(ctx)
-    }
-    LaunchedEffect(Unit) {
-        if (!allowed && Build.VERSION.SDK_INT >= 33) ask.launch(Manifest.permission.POST_NOTIFICATIONS)
-    }
-    val openSettings = {
-        ctx.startActivity(Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, ctx.packageName))
-    }
-
     // "not connected", only once the live line has been down for a few seconds
     val liveOpen by m.liveOpen.collectAsStateWithLifecycle()
     var down by remember { mutableStateOf(false) }
@@ -109,6 +82,7 @@ fun ChatsScreen(m: TeamModel, bar: SnackbarHostState) {
 
     Scaffold(
         snackbarHost = { SnackbarHost(bar) },
+        contentWindowInsets = WindowInsets(0, 0, 0, 0), // the tabs at the bottom take care of the bottom edge
         topBar = {
             TopAppBar(
                 title = {
@@ -120,15 +94,11 @@ fun ChatsScreen(m: TeamModel, bar: SnackbarHostState) {
                 actions = {
                     IconButton(onClick = { menu = true }) { Icon(Icons.Filled.MoreVert, contentDescription = "More") }
                     DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
-                        if (team.ringsBuilt) DropdownMenuItem(text = { Text("Send a test ring") }, onClick = { menu = false; m.testRing() })
-                        DropdownMenuItem(text = { Text("Ring sound") }, onClick = {
-                            menu = false
-                            ctx.startActivity(
-                                Intent(Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS)
-                                    .putExtra(Settings.EXTRA_APP_PACKAGE, ctx.packageName)
-                                    .putExtra(Settings.EXTRA_CHANNEL_ID, Rings.RING),
-                            )
-                        })
+                        if (team.ringsBuilt) {
+                            DropdownMenuItem(text = { Text("Send a test ring") }, onClick = { menu = false; m.testRing() })
+                            DropdownMenuItem(text = { Text("Test with the app closed") }, onClick = { menu = false; m.testRing(20) })
+                        }
+                        DropdownMenuItem(text = { Text("Ring sound") }, onClick = { menu = false; Phone.openRingSound(ctx) })
                         DropdownMenuItem(text = { Text("Refresh") }, onClick = { menu = false; m.refresh() })
                         HorizontalDivider()
                         DropdownMenuItem(text = { Text("Sign out") }, onClick = { menu = false; m.signOut() })
@@ -139,13 +109,7 @@ fun ChatsScreen(m: TeamModel, bar: SnackbarHostState) {
         },
     ) { pad ->
         Column(Modifier.fillMaxSize().padding(pad)) {
-            if (!allowed) Note(
-                "Notifications are off, so chats can't ring on this phone.", "Turn on",
-            ) { if (Build.VERSION.SDK_INT >= 33) ask.launch(Manifest.permission.POST_NOTIFICATIONS) else openSettings() }
-            if (allowed && !fullScreen) Note("Allow full-screen calls, so a new chat shows like a phone call even when the phone is locked.", "Allow") {
-                ctx.startActivity(Intent(Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT, Uri.parse("package:" + ctx.packageName)))
-            }
-            if (!team.ringsBuilt) Note("This version of the app can't ring yet: it was built before Firebase was set up.", null) {}
+            SetupCard(m) // what this phone still needs to ring with the app closed
             if (down) Note("Not connected to the inquiry box. Pull down to try again.", null) {}
 
             SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth().padding(horizontal = Gap, vertical = 8.dp)) {

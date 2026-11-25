@@ -77,3 +77,84 @@ internal fun JSONObject.toMessage() = Message(
     name = optString("name"),
     text = optString("text"),
 )
+
+/** A trip letter or enquiry form from the website (worker/src/index.js), as the admin panel's Inquiries shows it. */
+data class Inquiry(
+    val id: Long,
+    val created: Instant,
+    val status: String,       // new | replied | booked | closed
+    val name: String,
+    val email: String,
+    val phone: String,
+    val tour: String,
+    val subject: String,
+    val data: Map<String, String>, // everything the form sent: travellers, dates, interests, message, page…
+    val note: String,         // the team's own note
+    val sentFrom: String,     // two letters, from Cloudflare
+    val updated: Instant,
+    val updatedBy: String,
+) {
+    val isNew: Boolean get() = status == "new"
+
+    /** one thing the form sent, or "" */
+    fun d(key: String): String = data[key].orEmpty().trim()
+
+    /** "Ella & hill country · 10 days · March", like the admin panel's list */
+    val headline: String
+        get() = listOf(
+            d("tour").ifBlank { tour }.ifBlank { subject }.ifBlank { if (d("form") == "Letter") "Trip plan" else "Enquiry" },
+            daysText(d("days")),
+            d("arrival").ifBlank { d("arrival_date") },
+        ).filter { it.isNotBlank() }.joinToString(" · ")
+
+    val message: String get() = d("message")
+
+    val travellers: String
+        get() = d("travellers").ifBlank {
+            val adults = d("adults").toIntOrNull() ?: 0
+            val children = d("children").toIntOrNull() ?: 0
+            listOfNotNull(
+                adults.takeIf { it > 0 }?.let { if (it == 1) "1 adult" else "$it adults" },
+                children.takeIf { it > 0 }?.let { if (it == 1) "1 child" else "$it children" },
+            ).joinToString(", ")
+        }
+
+    /** the phone number as WhatsApp wants it (digits with the country code), or "" (as the admin panel's waDigits) */
+    val whatsapp: String
+        get() {
+            val digits = phone.replace(Regex("[^\\d+]"), "").replace(Regex("^00"), "+").filter { it.isDigit() }
+            return if (digits.length >= 8) digits else ""
+        }
+
+    val flag: String
+        get() = if (sentFrom.length == 2 && sentFrom.all { it in 'A'..'Z' }) {
+            sentFrom.map { String(Character.toChars(0x1F1E6 + (it - 'A'))) }.joinToString("")
+        } else ""
+}
+
+data class InquiryList(val items: List<Inquiry>, val counts: Map<String, Int>) {
+    val fresh: Int get() = counts["new"] ?: 0
+}
+
+/** "10 days" from "10"; anything else as it was typed */
+fun daysText(v: String): String = if (v.matches(Regex("\\d+"))) (if (v == "1") "1 day" else "$v days") else v
+
+internal fun JSONObject.toInquiry(): Inquiry {
+    val d = optJSONObject("data")
+    val data = buildMap { d?.keys()?.forEach { k -> val v = d.opt(k); if (v != null && v != JSONObject.NULL) put(k, v.toString()) } }
+    return Inquiry(
+        id = getLong("id"),
+        created = instant(optString("created")),
+        status = optString("status", "new"),
+        name = optString("name"),
+        email = optString("email"),
+        phone = optString("phone"),
+        tour = optString("tour"),
+        subject = optString("subject"),
+        data = data,
+        note = optString("note"),
+        sentFrom = optString("sent_from"),
+        updated = instant(optString("updated")),
+        updatedBy = optString("updated_by"),
+    )
+}

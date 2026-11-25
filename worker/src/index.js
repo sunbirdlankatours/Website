@@ -232,7 +232,8 @@ async function handle(request, env, ctx) {
 }
 
 // ------------------------------------------------------------------ the website sends a letter
-async function sendLetter({ request, env, db }) {
+async function sendLetter(c) {
+  const { request, env, db } = c;
   if (Number(request.headers.get("Content-Length") || 0) > 40000) refuse(413, "That letter is too long to send.");
   let body;
   try {
@@ -254,10 +255,12 @@ async function sendLetter({ request, env, db }) {
   const sender = await senderOf(request, env);
   const r = await db.prepare("SELECT COUNT(*) AS n FROM inquiries WHERE sender = ? AND created > ?").bind(sender, iso(3600e3)).first();
   if (r && r.n >= PER_HOUR) refuse(429, "Many letters came from here in the last hour. Please try again later.");
-  await db.prepare(
+  const saved = await db.prepare(
     "INSERT INTO inquiries (created, name, email, phone, country, tour, subject, data, sent_from, sender) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
   ).bind(iso(), d.name, d.email, d.phone || "", d.country || "", d.tour || "", d.subject || "",
     JSON.stringify(d), (request.cf && request.cf.country) || "", sender).run();
+  // the team's phones get a notification and their badge goes up (the app fetches the letter itself)
+  chat.ringLater(c, { kind: "inquiry", chat: saved.meta.last_row_id });
   return json({ success: true });
 }
 
@@ -408,7 +411,8 @@ async function listLetters({ url, db }) {
   return json({ items, counts, more: rows.length === 300 });
 }
 
-async function changeLetter({ request, db }, me) {
+async function changeLetter(c, me) {
+  const { request, db } = c;
   const b = await readJson(request);
   const id = Number(b.id);
   if (!id) stop(400, "Which inquiry?");
@@ -418,13 +422,16 @@ async function changeLetter({ request, db }, me) {
     "UPDATE inquiries SET status = COALESCE(?, status), note = COALESCE(?, note), updated = ?, updated_by = ? WHERE id = ?"
   ).bind(b.status == null ? null : b.status, b.note == null ? null : String(b.note).slice(0, 4000), iso(), me.name || me.email, id).run();
   if (!r.meta || !r.meta.changes) stop(404, "That inquiry is not there any more.");
+  if (b.status != null) chat.ringLater(c, { kind: "inquiries" }); // the phones' "new inquiries" badge changes
   return json({ ok: true });
 }
 
-async function deleteLetter({ url, db }) {
+async function deleteLetter(c) {
+  const { url, db } = c;
   const id = Number(url.searchParams.get("id"));
   if (!id) stop(400, "Which inquiry?");
   await db.prepare("DELETE FROM inquiries WHERE id = ?").bind(id).run();
+  chat.ringLater(c, { kind: "inquiries" });
   return json({ ok: true });
 }
 

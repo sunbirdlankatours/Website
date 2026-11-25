@@ -6,6 +6,8 @@
     <uses-permission android:name="android.permission.VIBRATE" />
     <!-- a new chat shows like a phone call over the lock screen (Android 14+ may ask the team to allow it once) -->
     <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
+    <!-- "Let SunBird always run in the background?", so it still rings after being swiped away (Set up this phone) -->
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
 
     <!-- allowBackup off: the sign-in pass stays on this phone only -->
     <application
@@ -61,6 +63,6 @@
 
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_channel_id"
-            android:value="messages" />
+            android:value="chat_message" />
     </application>
 </manifest>

@@ -92,6 +92,24 @@ class Api(private val store: Store) {
         call("POST", "/api/devices", JSONObject().put("token", token).put("platform", "android"))
     }
 
-    /** rings this person's phones once; the number of phones it reached */
-    suspend fun testRing(): Int = call("POST", "/api/devices/test").optInt("sent")
+    /** rings this person's phones once (after [wait] seconds, for testing with the app closed); the phones it reached */
+    suspend fun testRing(wait: Int = 0): Int =
+        call("POST", "/api/devices/test", JSONObject().put("wait", wait)).optInt("sent")
+
+    /** the newest 300 inquiries from the website, and how many there are of each status */
+    suspend fun inquiries(): InquiryList {
+        val j = call("GET", "/api/inquiries")
+        val a = j.getJSONArray("items")
+        val c = j.optJSONObject("counts")
+        val counts = buildMap { c?.keys()?.forEach { put(it, c.optInt(it)) } }
+        return InquiryList(List(a.length()) { a.getJSONObject(it).toInquiry() }, counts)
+    }
+
+    /** marks an inquiry (new, replied, booked, closed) or saves the team's note on it */
+    suspend fun changeInquiry(id: Long, status: String? = null, note: String? = null) {
+        val b = JSONObject().put("id", id)
+        if (status != null) b.put("status", status)
+        if (note != null) b.put("note", note)
+        call("PATCH", "/api/inquiries", b)
+    }
 }

@@ -17,7 +17,7 @@
      DELETE /api/chats?id=N
      POST   /api/devices            {token}   this phone rings for chats (its Firebase token)
      DELETE /api/devices            {token}   it stops
-     POST   /api/devices/test       rings this person's phones once, to try them
+     POST   /api/devices/test       {wait?}  rings this person's phones once, to try them (after wait seconds, up to 25)
    Both: GET /api/chat/live, a live line (index.js → liveLine).
 
    Ringing: a new chat (or a closed one written in again) rings every phone. More messages while nobody
@@ -136,6 +136,9 @@ async function tell(env, event) {
 export const kick = (env, member) => tell(env, { kick: member });
 
 const ring = (env, db, what) => ringPhones(env, db, what).catch(e => console.error("ring:", e));
+
+// rings the phones after the answer has gone back (index.js uses it for website inquiries)
+export const ringLater = (c, what) => later(c, () => ringPhones(c.env, c.db, what));
 
 // ------------------------------------------------------------------ the traveller's side
 export async function chatByKey(db, id, key) {
@@ -333,9 +336,25 @@ export async function removeDevice({ request, db }, me) {
   return json({ ok: true });
 }
 
-export async function testRing({ env, db }, me) {
+// {wait: seconds}: "test it with the app closed". The answer goes back at once and the ring comes that much later,
+// once the phone has been locked and the app swiped away (Cloudflare lets work go on for 30 seconds after the answer).
+export async function testRing(c, me) {
+  const { env, db } = c;
   if (!ringsOn(env)) {
     stop(503, "Phone rings aren't switched on yet. In Cloudflare, add the FCM_SERVICE_ACCOUNT secret to the inquiry box.", { setup: "fcm" });
+  }
+  let b = {};
+  try { b = await readJson(c.request); } catch (e) { /* no body: ring now */ }
+  const wait = Math.min(25, Math.max(0, Math.round(Number(b.wait) || 0)));
+  if (wait) {
+    const n = await db.prepare("SELECT COUNT(*) AS n FROM devices d JOIN sessions s ON s.token = d.session WHERE s.expires > ? AND d.member = ?")
+      .bind(iso(), me.id).first();
+    if (!n || !n.n) stop(404, "No phone of yours is set to ring yet. Open the app on your phone and allow notifications.");
+    later(c, async () => {
+      await new Promise(r => setTimeout(r, wait * 1000));
+      await ringPhones(env, db, { kind: "test", to: me.id });
+    });
+    return json({ ok: true, sent: n.n, wait });
   }
   const r = await ringPhones(env, db, { kind: "test", to: me.id });
   if (!r.sent) stop(404, "No phone of yours is set to ring yet. Open the app on your phone and allow notifications.");

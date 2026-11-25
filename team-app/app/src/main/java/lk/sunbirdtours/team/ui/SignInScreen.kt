@@ -63,15 +63,14 @@ fun SignInScreen(m: TeamModel, bar: SnackbarHostState) {
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {
-                // only the emblem (the user's wish: no motto, no lettering from the logo), the name in plain text
+                // only the emblem (the user's wish: no motto, no lettering from the logo), the app's name in plain text
                 Image(painterResource(R.drawable.logo_emblem), contentDescription = null, Modifier.size(112.dp))
                 Text(
-                    "Sunbird Lanka Tours", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold,
+                    "SunBird", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold,
                     color = Navy, textAlign = TextAlign.Center,
                 )
-                Text("Team app", fontSize = 13.sp, letterSpacing = 1.6.sp, fontWeight = FontWeight.Medium, color = Blue)
                 Text(
-                    "Chats with travellers from the website. Sign in with the same email and password as the admin panel.",
+                    "Chats and inquiries from the website. Sign in with the same email and password as the admin panel.",
                     style = MaterialTheme.typography.bodyMedium, color = Muted, textAlign = TextAlign.Center,
                 )
                 Spacer(Modifier.height(4.dp))

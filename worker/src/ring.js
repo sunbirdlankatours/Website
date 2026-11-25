@@ -8,6 +8,8 @@
      ding   another message in a chat
      hush   someone has opened or answered that chat: stop ringing for it
      test   "Send a test ring" in the app
+     inquiry    a new inquiry (trip letter or form) from the website: a notification, and the badge goes up
+     inquiries  an inquiry was marked or deleted: the app quietly updates its "new inquiries" badge
 
    Needs the FCM_SERVICE_ACCOUNT secret: the JSON key of the Firebase project's service account
    (Firebase console → Project settings → Service accounts → Generate new private key; paste the whole
@@ -19,6 +21,7 @@ import { enc, iso, unb64, b64url } from "./common.js";
 const SCOPE = "https://www.googleapis.com/auth/firebase.messaging";
 const TOKEN_URL = "https://oauth2.googleapis.com/token";
 let cached = null; // Google's pass for sending, which lasts an hour: {token, until, email}
+const TTL = { ring: "600s", inquiry: "86400s", inquiries: "86400s" }; // how long Google keeps trying a phone that is off
 
 function account(env) {
   if (!env.FCM_SERVICE_ACCOUNT) return null;
@@ -75,8 +78,12 @@ export async function ringPhones(env, db, what) {
     const r = await fetch(url, {
       method: "POST",
       headers: { Authorization: "Bearer " + pass, "Content-Type": "application/json" },
-      // "high" wakes a sleeping phone at once; a ring that is minutes old isn't worth ringing
-      body: JSON.stringify({ message: { token: p.token, data, android: { priority: "high", ttl: what.kind === "ring" ? "600s" : "120s" } } }),
+      // "high" wakes a sleeping phone at once; a ring that is minutes old isn't worth ringing, but an inquiry
+      // still matters tomorrow. A badge count needn't wake anyone ("normal" waits until the phone is in use).
+      body: JSON.stringify({ message: { token: p.token, data, android: {
+        priority: what.kind === "inquiries" ? "normal" : "high",
+        ttl: TTL[what.kind] || "120s",
+      } } }),
     });
     if (r.ok) { sent++; return; }
     const e = await r.json().catch(() => ({}));

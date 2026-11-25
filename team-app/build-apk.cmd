@@ -1,5 +1,5 @@
 @echo off
-rem Builds the Sunbird Team app to put on phones: apk\Sunbird-Team.apk (README.md says how).
+rem Builds the SunBird app to put on phones: apk\SunBird.apk (README.md says how).
 setlocal
 set "JAVA_HOME=%USERPROFILE%\.jdks\jdk-21.0.13+9"
 set "ANDROID_HOME=%LOCALAPPDATA%\Android\Sdk"
@@ -17,7 +17,7 @@ if errorlevel 1 (
   exit /b 1
 )
 if not exist apk mkdir apk
-copy /y app\build\outputs\apk\release\app-release.apk apk\Sunbird-Team.apk >nul
+copy /y app\build\outputs\apk\release\app-release.apk apk\SunBird.apk >nul
 echo.
-echo Made apk\Sunbird-Team.apk
+echo Made apk\SunBird.apk
 pause

@@ -5,6 +5,12 @@ import android.content.Context
 /** The sign-in, kept on this phone only (the app is not backed up). */
 class Store(context: Context) {
     private val p = context.getSharedPreferences("sign-in", Context.MODE_PRIVATE)
+    private val phone = context.getSharedPreferences("phone", Context.MODE_PRIVATE) // about this phone: kept after signing out
+
+    /** the team member said they've allowed auto-start in the phone maker's settings (the app can't check it) */
+    var autoStartDone: Boolean
+        get() = phone.getBoolean("autostart", false)
+        set(v) { phone.edit().putBoolean("autostart", v).apply() }
 
     /** the sign-in pass from the inquiry box (lasts 30 days) */
     val token: String? get() = p.getString("token", null)

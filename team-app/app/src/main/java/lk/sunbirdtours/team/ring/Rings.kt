@@ -21,6 +21,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeoutOrNull
 import lk.sunbirdtours.team.R
 import lk.sunbirdtours.team.TeamApp
+import lk.sunbirdtours.team.data.InquiryList
 import lk.sunbirdtours.team.ui.CallActivity
 import lk.sunbirdtours.team.ui.MainActivity
 
@@ -32,14 +33,21 @@ import lk.sunbirdtours.team.ui.MainActivity
  *   ding  another message in a chat: one short sound
  *   hush  someone opened or answered that chat: stop, and close the call screen
  *   test  "Send a test ring": the call screen, with nothing to answer
- * Each kind has its own channel, so the team can change its sound in Android's settings.
+ *   inquiry    a new inquiry (trip letter or form) on the website: a notification, and the number on the app icon
+ *   inquiries  one was marked (replied, booked, closed) or deleted: the number changes quietly
+ * Each kind has its own channel, so the team can change its sound in Android's settings. Only inquiries count on
+ * the app icon's badge (the user's wish): the chat channels have their badge turned off.
  */
 object Rings {
-    const val RING = "travellers"   // a new chat
-    const val RING_HERE = "travellers_here" // a new chat while the app is open: the same ring, without Android's banner
-    const val MESSAGE = "messages"  // more messages
-    const val QUIET = "waiting"     // a chat still waiting, without sound
+    // Android fixes a channel's badge setting when the channel is made, so 1.3 has new chat channels without a badge
+    const val RING = "chat_call"           // a new chat
+    const val RING_HERE = "chat_call_here" // a new chat while the app is open: the same ring, without Android's banner
+    const val MESSAGE = "chat_message"     // more messages
+    const val QUIET = "chat_waiting"       // a chat still waiting, without sound
+    const val INQUIRY = "inquiries"        // a new inquiry from the website; the number on the app icon
+    private val OLD = listOf("travellers", "travellers_here", "messages", "waiting") // the channels before 1.3
     private const val TAG = "chat"
+    private const val INQUIRY_TAG = "inquiries"
     private const val RING_FOR_MS = 120_000L
     private const val BLUE = 0xFF1F74BA.toInt()
     private val RINGS = setOf(RING, RING_HERE)
@@ -47,6 +55,10 @@ object Rings {
     /** chats whose ring has ended here (answered, hushed, later, or gone quiet): the call screen closes */
     private val _ended = MutableSharedFlow<Long>(extraBufferCapacity = 16)
     val ended: SharedFlow<Long> = _ended
+
+    /** an inquiry came in or changed: the open app fetches the list again */
+    private val _inquiries = MutableSharedFlow<Unit>(extraBufferCapacity = 4)
+    val inquiriesChanged: SharedFlow<Unit> = _inquiries
 
     fun channels(c: Context) {
         val ring = NotificationChannel(RING, "A traveller starts a chat", NotificationManager.IMPORTANCE_HIGH).apply {
@@ -61,6 +73,7 @@ object Rings {
             enableVibration(true)
             vibrationPattern = longArrayOf(0, 900, 700, 900, 700, 900)
             lockscreenVisibility = Notification.VISIBILITY_PUBLIC
+            setShowBadge(false)
         }
         // the app's own call screen covers it, so no banner over the top (default importance: sound, no banner)
         val here = NotificationChannel(RING_HERE, "A traveller starts a chat (app open)", NotificationManager.IMPORTANCE_DEFAULT).apply {
@@ -69,17 +82,28 @@ object Rings {
             enableVibration(true)
             vibrationPattern = ring.vibrationPattern
             lockscreenVisibility = Notification.VISIBILITY_PUBLIC
+            setShowBadge(false)
         }
         val message = NotificationChannel(MESSAGE, "More messages in a chat", NotificationManager.IMPORTANCE_HIGH).apply {
             description = "A short sound when a traveller writes again."
             enableVibration(true)
             lockscreenVisibility = Notification.VISIBILITY_PUBLIC
+            setShowBadge(false)
         }
         val quiet = NotificationChannel(QUIET, "Chats still waiting", NotificationManager.IMPORTANCE_LOW).apply {
             description = "A quiet reminder when nobody has picked up a new chat after two minutes."
             setSound(null, null)
+            setShowBadge(false)
         }
-        c.getSystemService(NotificationManager::class.java).createNotificationChannels(listOf(ring, here, message, quiet))
+        val inquiry = NotificationChannel(INQUIRY, "New inquiries", NotificationManager.IMPORTANCE_HIGH).apply {
+            description = "A new trip letter or enquiry from the website. The number on the app icon counts the new ones."
+            enableVibration(true)
+            lockscreenVisibility = Notification.VISIBILITY_PUBLIC
+            setShowBadge(true)
+        }
+        val nm = c.getSystemService(NotificationManager::class.java)
+        nm.createNotificationChannels(listOf(ring, here, message, quiet, inquiry))
+        for (old in OLD) nm.deleteNotificationChannel(old)
     }
 
     /** Whether Android lets a ring take over the screen like a phone call (Android 14 and later can say no). */
@@ -92,6 +116,8 @@ object Rings {
             "hush" -> hush(c, chat)
             "test" -> ring(c, Call.test())
             "ring" -> ring(c, fetch(c, chat))
+            "inquiry" -> inquiries(c, chat)
+            "inquiries" -> inquiries(c, 0L)
             "ding" -> {
                 if (TeamApp.inFront && TeamApp.viewing == chat) return // being read right now
                 if (ringing(c, chat)) return                             // still ringing: that's enough
@@ -99,6 +125,67 @@ object Rings {
                 post(c, chat, call.title, call.message, MESSAGE)
             }
         }
+    }
+
+    /** A new inquiry ([alert] = its number) or a changed one (0): fetch the list, then the notification and badge. */
+    private fun inquiries(c: Context, alert: Long) {
+        _inquiries.tryEmit(Unit)
+        val list = runBlocking {
+            withTimeoutOrNull(8_000) {
+                try { TeamApp.of(c).api.inquiries() } catch (e: Exception) { null }
+            }
+        }
+        badge(c, list, alert)
+    }
+
+    /**
+     * The one "new inquiries" notification. Its number is the badge on the app icon (most phones show the number;
+     * some only a dot), so it stays until no inquiry is New any more. [alert]: a new one just came in, so it sounds
+     * and names them; otherwise it changes quietly. With no list (no connection), a new one is still announced.
+     */
+    @SuppressLint("MissingPermission") // checked: areNotificationsEnabled
+    fun badge(c: Context, list: InquiryList?, alert: Long = 0L) {
+        val nm = NotificationManagerCompat.from(c)
+        if (!nm.areNotificationsEnabled()) return
+        if (list == null && alert == 0L) return
+        val fresh = list?.items?.filter { it.isNew }.orEmpty()
+        val count = list?.fresh ?: 1
+        if (count <= 0) { nm.cancel(INQUIRY_TAG, 1); return }
+        val newest = fresh.firstOrNull { it.id == alert } ?: fresh.firstOrNull()
+        val many = if (count == 1) "1 new inquiry" else "$count new inquiries"
+        val title = when {
+            alert > 0 && newest != null && newest.id == alert -> "New inquiry from ${newest.name}"
+            alert > 0 -> "New inquiry from the website"
+            else -> many
+        }
+        val text = newest?.headline ?: "Open SunBird to read it."
+        val lines = NotificationCompat.InboxStyle().setBigContentTitle(title).setSummaryText(many)
+        for (it in fresh.take(5)) lines.addLine(it.name + " · " + it.headline)
+        val open = PendingIntent.getActivity(
+            c, 30_000, MainActivity.openInquiry(c, if (count == 1 && newest != null) newest.id else 0L),
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+        )
+        val b = NotificationCompat.Builder(c, INQUIRY)
+            .setSmallIcon(R.drawable.ic_notify)
+            .setColor(BLUE)
+            .setContentTitle(title)
+            .setContentText(text)
+            .setStyle(if (fresh.isEmpty()) NotificationCompat.BigTextStyle().bigText(text) else lines)
+            .setNumber(count)
+            .setBadgeIconType(NotificationCompat.BADGE_ICON_SMALL)
+            .setContentIntent(open)
+            .setAutoCancel(false) // it holds the badge: it goes when nothing is New any more
+            .setCategory(NotificationCompat.CATEGORY_EMAIL)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setShowWhen(true)
+            .setSilent(alert == 0L)
+        nm.notify(INQUIRY_TAG, 1, b.build())
+    }
+
+    /** signed out on this phone: no badge */
+    fun clearBadge(c: Context) {
+        NotificationManagerCompat.from(c).cancel(INQUIRY_TAG, 1)
     }
 
     /** The traveller and their words, fetched from the inquiry box (they never go through Firebase). */
