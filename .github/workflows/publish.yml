@@ -27,6 +27,15 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      # Pillow makes the smaller WebP copies of the photos (phones download phone-sized photos)
+      - name: Install the photo tool
+        run: pip install -r requirements.txt
+      # keep the photo copies between builds, so only new or changed photos take time
+      - uses: actions/cache@v4
+        with:
+          path: .cache/photos
+          key: photos-${{ hashFiles('static/img/**') }}
+          restore-keys: photos-
       - name: Build the site
         run: python build.py
         env:
