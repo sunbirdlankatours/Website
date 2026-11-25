@@ -1,0 +1,13 @@
+# built files
+.gradle/
+.kotlin/
+build/
+app/build/
+apk/
+# this computer's own settings
+local.properties
+# kept off GitHub: the signing key and its passwords, and the Firebase file
+keystore/
+keystore.properties
+app/google-services.json
+*.jks

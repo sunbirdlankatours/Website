@@ -19,3 +19,15 @@ GITHUB_BRANCH = "main"
 binding = "DB"
 database_name = "sunbird-inquiries"
 database_id = "85f119bf-43d2-4802-a973-9815f1638f42"
+
+# the live chat's doorbell (src/desk.js): holds the open live lines, so messages arrive at once
+[[durable_objects.bindings]]
+name = "DESK"
+class_name = "Desk"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["Desk"]
+
+# Secrets, added in Cloudflare (never written here): SETUP_CODE, GITHUB_TOKEN, and FCM_SERVICE_ACCOUNT
+# (the Firebase key that rings the team's phones for chats, see src/ring.js).

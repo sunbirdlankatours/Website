@@ -2309,8 +2309,9 @@ class Builder:
         yellow "Chat with us" sun pill; it opens a paper card (a sheet from the bottom on phones). The card's blue top
         has the logo mark, "Ayubowan." and a line that says whether the team is in, with the time in Sri Lanka (the
         office hours from settings "hours"). Under it: a hello from the team, a few starting questions as chips, the
-        messages, and a box to write in with a yellow sun to send. Only the look and feel is built: site.js shows the
-        messages and offers window.SunbirdChat for sending them for real later."""
+        messages, and a box to write in with a yellow sun to send. When the inquiry box is set (inquiry_api), the card
+        is live: site.js sends the messages there (data-api) and the team answers in the Sunbird team app. Without
+        it, the card says the chat isn't live yet and offers WhatsApp."""
         s = self.s
         m = re.findall(r"(\d{1,2})[.:]?(\d{2})?\s*([AP])\.?\s*M", s.get("hours", "").upper())
         hrs = [(int(h) % 12) + (12 if ap == "P" else 0) for h, _, ap in m]
@@ -2318,7 +2319,7 @@ class Builder:
         chips = ["Help me plan a trip", "How much does a tour cost?", "When's the best time to go?", "A question about a tour"]
         wa = s.get("whatsapp")
         return (
-            '<div class="cb" data-open="{o}" data-close="{c}"{wa_attr}>'
+            '<div class="cb" data-open="{o}" data-close="{c}"{wa_attr}{api_attr}>'
             '<section class="cb-card" id="cb-card" role="dialog" aria-labelledby="cb-hi" hidden>'
             '<header class="cb-head">'
             '<span class="cb-mark" aria-hidden="true"><img src="/img/logo.svg" alt="" width="106" height="40"></span>'
@@ -2334,7 +2335,7 @@ class Builder:
             '</div>'
             '<form class="cb-write" action="#" autocomplete="off">'
             '<label class="sr" for="cb-text">Your message</label>'
-            '<textarea id="cb-text" rows="1" maxlength="2000" placeholder="Write a message" enterkeyhint="send"></textarea>'
+            '<textarea id="cb-text" rows="1" maxlength="1000" placeholder="Write a message" enterkeyhint="send"></textarea>'
             '<button class="cb-send" type="submit" aria-label="Send"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>'
             '</form>'
             '{wa_line}'
@@ -2350,6 +2351,7 @@ class Builder:
         ).format(
             o=opens, c=closes, name=esc(s.get("site_name")),
             wa_attr=' data-wa="%s"' % esc(wa) if wa else "",
+            api_attr=' data-api="%s"' % esc(inquiry_api(s)) if inquiry_api(s) else "",
             chips="".join('<button type="button" class="cb-chip">%s</button>' % esc(c) for c in chips),
             wa_line=('<p class="cb-alt"><a href="https://wa.me/%s" target="_blank" rel="noopener">%s<span>Prefer WhatsApp? Message us there</span></a></p>'
                      % (esc(wa), ICON["whatsapp"])) if wa else "")

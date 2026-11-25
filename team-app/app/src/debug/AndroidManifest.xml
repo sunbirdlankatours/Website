@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Test builds only: lets a computer pretend Firebase rang (the adb command is in DebugRingReceiver.kt) -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application>
+        <receiver
+            android:name=".ring.DebugRingReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="lk.sunbirdtours.team.DEBUG_RING" />
+            </intent-filter>
+        </receiver>
+    </application>
+</manifest>

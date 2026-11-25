@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- the sun from the website's chat button, yellow on the logo blue -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <path android:fillColor="#FBDC03" android:pathData="M38,54a16,16 0,1 0,32 0a16,16 0,1 0,-32 0z" />
+    <path android:strokeColor="#FBDC03" android:strokeWidth="5" android:strokeLineCap="round"
+        android:pathData="M76,54L84,54M69.6,69.6L75.2,75.2M54,76L54,84M38.4,69.6L32.8,75.2M32,54L24,54M38.4,38.4L32.8,32.8M54,32L54,24M69.6,38.4L75.2,32.8" />
+</vector>

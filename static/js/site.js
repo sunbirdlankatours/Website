@@ -3377,16 +3377,17 @@
     }
   })();
 
-  // ---- our own chat box (build.py chat_box; settings "chat_box: on"). Only the look and feel is built here: the
-  // card opens and closes, the visitor's messages and the starting questions show in the thread, and the thread and
-  // whether the card is open carry on from page to page (sessionStorage "sbChat"). Nothing is sent anywhere yet. To
-  // connect it later, use window.SunbirdChat:
-  //   SunbirdChat.onSend = function (text) { ... }   called with each message the visitor sends
-  //   SunbirdChat.reply("text", "Name")              shows a message from the team (a red dot on the pill if shut)
-  //   SunbirdChat.typing(true / false)               shows or hides the team's "typing" dots
-  //   SunbirdChat.open() / .close()
-  // Until onSend is set, a note under the visitor's first message says the chat isn't live yet and offers to send
-  // the same words on WhatsApp, so nothing typed is lost.
+  // ---- our own chat box (build.py chat_box; settings "chat_box: on"). The card opens and closes, the visitor's
+  // messages and the starting questions show in the thread, and the thread and whether the card is open carry on
+  // from page to page (sessionStorage "sbChat").
+  // It's live when the card has data-api (the inquiry box, settings inquiry_api): each message goes to the inquiry
+  // box (worker/src/chat.js), the team's phones ring, and their answers come back at once on a live line (a
+  // WebSocket), or by asking every few seconds when one can't open. The chat's key is kept for 7 days in
+  // localStorage "sbChatId", so an answer that comes later still shows on the next visit. If nobody is in, or
+  // nobody has answered after 3 minutes, the card asks for an email or WhatsApp number to answer at.
+  // window.SunbirdChat: reply("text", "Name"), typing(true / false), open(), close(); and onSend(text), called
+  // with each message on a card without data-api. With neither, a note under the visitor's first message says the
+  // chat isn't live yet and offers to send the same words on WhatsApp, so nothing typed is lost.
   (function () {
     var cb = d.querySelector(".cb");
     if (!cb) return;
@@ -3397,8 +3398,12 @@
     var opens = +cb.getAttribute("data-open") || 8, closes = +cb.getAttribute("data-close") || 17, wa = cb.getAttribute("data-wa");
     var api = window.SunbirdChat = window.SunbirdChat || {};
     var KEY = "sbChat", msgs = [], isOpen = false, wasOpen = false, hideT = 0, tick = 0, nudgeT = 0, note = null, typingEl = null;
+    var base = (cb.getAttribute("data-api") || "").replace(/\/+$/, ""), live = !!(base && window.fetch);
     try { var st = JSON.parse(sessionStorage.getItem(KEY) || "null"); if (st) { msgs = st.msgs || []; wasOpen = !!st.open; } } catch (err) { /* fresh */ }
+    // each message: {w: "me" | "them", t: text, n: name, at: "3:55 pm", ts: ms, id: the inquiry box's number,
+    // p: 1 sending / 2 not sent}; its element rides along as m.el (left out when saved)
     var save = function () { try { sessionStorage.setItem(KEY, JSON.stringify({ open: isOpen, msgs: msgs.slice(-60) })); } catch (err) { /* private mode */ } };
+    var tie = function (m, el) { Object.defineProperty(m, "el", { value: el, writable: true, configurable: true }); return el; };
 
     // the time in Sri Lanka (UTC+5:30 all year, no summer time) and whether the office is open
     var clock = function (h, m) { return ((h + 11) % 12 + 1) + (m == null ? "" : ":" + (m < 10 ? "0" : "") + m) + (h < 12 ? " am" : " pm"); };
@@ -3408,8 +3413,8 @@
       when.textContent = inNow ? "Our team is in · " + clock(h, m) + " in Sri Lanka"
         : "Back at " + clock(opens) + " · it's " + clock(h, m) + " in Sri Lanka";
     };
-    var stamp = function () {
-      try { return new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }).toLowerCase(); } catch (err) { return ""; }
+    var stamp = function (when) {
+      try { return (when ? new Date(when) : new Date()).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }).toLowerCase(); } catch (err) { return ""; }
     };
 
     // ---- the thread
@@ -3429,19 +3434,24 @@
       down();
       return el;
     };
-    // the note for while the chat isn't connected: it always sits under the latest message, and its WhatsApp link
-    // carries everything the visitor wrote
-    var showNote = function (quiet) {
-      if (typeof api.onSend === "function") return;
+    // the note for while the chat isn't connected, or a message couldn't get through (stuck; why: the inquiry box's
+    // own words, as for too many chats): it always sits under the latest message, and its WhatsApp link carries
+    // everything the visitor wrote
+    var showNote = function (quiet, stuck, why) {
+      if (!stuck && (live || typeof api.onSend === "function")) return;
       if (!note) {
         note = d.createElement("div");
         note.className = "cb-note";
-        note.innerHTML = "<p>Thanks for writing. Our live chat isn't switched on yet, so this hasn't reached us." +
-          (wa ? " Send it on WhatsApp and we'll answer you there.</p><a target=\"_blank\" rel=\"noopener\">" +
-            (cb.querySelector(".cb-alt svg") || { outerHTML: "" }).outerHTML +   // the same WhatsApp logo as the line under the box
-
-            "Send it on WhatsApp</a>" : "</p>");
       }
+      var p = d.createElement("p");
+      p.textContent = stuck ? (why || "We couldn't reach our team just now, so that hasn't got to us yet. Try again in a moment.") +
+          (wa ? " Or send it on WhatsApp and we'll answer you there." : "")
+        : "Thanks for writing. Our live chat isn't switched on yet, so this hasn't reached us." +
+          (wa ? " Send it on WhatsApp and we'll answer you there." : "");
+      note.innerHTML = wa ? "<a target=\"_blank\" rel=\"noopener\">" +
+        (cb.querySelector(".cb-alt svg") || { outerHTML: "" }).outerHTML +   // the same WhatsApp logo as the line under the box
+        "Send it on WhatsApp</a>" : "";
+      note.insertBefore(p, note.firstChild);
       if (quiet) note.style.animation = "none"; else note.style.animation = "";
       var link = note.querySelector("a");
       if (link) link.href = "https://wa.me/" + wa + "?text=" + encodeURIComponent(msgs.filter(function (m) { return m.w === "me"; })
@@ -3471,15 +3481,246 @@
     var send = function (text) {
       text = (text || "").trim();
       if (!text) { box.focus(); return; }
-      var at = stamp();
-      msgs.push({ w: "me", t: text, at: at });
+      var m = { w: "me", t: text, at: stamp(), ts: Date.now() };
+      if (live) m.p = 1;
+      msgs.push(m);
       save();
       chips.classList.add("gone");
-      add("me", text, null, at);
+      tie(m, add("me", text, null, m.at));
       box.value = "";
       grow();
-      if (typeof api.onSend === "function") { try { api.onSend(text); } catch (err) { /* the sender's own problem */ } }
+      if (live) { typed(false); post(m); }
+      else if (typeof api.onSend === "function") { try { api.onSend(text); } catch (err) { /* the sender's own problem */ } }
       else setTimeout(function () { showNote(false); }, 450);
+    };
+    // a message from the team (from the inquiry box, or SunbirdChat.reply)
+    var theirs = function (text, name, at, id, ts) {
+      text = String(text == null ? "" : text).trim();
+      if (!text) return;
+      typing(false);
+      if (note && note.parentNode) note.parentNode.removeChild(note);   // the team is answering: the chat is live
+      var m = { w: "them", t: text, n: name || "", at: at || stamp(), ts: ts || Date.now() };
+      if (id) m.id = id;
+      msgs.push(m);
+      save();
+      tie(m, add("them", text, name, m.at));
+      clearTimeout(askT);
+      if (!isOpen) cb.classList.add("news");
+    };
+
+    // ---- live: the inquiry box (data-api). chat: {id, key, until, asked?, contact?} in localStorage "sbChatId".
+    var LS = "sbChatId", chat = null, last = 0, sock = null, tries = 0, pollT = 0, pingT = 0, reT = 0, typT = 0,
+      sentTyping = 0, syncing = null, ask = null, askT = 0;
+    var ls = function (v) {
+      try {
+        if (v === undefined) return JSON.parse(localStorage.getItem(LS) || "null");
+        if (v) localStorage.setItem(LS, JSON.stringify(v)); else localStorage.removeItem(LS);
+      } catch (err) { /* private mode: the chat lasts as long as the page */ }
+      return null;
+    };
+    if (live) { chat = ls(); if (!chat || !chat.id || !chat.key || !(chat.until > Date.now())) chat = null; }
+    var keep = function () { if (chat) { chat.until = Date.now() + 7 * 864e5; ls(chat); } };
+    var call = function (method, path, body) {
+      var h = {};
+      if (chat) h.Authorization = "Chat " + chat.id + "." + chat.key;
+      if (body) h["Content-Type"] = "application/json";
+      return fetch(base + path, { method: method, headers: h, body: body ? JSON.stringify(body) : undefined, credentials: "omit", cache: "no-store" })
+        .then(function (r) {
+          return r.json().catch(function () { return {}; }).then(function (data) {
+            if (!r.ok) { var e = new Error(data.error || "No answer"); e.status = r.status; throw e; }
+            return data;
+          });
+        });
+    };
+    // talked in the last half hour, or looking at the card: worth keeping a line open
+    var lively = function () {
+      if (isOpen) return true;
+      var t = 0;
+      msgs.forEach(function (m) { if (m.ts > t) t = m.ts; });
+      return Date.now() - t < 30 * 60000;
+    };
+
+    // sending: the bubble is faint until the inquiry box has it; if it can't get there, "Not sent · Try again"
+    var post = function (m) {
+      var el = m.el;
+      m.p = 1;
+      if (el) { el.classList.remove("failed"); el.classList.add("sending"); }
+      call("POST", "/api/chat", { text: m.t, page: location.pathname }).then(function (r) {
+        if (r.key) chat = { id: r.chat, key: r.key };   // the first message: a new chat
+        keep();
+        sent(m, r.message.id);
+        if (note && note.parentNode) note.parentNode.removeChild(note);
+        connect();
+        awaySoon();
+      }, function (e) { failed(m, e); });
+    };
+    var sent = function (m, id) {
+      m.id = id;
+      delete m.p;
+      save();
+      if (m.el) m.el.classList.remove("sending", "failed");
+      var by = m.el && m.el.querySelector(".cb-by");
+      if (by) by.textContent = m.at;
+    };
+    var failed = function (m, e) {
+      m.p = 2;
+      save();
+      var el = m.el;
+      if (!el) return;
+      el.classList.remove("sending");
+      el.classList.add("failed");
+      var by = el.querySelector(".cb-by"), again = d.createElement("button");
+      again.type = "button";
+      again.className = "cb-retry";
+      again.textContent = "Not sent · Try again";
+      again.addEventListener("click", function () { by.textContent = m.at; post(m); });
+      by.textContent = "";
+      by.appendChild(again);
+      if (e) showNote(false, true, e.status === 429 ? e.message : "");
+    };
+
+    // news from the inquiry box: a message it has (from either side), never shown twice
+    var take = function (x) {
+      if (!x || !x.id) return;
+      if (x.id > last) last = x.id;
+      for (var i = 0; i < msgs.length; i++) if (msgs[i].id === x.id) return;
+      if (x.who === "visitor") {
+        // our own message, whose answer hasn't come back yet, or one written in another tab
+        for (var j = 0; j < msgs.length; j++) if (msgs[j].w === "me" && msgs[j].p && msgs[j].t === x.text) { sent(msgs[j], x.id); return; }
+        var m = { w: "me", t: x.text, at: stamp(x.at), ts: Date.parse(x.at) || Date.now(), id: x.id };
+        msgs.push(m);
+        save();
+        chips.classList.add("gone");
+        tie(m, add("me", m.t, null, m.at));
+      } else if (x.who === "team") {
+        theirs(x.text, x.name, stamp(x.at), x.id, Date.parse(x.at));
+      }
+    };
+    var sync = function () {
+      if (!chat) return Promise.resolve();
+      if (!syncing) {
+        syncing = call("GET", "/api/chat?after=" + last).then(function (r) {
+          (r.messages || []).forEach(take);
+          keep();
+        }, function (e) { if (e.status === 404) forget(); }).then(function () { syncing = null; });
+      }
+      return syncing;
+    };
+
+    // the live line; when it can't open, ask for news every 4 s while the card is open (30 s while it's shut)
+    var connect = function () {
+      if (!chat || sock || d.hidden || !lively()) return;
+      if (!window.WebSocket) { poll(); return; }
+      var s;
+      try { s = new WebSocket(base.replace(/^http/, "ws") + "/api/chat/live", ["sunbird", "chat." + chat.id + "." + chat.key]); }
+      catch (err) { poll(); return; }
+      sock = s;
+      s.onopen = function () {
+        tries = 0;
+        clearTimeout(pollT);
+        s.send("ping");
+        clearInterval(pingT);
+        pingT = setInterval(function () { if (s.readyState === 1) s.send("ping"); }, 30000);
+        sync();   // anything said while there was no line
+      };
+      s.onmessage = function (e) {
+        if (e.data === "pong") return;
+        var x;
+        try { x = JSON.parse(e.data); } catch (err) { return; }
+        if (x.t === "message") take(x.message);
+        else if (x.t === "typing") theyType(x.on);
+        else if (x.t === "bye") { s.close(); if (x.why === "gone") forget(); }
+      };
+      s.onclose = function () {
+        if (sock !== s) return;
+        sock = null;
+        clearInterval(pingT);
+        theyType(false);
+        if (!chat || d.hidden) return;
+        tries++;
+        poll();
+        clearTimeout(reT);
+        reT = setTimeout(connect, Math.min(60000, 2000 * Math.pow(2, tries)));
+      };
+    };
+    var poll = function () {
+      clearTimeout(pollT);
+      if (!chat || d.hidden || (sock && sock.readyState === 1) || !lively()) return;
+      pollT = setTimeout(function () { sync().then(poll); }, isOpen ? 4000 : 30000);
+    };
+    var hangUp = function () {
+      var s = sock;
+      sock = null;
+      clearInterval(pingT);
+      clearTimeout(pollT);
+      clearTimeout(reT);
+      if (s) try { s.close(); } catch (err) { /* closing */ }
+    };
+    // the team deleted the chat: the thread stays on screen, and the next message starts a new chat
+    var forget = function () { chat = null; ls(null); hangUp(); };
+    // the team's "typing" dots, which go by themselves if nothing more is heard
+    var theyType = function (on) {
+      clearTimeout(typT);
+      typing(!!on);
+      if (on) typT = setTimeout(function () { typing(false); }, 6000);
+    };
+    // ours, for the team (at most every 3 seconds)
+    var typed = function (on) {
+      if (!sock || sock.readyState !== 1) return;
+      var now = Date.now();
+      if (on && now - sentTyping < 3000) return;
+      if (!on && !sentTyping) return;
+      sentTyping = on ? now : 0;
+      try { sock.send(JSON.stringify({ t: "typing", on: on })); } catch (err) { /* closing */ }
+    };
+
+    // ---- if nobody is in, or nobody has answered after 3 minutes: an email or WhatsApp number to answer at
+    var awaySoon = function () {
+      clearTimeout(askT);
+      if (!chat || chat.contact || (ask && ask.parentNode)) return;
+      if (chat.asked) { askFor(true, chat.asked); return; }   // asked on an earlier page: still in the thread
+      var t = new Date(Date.now() + 330 * 60000), h = t.getUTCHours();
+      if (h < opens || h >= closes) { askT = setTimeout(function () { askFor(false, "out"); }, 1400); return; }
+      // the first of the visitor's messages since the team last wrote
+      var since = 0;
+      for (var i = msgs.length - 1; i >= 0 && msgs[i].w === "me"; i--) if (msgs[i].id) since = msgs[i].ts;
+      if (since) askT = setTimeout(function () { askFor(false, "slow"); }, Math.max(0, since + 180000 - Date.now()));
+    };
+    var askFor = function (quiet, why) {
+      if (!chat || chat.contact || (ask && ask.parentNode)) return;
+      var t = new Date(Date.now() + 330 * 60000);
+      ask = d.createElement("div");
+      ask.className = "cb-note cb-ask";
+      if (quiet) ask.style.animation = "none";
+      ask.innerHTML = '<p></p><form class="cb-ask-f" novalidate><label class="sr" for="cb-ask-in">Your email or WhatsApp number</label>' +
+        '<input id="cb-ask-in" type="text" inputmode="email" autocomplete="email" maxlength="120" placeholder="Email or WhatsApp">' +
+        '<button type="submit">Save</button></form><p class="cb-ask-no" role="alert" hidden></p>';
+      ask.firstChild.textContent = why === "out"
+        ? "We're out of the office right now (it's " + clock(t.getUTCHours(), t.getUTCMinutes()) + " in Sri Lanka). Leave your email or " +
+          "WhatsApp number and we'll answer you there as soon as we're back."
+        : "Sorry, this is taking us a little longer than usual. If you have to go, leave your email or WhatsApp number and " +
+          "we'll answer you there.";
+      var f = ask.querySelector("form"), inp = f.querySelector("input"), no = ask.querySelector(".cb-ask-no");
+      f.addEventListener("submit", function (e) {
+        e.preventDefault();
+        var v = inp.value.trim();
+        if (!v) { inp.focus(); return; }
+        f.classList.add("busy");
+        no.hidden = true;
+        call("PATCH", "/api/chat", { contact: v }).then(function (r) {
+          chat.contact = r.email || r.whatsapp || v;
+          keep();
+          ask.innerHTML = "<p></p>";
+          ask.firstChild.textContent = "Thanks. We'll answer you here, and at " + chat.contact + " if you've gone.";
+        }, function (err) {
+          f.classList.remove("busy");
+          no.hidden = false;
+          no.textContent = err.status === 400 ? err.message : "That didn't save. Please try again.";
+        });
+      });
+      log.insertBefore(ask, typingEl && typingEl.parentNode === log ? typingEl : null);
+      if (chat.asked !== why) { chat.asked = why; keep(); }
+      down();
     };
 
     // ---- opening and closing
@@ -3507,6 +3748,7 @@
         down(true);
         // on phones the keyboard would cover the sheet at once: it waits for a tap in the box
         if (!quiet && !phone.matches) setTimeout(function () { box.focus({ preventScroll: true }); }, 320);
+        if (live && chat) { connect(); poll(); }
       } else {
         var inside = card.contains(d.activeElement);
         cb.classList.remove("on");
@@ -3514,6 +3756,7 @@
         clearInterval(tick);
         hideT = setTimeout(function () { card.hidden = true; }, still.matches || quiet ? 0 : 520);
         if (inside) openBtn.focus({ preventScroll: true });
+        if (live) { typed(false); poll(); }   // shut: news less often (the line, if open, stays for the red dot)
       }
       save();
     };
@@ -3523,6 +3766,13 @@
     d.addEventListener("keydown", function (e) { if (e.key === "Escape" && isOpen) show(false); });
     form.addEventListener("submit", function (e) { e.preventDefault(); send(box.value); });
     box.addEventListener("input", grow);
+    box.addEventListener("input", function () { if (live) typed(!!box.value.trim()); });
+    // a tab in the background keeps no line open; back in front, it catches up
+    d.addEventListener("visibilitychange", function () {
+      if (!live || !chat) return;
+      if (d.hidden) hangUp();
+      else sync().then(function () { connect(); poll(); });
+    });
     box.addEventListener("keydown", function (e) {
       if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); send(box.value); }
     });
@@ -3616,23 +3866,22 @@
     api.open = function () { show(true); };
     api.close = function () { show(false); };
     api.typing = typing;
-    api.reply = function (text, name) {
-      text = String(text == null ? "" : text).trim();
-      if (!text) return;
-      typing(false);
-      if (note && note.parentNode) note.parentNode.removeChild(note);   // the team is answering: the chat is live
-      var at = stamp();
-      msgs.push({ w: "them", t: text, n: name || "", at: at });
-      save();
-      add("them", text, name, at);
-      if (!isOpen) cb.classList.add("news");
-    };
+    api.reply = function (text, name) { theirs(text, name); };
 
     // the thread so far, from the pages before
-    msgs.forEach(function (m) { add(m.w === "me" ? "me" : "them", m.t, m.n, m.at, true); });
+    msgs.forEach(function (m) {
+      tie(m, add(m.w === "me" ? "me" : "them", m.t, m.n, m.at, true));
+      if (m.p && m.el) m.el.classList.add("sending");   // it was on its way when the page changed
+      if (m.id > last) last = m.id;
+    });
     if (msgs.some(function (m) { return m.w === "me"; })) { chips.classList.add("gone"); showNote(true); }
     status();
     grow();
     if (wasOpen) show(true, true);
+    // live: catch up with the inquiry box (answers that came while away), then a line while it's lively. A message
+    // still on its way when the page changed either got there (it comes back in the news) or is marked not sent.
+    var unsent = function () { msgs.forEach(function (m) { if (m.p) failed(m); }); };
+    if (live && chat) sync().then(function () { unsent(); connect(); poll(); awaySoon(); });
+    else if (live) unsent();
   })();
 })();

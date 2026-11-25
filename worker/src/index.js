@@ -25,10 +25,18 @@
      POST   /api/site/save          {changes: [{path, sha} | {path, delete}], message, expected}
                                     → {commit}   saves them together as one change to the website
      GET    /api/site/status?sha=C  whether the website has been rebuilt with that change yet
+   The live chat with travellers, and the phones that ring for it: see chat.js.
 
    Setting it up (once): in Cloudflare, give the Worker a D1 database binding called DB, and the
    secrets SETUP_CODE and GITHUB_TOKEN (a GitHub key that may change GITHUB_REPO, see wrangler.toml).
+   FCM_SERVICE_ACCOUNT (a Firebase key, see ring.js) makes the team's phones ring for chats.
    The tables make themselves the first time they are used. README.md has the clicks. */
+
+import {
+  Stop, stop, refuse, json, iso, b64, unb64, sha256hex, randomPass, sameText, cleanEmail, cleanName, readJson, senderOf, enc, EMAIL,
+} from "./common.js";
+import * as chat from "./chat.js";
+export { Desk } from "./desk.js";
 
 const FIELDS = { // the parts of a letter or form that are kept, with the most characters kept of each
   name: 120, email: 200, phone: 60, country: 80, travellers: 120, adults: 4, children: 4,
@@ -36,7 +44,6 @@ const FIELDS = { // the parts of a letter or form that are kept, with the most c
   subject: 300, message: 6000, page: 500, form: 30,
 };
 const STATUSES = ["new", "replied", "booked", "closed"];
-const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PER_HOUR = 10;        // letters one connection may send in an hour
 const WRONG_ALLOWED = 8;    // wrong passwords or setup codes one connection may try in 15 minutes
 const SESSION_DAYS = 30;    // how long a sign-in lasts
@@ -46,43 +53,9 @@ const ITERATIONS = 100000;  // rounds used to scramble passwords (the most Cloud
 const ORIGINS = ["https://sunbirdtours.lk", "https://www.sunbirdtours.lk", "https://sunbirdlankatours.github.io",
   "https://vockshel-gif.github.io"]; // the old test site, until it is retired
 
-const enc = new TextEncoder();
 const NOT_CONNECTED = "The inquiry box is not connected to its database yet.";
 
-class Stop extends Error {
-  constructor(status, body) { super(body.error || body.message || "stop"); this.status = status; this.body = body; }
-}
-const stop = (status, error, extra) => { throw new Stop(status, Object.assign({ error }, extra)); };
-const refuse = (status, message) => { throw new Stop(status, { success: false, message }); }; // for the website's letters
-
-const json = (data, status = 200) => new Response(JSON.stringify(data), {
-  status, headers: { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" },
-});
-const iso = (agoMs = 0) => new Date(Date.now() - agoMs).toISOString();
-
-// ------------------------------------------------------------------ small helpers
-const b64 = bytes => btoa(String.fromCharCode(...bytes));
-const unb64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
-
-async function sha256hex(text) {
-  const d = await crypto.subtle.digest("SHA-256", enc.encode(text));
-  return [...new Uint8Array(d)].map(b => b.toString(16).padStart(2, "0")).join("");
-}
-
-function randomPass() {
-  const b = new Uint8Array(32);
-  crypto.getRandomValues(b);
-  return b64(b).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-}
-
-// compares two texts in the same time whatever they hold, so timing gives nothing away
-function sameText(a, b) {
-  a = String(a); b = String(b);
-  let diff = a.length ^ b.length;
-  for (let i = 0; i < Math.max(a.length, b.length); i++) diff |= (a.charCodeAt(i) || 0) ^ (b.charCodeAt(i) || 0);
-  return diff === 0;
-}
-
+// ------------------------------------------------------------------ small helpers (the rest are in common.js)
 // passwords are only ever kept scrambled (PBKDF2 with a random salt), never as typed
 async function scramble(password, salt = crypto.getRandomValues(new Uint8Array(16)), rounds = ITERATIONS) {
   const key = await crypto.subtle.importKey("raw", enc.encode(password), "PBKDF2", false, ["deriveBits"]);
@@ -99,30 +72,9 @@ async function passwordMatches(password, stored) {
 let dummy = null; // checked against when an email isn't on the team, so both take the same time
 const dummyScramble = () => (dummy = dummy || scramble("not a real password"));
 
-const cleanEmail = v => {
-  const s = String(v == null ? "" : v).trim().toLowerCase().slice(0, 200);
-  return EMAIL.test(s) ? s : "";
-};
-const cleanName = v => String(v == null ? "" : v).trim().replace(/\s+/g, " ").slice(0, 80);
-
 function checkPassword(p) {
   if (p.length < 8) stop(400, "The password needs 8 characters or more.");
   if (p.length > 200) stop(400, "That password is too long.");
-}
-
-async function readJson(request) {
-  if (Number(request.headers.get("Content-Length") || 0) > 40000) stop(413, "That is too long to send.");
-  try {
-    const b = await request.json();
-    if (b && typeof b === "object" && !Array.isArray(b)) return b;
-  } catch (e) { /* falls through */ }
-  stop(400, "Could not read what was sent.");
-}
-
-// who is asking, as a fingerprint (the address itself is never kept)
-async function senderOf(request, env) {
-  const ip = request.headers.get("CF-Connecting-IP") || "local";
-  return (await sha256hex(ip + "|" + (env.SALT || "sunbird inquiry box"))).slice(0, 24);
 }
 
 function allowedOrigin(origin, env) {
@@ -171,6 +123,7 @@ function ready(db) {
       db.prepare("CREATE INDEX IF NOT EXISTS sessions_member ON sessions (member)"),
       db.prepare("CREATE TABLE IF NOT EXISTS wrong_tries (sender TEXT NOT NULL, at TEXT NOT NULL)"),
       db.prepare("CREATE INDEX IF NOT EXISTS wrong_tries_sender ON wrong_tries (sender, at)"),
+      ...chat.tables(db),
     ]).catch(e => { tablesReady = null; throw e; });
   }
   return tablesReady;
@@ -178,7 +131,7 @@ function ready(db) {
 
 // ------------------------------------------------------------------ the door
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const origin = request.headers.get("Origin") || "";
     const crossSite = origin !== "" && origin !== "null";
     const known = crossSite && allowedOrigin(origin, env);
@@ -195,7 +148,8 @@ export default {
         },
       });
     } else {
-      res = await handle(request, env);
+      res = await handle(request, env, ctx);
+      if (res.status === 101) return res; // a live line (WebSocket) was opened: it goes back as it is
     }
     if (known) {
       res = new Response(res.body, res);
@@ -206,7 +160,7 @@ export default {
   },
 };
 
-async function handle(request, env) {
+async function handle(request, env, ctx) {
   const url = new URL(request.url);
   const path = url.pathname.replace(/\/+$/, "") || "/";
   const m = request.method;
@@ -215,9 +169,28 @@ async function handle(request, env) {
     if (path === "/" || path === "/api") return json({ ok: true, name: "Sunbird inquiry box" });
     if (!env.DB) return json(letter ? { success: false, message: NOT_CONNECTED } : { error: NOT_CONNECTED, connected: false }, 503);
     await ready(env.DB);
-    const c = { request, env, url, db: env.DB };
+    const c = { request, env, ctx, url, db: env.DB };
 
-    if (path === "/api/inquiries") {
+    if (path === "/api/chat") { // the traveller's side of the live chat
+      if (m === "POST") return await chat.visitorSend(c);
+      if (m === "GET") return await chat.visitorRead(c);
+      if (m === "PATCH") return await chat.visitorContact(c);
+    } else if (path === "/api/chat/live") { // a live line, for the traveller or the team
+      return await liveLine(c);
+    } else if (path === "/api/chats") { // the team's side
+      const me = await signedIn(c);
+      if (m === "GET") return await chat.teamRead(c, me);
+      if (m === "POST") return await chat.teamReply(c, me);
+      if (m === "PATCH") return await chat.teamChange(c, me);
+      if (m === "DELETE") return await chat.teamDelete(c, me);
+    } else if (path === "/api/devices") {
+      const me = await signedIn(c);
+      if (m === "POST") return await chat.addDevice(c, me);
+      if (m === "DELETE") return await chat.removeDevice(c, me);
+    } else if (path === "/api/devices/test") {
+      const me = await signedIn(c);
+      if (m === "POST") return await chat.testRing(c, me);
+    } else if (path === "/api/inquiries") {
       if (m === "POST") return await sendLetter(c);
       const me = await signedIn(c);
       if (m === "GET") return await listLetters(c);
@@ -292,7 +265,12 @@ async function sendLetter({ request, env, db }) {
 async function signedIn({ request, db }) {
   const m = /^Bearer\s+(\S+)$/i.exec(request.headers.get("Authorization") || "");
   if (!m) stop(401, "Please sign in.", { signin: true });
-  const token = await sha256hex(m[1]);
+  return sessionOf(db, m[1]);
+}
+
+// the team member a sign-in pass belongs to (or a stop, if it has ended)
+async function sessionOf(db, pass) {
+  const token = await sha256hex(pass);
   const row = await db.prepare(
     "SELECT s.member, s.expires, t.email, t.name FROM sessions s JOIN team t ON t.id = s.member WHERE s.token = ?"
   ).bind(token).first();
@@ -301,6 +279,33 @@ async function signedIn({ request, db }) {
     stop(401, "Your sign-in has ended. Please sign in again.", { signin: true });
   }
   return { id: row.member, email: row.email, name: row.name, token }; // token: the pass as kept (scrambled)
+}
+
+// A live line (WebSocket) to the doorbell, for new messages and "typing" the moment they happen. The
+// chat card on the website asks with its chat key, the team's app with its sign-in pass. A browser
+// can't add headers to a WebSocket, so the card sends its key as the second "protocol":
+// ["sunbird", "chat.<id>.<key>"]; the app may use the Authorization header instead.
+async function liveLine(c) {
+  const { request, env, db } = c;
+  if ((request.headers.get("Upgrade") || "").toLowerCase() !== "websocket") stop(426, "This address is for a live line (a WebSocket).");
+  const offered = (request.headers.get("Sec-WebSocket-Protocol") || "").split(",").map(s => s.trim()).filter(Boolean);
+  const cred = offered.find(p => p !== "sunbird") || "";
+  const auth = request.headers.get("Authorization") || "";
+  let info, m;
+  if ((m = /^chat\.(\d+)\.(\S+)$/.exec(cred)) || (m = /^Chat\s+(\d+)\.(\S+)$/i.exec(auth))) {
+    const row = await chat.chatByKey(db, Number(m[1]), m[2]);
+    if (!row) stop(404, "That chat isn't there any more.", { gone: true });
+    info = { kind: "chat", chat: row.id };
+  } else if ((m = /^team\.(\S+)$/.exec(cred)) || (m = /^Bearer\s+(\S+)$/i.exec(auth))) {
+    const me = await sessionOf(db, m[1]);
+    info = { kind: "team", member: me.id, name: chat.firstName(me) };
+  } else {
+    stop(401, "Please sign in.", { signin: true });
+  }
+  if (offered.length) info.proto = "sunbird";
+  const desk = chat.deskOf(env);
+  if (!desk) stop(503, "The live line isn't switched on.");
+  return desk.fetch("https://desk/live", { headers: { Upgrade: "websocket", "X-Desk": JSON.stringify(info) } });
 }
 
 async function tooManyTries(db, sender) {
@@ -377,7 +382,10 @@ async function setup({ request, env, db }) {
 
 async function logout(c) {
   const me = await signedIn(c);
-  await c.db.prepare("DELETE FROM sessions WHERE token = ?").bind(me.token).run();
+  await c.db.batch([
+    c.db.prepare("DELETE FROM sessions WHERE token = ?").bind(me.token),
+    c.db.prepare("DELETE FROM devices WHERE session = ?").bind(me.token), // a signed-out phone stops ringing
+  ]);
   return json({ ok: true });
 }
 
@@ -466,6 +474,7 @@ async function changeMember({ request, env, db }, me) {
   }
   if (!sets.length) stop(400, "Nothing to change.");
   await db.batch(sets);
+  if (b.password != null) await chat.kick(env, id); // their open live lines sign in again (or can't)
   return json({ ok: true });
 }
 
@@ -588,14 +597,16 @@ async function siteStatus({ env, url }) {
   return json(run ? { found: true, status: run.status, conclusion: run.conclusion, url: run.html_url } : { found: false });
 }
 
-async function removeMember({ url, db }, me) {
+async function removeMember({ url, env, db }, me) {
   const id = Number(url.searchParams.get("id"));
   if (!id) stop(400, "Who?");
   if (id === me.id) stop(400, "You can’t remove yourself. Ask someone else on the team to do it.");
   const r = await db.batch([
     db.prepare("DELETE FROM sessions WHERE member = ?").bind(id),
     db.prepare("DELETE FROM team WHERE id = ?").bind(id),
+    db.prepare("DELETE FROM devices WHERE member = ?").bind(id), // their phones stop ringing
   ]);
   if (!r[1].meta || !r[1].meta.changes) stop(404, "That person is not on the team any more.");
+  await chat.kick(env, id);
   return json({ ok: true });
 }

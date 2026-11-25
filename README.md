@@ -137,6 +137,33 @@ Photos: when Pillow is installed (`pip install pillow`),
 the build makes smaller WebP copies of every photo in `/imgv/`, in several widths for the big ones,
 so phones download phone-sized photos. The text files keep using the normal `/img/...jpg` names.
 
+## The live chat
+
+The chat card on every page (the sun in the corner, `chat_box: on` in `content/settings.txt`) is live
+when `inquiry_api:` is set: travellers' messages go to the inquiry box, the team's phones ring, and the
+team answers in the Sunbird team app (Android). The code is `worker/src/chat.js`, `desk.js` and `ring.js`,
+and the card's side is in `static/js/site.js`.
+
+- **A traveller writes.** The first message starts a chat. Their browser keeps the chat's key for
+  7 days, so an answer that comes later still shows when they come back.
+- **The phones ring.** A new chat rings every team phone until someone picks it up. More messages
+  before anyone answers give a short ding; once someone answers, only their phone dings. Opening or
+  answering a chat stops the other phones ringing. Only "ring, chat 12" goes through Google
+  (Firebase); the words stay in our own database.
+- **Answers arrive at once** on a live line (the "doorbell", a Cloudflare Durable Object). If a live
+  line can't open, the card asks for news every 4 seconds while it is open.
+- **Nobody in?** Outside office hours (`hours:` in settings), or when nobody has answered after
+  3 minutes, the card asks for an email or WhatsApp number so the team can answer there.
+- **Limits:** 1,000 characters a message; 3 new chats an hour from one connection (60 from everyone);
+  40 messages in 10 minutes in one chat. Only the site's own addresses can use it. Chats are deleted
+  a year after their last message.
+
+To switch the ringing on (once): in the Firebase console, make a project (Analytics off) and add an
+Android app to it. Then **Project settings → Service accounts → Generate new private key**, and add
+the whole downloaded file's contents to the Worker as a secret called `FCM_SERVICE_ACCOUNT`, the same
+way as `SETUP_CODE`. Never put that file in this folder or on GitHub. The doorbell needs a deploy with
+wrangler (`npx wrangler deploy` in `worker`); the Cloudflare dashboard's Edit code can't add it.
+
 ## Publish on GitHub Pages (one time)
 
 1. Create a new repository on github.com (for example `sunbirdtours-website`) and upload this folder
