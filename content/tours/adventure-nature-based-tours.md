@@ -1,5 +1,5 @@
 ---
-title: "Adventure, Culture & Nature Escap"
+title: "Adventure, Culture & Nature Escape"
 tagline: "Explore Heritage, Nature & Culture in One Epic Journey"
 category: "bespoke"
 themes:
