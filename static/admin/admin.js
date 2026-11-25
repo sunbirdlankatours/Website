@@ -2,6 +2,8 @@
    It works two ways, with the same screens:
    - on your computer (python admin.py): saves straight into the files and rebuilds the site;
    - on the live website (/admin/): saves to GitHub, which rebuilds and publishes the site.
+   Inquiries and Team talk to the inquiry box on Cloudflare (worker/ in the project) in both cases,
+   with the team's own email and password.
    No libraries: everything is in this file. */
 (function () {
   'use strict';
@@ -270,18 +272,6 @@
     clearInterval(publishTimer);
     setStatus('busy', 'Publishing…');
     const started = Date.now();
-    if (S.cfg.host === 'cloudflare') {
-      // Cloudflare Pages builds the site itself; every build writes the commit it was made from
-      // into admin/config.json, so the save is live once that file names this commit
-      publishTimer = setInterval(async () => {
-        if (Date.now() - started > 10 * 60 * 1000) { clearInterval(publishTimer); setStatus('', 'Saved · not live yet, check Cloudflare'); return; }
-        try {
-          const c = await (await fetch(siteBase + '/admin/config.json?t=' + Date.now(), { cache: 'no-store' })).json();
-          if (c.built_from === sha) { clearInterval(publishTimer); setStatus('ok', 'Live on the site'); }
-        } catch (e) { /* the site is between builds: ask again */ }
-      }, 8000);
-      return;
-    }
     publishTimer = setInterval(async () => {
       if (Date.now() - started > 6 * 60 * 1000) { clearInterval(publishTimer); setStatus('', 'Saved'); return; }
       try {
@@ -527,6 +517,7 @@
   const NAV = [
     ['#/', 'Home', 'home'],
     ['#/inquiries', 'Inquiries', 'mail'],
+    ['#/team', 'Team', 'user'],
     ['#/photos', 'Photos', 'photo'],
     null,
     ['#/c/tours', 'Tours', 'map'],
@@ -556,6 +547,7 @@
     gear: 'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm7.4-3a7.4 7.4 0 0 0-.1-1.2l2-1.6-2-3.4-2.4 1a7.5 7.5 0 0 0-2-1.2L14.5 3h-5l-.4 2.6a7.5 7.5 0 0 0-2 1.2l-2.4-1-2 3.4 2 1.6a7.4 7.4 0 0 0 0 2.4l-2 1.6 2 3.4 2.4-1a7.5 7.5 0 0 0 2 1.2l.4 2.6h5l.4-2.6a7.5 7.5 0 0 0 2-1.2l2.4 1 2-3.4-2-1.6c.1-.4.1-.8.1-1.2z',
     list: 'M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01',
     mail: 'M4 6h16v12H4zM4 7l8 6 8-6',
+    user: 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM5 20a7 7 0 0 1 14 0',
     ext: 'M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5',
     up: 'M12 19V5M5 12l7-7 7 7', down: 'M12 5v14M5 12l7 7 7-7', x: 'M6 6l12 12M18 6L6 18',
     plus: 'M12 5v14M5 12h14', upload: 'M12 16V4M7 9l5-5 5 5M4 20h16', search: 'M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zm9 2l-4-4',
@@ -1692,7 +1684,7 @@
       refreshSaveBar();
     };
     const body = h('div');
-    const LABELS = { web3forms_key: 'Enquiry form key (web3forms)', tawk_chat: 'Live chat (tawk.to)', chat_box: 'Our own chat box (on / off)',google_tag: 'Google tag (analytics)', phone_link: 'Phone (for the call link)', phone2: 'Second phone', phone2_link: 'Second phone (for the call link)', whatsapp: 'WhatsApp number', email2: 'Second email', admin_repo: 'GitHub repository', admin_branch: 'GitHub branch' };
+    const LABELS = { web3forms_key: 'Enquiry form key (web3forms)', inquiry_api: 'Inquiry box address (Cloudflare)', tawk_chat: 'Live chat (tawk.to)', chat_box: 'Our own chat box (on / off)',google_tag: 'Google tag (analytics)', phone_link: 'Phone (for the call link)', phone2: 'Second phone', phone2_link: 'Second phone (for the call link)', whatsapp: 'WhatsApp number', email2: 'Second email', admin_repo: 'GitHub repository', admin_branch: 'GitHub branch' };
     const draw = () => {
       // blank lines split the file into groups; a group's first note is its title
       const groups = [];
@@ -1765,30 +1757,63 @@
   }
 
   // ------------------------------------------------------------------ inquiries
-  // Trip letters and enquiry forms from the website. They are kept in the inquiry box on Cloudflare
-  // (functions/api/inquiries.js), which lets in whoever has a GitHub key that may change the site.
+  // Trip letters and enquiry forms from the website. They are kept by the inquiry box, a Cloudflare
+  // Worker (worker/ in the project) at the address inquiry_api in settings.txt. The team signs in to it
+  // with their own email and password (the Team page), apart from saving the website's files.
   const INQ_STATUS = [['new', 'New'], ['replied', 'Replied'], ['booked', 'Booked'], ['closed', 'Closed']];
   const inq = { items: null, counts: {}, more: false, filter: 'new', q: '', error: null };
+  const inqBase = () => String(S.cfg.inquiry_api || '').replace(/\/+$/, '');
 
-  async function inqApi(method, query, body) {
-    const r = await fetch(siteBase + '/api/inquiries' + (query || ''), {
-      method, cache: 'no-store',
-      headers: Object.assign({ Authorization: 'Bearer ' + (S.be.token || ''), Accept: 'application/json' },
-        body ? { 'Content-Type': 'application/json' } : {}),
-      body: body ? JSON.stringify(body) : undefined,
-    });
+  // the sign-in pass the inquiry box hands out, kept in this browser
+  const INQ_KEY = 'sbInquiryPass';
+  const inqAuth = {
+    token: '',
+    load() {
+      try { inqAuth.token = sessionStorage.getItem(INQ_KEY) || localStorage.getItem(INQ_KEY) || ''; } catch (e) { /* storage blocked */ }
+    },
+    set(token, remember) {
+      inqAuth.token = token;
+      try {
+        (remember ? localStorage : sessionStorage).setItem(INQ_KEY, token);
+        (remember ? sessionStorage : localStorage).removeItem(INQ_KEY);
+      } catch (e) { /* private window: keep it in memory only */ }
+    },
+    clear() {
+      inqAuth.token = '';
+      inq.items = null;
+      try { localStorage.removeItem(INQ_KEY); sessionStorage.removeItem(INQ_KEY); } catch (e) { /* nothing stored */ }
+      setInquiryBadge();
+    },
+  };
+
+  async function inqApi(method, path, query, body) {
+    let r;
+    try {
+      r = await fetch(inqBase() + path + (query || ''), {
+        method, cache: 'no-store',
+        headers: Object.assign({ Accept: 'application/json' },
+          inqAuth.token ? { Authorization: 'Bearer ' + inqAuth.token } : {},
+          body ? { 'Content-Type': 'application/json' } : {}),
+        body: body ? JSON.stringify(body) : undefined,
+      });
+    } catch (e) {
+      const err = new Error('Could not reach the inquiry box. Check the internet connection, or its address under Settings.');
+      err.status = 0;
+      throw err;
+    }
     const data = await r.json().catch(() => null);
     if (!r.ok || !data) {
-      const e = new Error((data && data.error) || 'The inquiry box did not answer (' + r.status + ').');
+      const e = new Error((data && (data.error || data.message)) || 'The inquiry box did not answer (' + r.status + ').');
       e.status = r.status;
-      e.missing = !data || r.status === 503; // no box on this website, or no database linked to it
+      e.setup = data && data.setup;
+      if (r.status === 401 && data && data.signin) inqAuth.clear(); // the sign-in ran out or was ended
       throw e;
     }
     return data;
   }
 
   async function loadInquiries() {
-    const d = await inqApi('GET');
+    const d = await inqApi('GET', '/api/inquiries');
     inq.items = d.items; inq.counts = d.counts || {}; inq.more = !!d.more; inq.error = null;
     setInquiryBadge();
     return d;
@@ -1826,32 +1851,84 @@
   const statusPill = s => h('span.inq-pill.' + s, (INQ_STATUS.find(x => x[0] === s) || [s, s])[1]);
 
   function inquiryBlocked(e) {
-    if (S.be.mode === 'local') {
-      return h('div.note', h('b', 'Inquiries are kept online.'),
-        ' Letters and forms from the website go into the inquiry box on Cloudflare. Open the admin panel on the website (its address ends in /admin/) to read them.');
+    if (!inqBase()) {
+      return h('div.note', h('b', 'The inquiry box isn’t connected yet.'),
+        ' Add its address under ', h('a', { href: '#/settings' }, 'Settings'), ' → Inquiry box address (it ends in .workers.dev). ',
+        'Until then, letters and forms only arrive by email, if the Web3Forms key is filled in.');
     }
-    if (!S.cfg.inquiries || (e && e.status === 404)) {
-      return h('div.note', h('b', 'There is no inquiry box on this website yet.'),
-        ' It starts working once the site is hosted on Cloudflare Pages. Until then, letters and forms only arrive by email, if the Web3Forms key is filled in under Settings.');
+    if (e && e.status === 503 && e.setup === 'off') {
+      return h('div.note', h('b', 'Making accounts is switched off. '), e.message);
     }
     if (e && e.status === 503) {
-      return h('div.note', h('b', 'The inquiry box isn’t connected yet.'),
-        ' In Cloudflare open the Pages project → Settings → Bindings → Add → D1 database, name it ', h('code', 'DB'),
-        ' and pick the database. Then deploy the site again (Deployments → Retry deployment).');
-    }
-    if (e && e.status === 401) {
-      return h('div.note', h('b', 'Your GitHub key may not read the inquiries.'),
-        ' The inquiry box only opens for keys that may change ' + S.be.repo + '. Sign out and sign in with that key.');
+      return h('div.note', h('b', 'The inquiry box can’t reach its database.'),
+        ' In Cloudflare open the Worker → Bindings and check that ', h('code', 'DB'), ' is connected to the sunbird-inquiries database.');
     }
     return h('div.note', h('b', 'The inquiries could not be loaded. '), (e && e.message) || '');
   }
 
+  // sign in to the inquiry box, or make an account with the setup code; done() runs once signed in
+  function inqSignIn(done, error) {
+    const box = h('section.card.inq-login');
+    const draw = (mode, msgText) => {
+      const field = (label, input, help) => h('label.field', h('span.f-label', label), input, help ? h('span.f-help', help) : null);
+      const code = h('input', { type: 'password', autocomplete: 'off' });
+      const name = h('input', { type: 'text', autocomplete: 'name' });
+      const email = h('input', { type: 'email', autocomplete: 'username', placeholder: 'you@sunbirdtours.lk' });
+      const pass = h('input', { type: 'password', autocomplete: mode === 'in' ? 'current-password' : 'new-password' });
+      const remember = h('input', { type: 'checkbox', checked: true });
+      const msg = h('p.login-error', msgText || '');
+      const btn = h('button.btn.gold', { type: 'submit' }, mode === 'in' ? 'Sign in' : 'Make my account');
+      const form = h('form.inq-login-form',
+        mode === 'in'
+          ? [field('Email', email), field('Password', pass)]
+          : [field('Setup code', code, 'The secret called SETUP_CODE that you added to the inquiry box in Cloudflare.'),
+            field('Your name', name), field('Email', email),
+            field('Password', pass, '8 characters or more. If this email is already on the team, this sets a new password for it.')],
+        h('label.check', remember, ' Stay signed in on this device'),
+        h('div.inq-login-bar', btn,
+          h('button.link-btn', { type: 'button', onclick: () => draw(mode === 'in' ? 'setup' : 'in') },
+            mode === 'in' ? 'First time, or forgot your password?' : 'Back to sign in')),
+        msg);
+      form.addEventListener('submit', async ev => {
+        ev.preventDefault();
+        btn.disabled = true;
+        msg.textContent = mode === 'in' ? 'Checking…' : 'Making the account…';
+        try {
+          const d = mode === 'in'
+            ? await inqApi('POST', '/api/login', '', { email: email.value, password: pass.value })
+            : await inqApi('POST', '/api/setup', '', { code: code.value, name: name.value, email: email.value, password: pass.value });
+          inqAuth.set(d.token, remember.checked);
+          inq.items = null;
+          toast(mode === 'in' ? 'Signed in as ' + (d.user.name || d.user.email)
+            : (d.reset ? 'New password set' : 'Account made') + ' · signed in as ' + (d.user.name || d.user.email));
+          done();
+        } catch (e) {
+          btn.disabled = false;
+          msg.textContent = e.message;
+        }
+      });
+      box.replaceChildren(
+        h('div.card-head', h('h2', mode === 'in' ? 'Sign in to the inquiries' : 'Make an account'),
+          h('p.card-help', mode === 'in'
+            ? 'Use your own team email and password. This is separate from saving the website.'
+            : 'For the first account, or to set a new password when one is forgotten.')),
+        form);
+      setTimeout(() => (mode === 'in' ? email : code).focus(), 0);
+    };
+    draw('in', error);
+    return box;
+  }
+
   async function viewInquiries(id) {
-    const blank = (sub, body) => main.replaceChildren(page('Website', 'Inquiries', sub, body));
-    if (S.be.mode === 'local' || !S.cfg.inquiries) return blank('Trip letters and enquiry forms sent from the website.', inquiryBlocked(null));
+    const blank = body => main.replaceChildren(page('Website', 'Inquiries', 'Trip letters and enquiry forms sent from the website.', body));
+    if (!inqBase()) return blank(inquiryBlocked(null));
+    if (!inqAuth.token) return blank(inqSignIn(() => viewInquiries(id)));
     if (!inq.items) {
       loading('Opening the inquiry box…');
-      try { await loadInquiries(); } catch (e) { inq.error = e; return blank('Trip letters and enquiry forms sent from the website.', inquiryBlocked(e)); }
+      try { await loadInquiries(); } catch (e) {
+        inq.error = e;
+        return blank(e.status === 401 ? inqSignIn(() => viewInquiries(id), e.message) : inquiryBlocked(e));
+      }
     }
     if (id) return viewInquiry(Number(id));
 
@@ -1902,7 +1979,9 @@
       if (s === it.status) return;
       const was = it.status;
       try {
-        await inqApi('PATCH', '', { id: it.id, status: s });
+        await inqApi('PATCH', '/api/inquiries', '', { id: it.id, status: s });
+        it.updated_by = 'You';
+        it.updated = new Date().toISOString();
         inq.counts[was] = Math.max(0, (inq.counts[was] || 1) - 1);
         inq.counts[s] = (inq.counts[s] || 0) + 1;
         it.status = s;
@@ -1927,6 +2006,7 @@
       ['They’d love', d.interests],
       ['Tour', d.tour],
       ['Sent from', d.page ? h('a', { href: d.page, target: '_blank', rel: 'noopener' }, d.page.replace(/^https?:\/\/[^/]+/, '') || '/') : null],
+      ['Last changed', it.updated_by ? it.updated_by + (it.updated ? ' · ' + whenText(it.updated) : '') : null],
     ].filter(f => f[1]);
 
     const noteBox = h('textarea.grow', { rows: 3, value: it.note || '', placeholder: 'Only the team sees this. For example: sent the 10-day plan, waiting for dates.' });
@@ -1934,12 +2014,12 @@
     noteBox.addEventListener('input', () => { noteBtn.disabled = noteBox.value === (it.note || ''); autoGrow(noteBox); });
     noteBtn.addEventListener('click', async () => {
       noteBtn.disabled = true;
-      try { await inqApi('PATCH', '', { id: it.id, note: noteBox.value }); it.note = noteBox.value; toast('Note saved'); } catch (e) { noteBtn.disabled = false; toast(e.message, { bad: true }); }
+      try { await inqApi('PATCH', '/api/inquiries', '', { id: it.id, note: noteBox.value }); it.note = noteBox.value; toast('Note saved'); } catch (e) { noteBtn.disabled = false; toast(e.message, { bad: true }); }
     });
     const del = async () => {
       if (!await confirmBox('Delete this inquiry?', 'The letter from ' + (it.name || 'this traveller') + ' is removed for good. This can’t be undone.', 'Delete', true)) return;
       try {
-        await inqApi('DELETE', '?id=' + it.id);
+        await inqApi('DELETE', '/api/inquiries', '?id=' + it.id);
         inq.items = inq.items.filter(x => x !== it);
         inq.counts[it.status] = Math.max(0, (inq.counts[it.status] || 1) - 1);
         setInquiryBadge();
@@ -1963,6 +2043,116 @@
     growAll(main);
   }
 
+  // ------------------------------------------------------------------ team
+  // Who may read the inquiries: each person signs in to the inquiry box with their own email and password.
+  async function viewTeam() {
+    const blank = body => main.replaceChildren(page('Website', 'Team', 'Who can sign in to read the inquiries.', body));
+    if (!inqBase()) return blank(inquiryBlocked(null));
+    if (!inqAuth.token) return blank(inqSignIn(viewTeam));
+    loading('Opening the team list…');
+    let d;
+    try { d = await inqApi('GET', '/api/team'); } catch (e) {
+      return blank(e.status === 401 ? inqSignIn(viewTeam, e.message) : inquiryBlocked(e));
+    }
+    const me = d.items.find(m => m.id === d.me) || { id: d.me, name: '', email: '' };
+    const who = m => m.name || m.email;
+    const field = (label, input, help) => h('label.field', h('span.f-label', label), input, help ? h('span.f-help', help) : null);
+
+    // you: a new password, or sign out
+    const cur = h('input', { type: 'password', autocomplete: 'current-password' });
+    const fresh = h('input', { type: 'password', autocomplete: 'new-password' });
+    const pwBtn = h('button.btn.sm', { type: 'submit' }, 'Change my password');
+    const pwForm = h('form.fields', field('Current password', cur), field('New password', fresh, '8 characters or more.'),
+      h('div.field.wide.inq-login-bar', pwBtn));
+    pwForm.addEventListener('submit', async ev => {
+      ev.preventDefault();
+      pwBtn.disabled = true;
+      try {
+        await inqApi('PATCH', '/api/team', '', { id: me.id, current: cur.value, password: fresh.value });
+        cur.value = fresh.value = '';
+        toast('Password changed. Your other devices are signed out.');
+      } catch (e) { toast(e.message, { bad: true }); }
+      pwBtn.disabled = false;
+    });
+    const signOut = async () => {
+      try { await inqApi('POST', '/api/logout', ''); } catch (e) { /* signed out here anyway */ }
+      inqAuth.clear();
+      toast('Signed out of the inquiries');
+      viewTeam();
+    };
+
+    // everyone on the team
+    const list = h('div.doc-list.team-list');
+    const drawList = () => list.replaceChildren(...d.items.map(m => {
+      const row = h('div.doc-row.team-row');
+      const av = () => h('div.inq-av', (who(m) || '?').trim().charAt(0).toUpperCase());
+      const setPw = () => {
+        const inp = h('input', { type: 'text', autocomplete: 'off', placeholder: 'New password, 8 characters or more' });
+        const save = h('button.btn.sm.gold', { type: 'submit' }, 'Save');
+        const f = h('form.team-pw', inp, save, h('button.btn.sm.ghost', { type: 'button', onclick: () => plain() }, 'Cancel'));
+        f.addEventListener('submit', async ev => {
+          ev.preventDefault();
+          save.disabled = true;
+          try {
+            await inqApi('PATCH', '/api/team', '', { id: m.id, password: inp.value });
+            toast('New password set for ' + who(m) + '. Tell them yourself.');
+            plain();
+          } catch (e) { save.disabled = false; toast(e.message, { bad: true }); }
+        });
+        row.replaceChildren(av(), h('div.dr-text', h('b', who(m)), f));
+        inp.focus();
+      };
+      const remove = async () => {
+        if (!await confirmBox('Remove ' + who(m) + '?', 'They won’t be able to sign in to the inquiries any more.', 'Remove', true)) return;
+        try {
+          await inqApi('DELETE', '/api/team', '?id=' + m.id);
+          d.items = d.items.filter(x => x !== m);
+          drawList();
+          toast(who(m) + ' removed');
+        } catch (e) { toast(e.message, { bad: true }); }
+      };
+      const plain = () => row.replaceChildren(...[av(),
+        h('div.dr-text', h('b', who(m), m.id === d.me ? h('span.inq-country', ' · you') : null),
+          h('small', [m.name ? m.email : null, m.last_login ? 'last signed in ' + whenText(m.last_login) : 'hasn’t signed in yet'].filter(Boolean).join(' · '))),
+        m.id === d.me ? null : h('div.team-acts',
+          h('button.btn.sm', { type: 'button', onclick: setPw }, 'New password'),
+          h('button.btn.sm.danger-text', { type: 'button', onclick: remove }, 'Remove'))].filter(Boolean));
+      plain();
+      return row;
+    }));
+    drawList();
+
+    // add someone
+    const nName = h('input', { type: 'text', autocomplete: 'off' });
+    const nEmail = h('input', { type: 'email', autocomplete: 'off' });
+    const nPass = h('input', { type: 'text', autocomplete: 'off' });
+    const addBtn = h('button.btn.gold.sm', { type: 'submit' }, icon('plus'), 'Add to the team');
+    const addForm = h('form.fields', field('Name', nName), field('Email', nEmail),
+      field('A password for them', nPass, '8 characters or more. Tell it to them yourself, for example on WhatsApp. They can change it on this page.'),
+      h('div.field.wide.inq-login-bar', addBtn));
+    addForm.addEventListener('submit', async ev => {
+      ev.preventDefault();
+      addBtn.disabled = true;
+      try {
+        const r = await inqApi('POST', '/api/team', '', { name: nName.value, email: nEmail.value, password: nPass.value });
+        d.items.push(r.item);
+        d.items.sort((a, b) => who(a).localeCompare(who(b)));
+        drawList();
+        nName.value = nEmail.value = nPass.value = '';
+        toast(who(r.item) + ' can now sign in');
+      } catch (e) { toast(e.message, { bad: true }); }
+      addBtn.disabled = false;
+    });
+
+    main.replaceChildren(page('Website', 'Team', 'Everyone here can sign in to read and answer the inquiries, each with their own email and password.',
+      h('section.card', h('div.card-head', h('h2', 'You'),
+        h('p.card-help', 'Signed in as ', h('b', who(me)), me.name ? ' (' + me.email + ')' : '', '. ',
+          h('button.link-btn', { type: 'button', onclick: signOut }, 'Sign out of the inquiries'))), pwForm),
+      h('section.card', h('div.card-head', h('h2', 'The team')), list),
+      h('section.card', h('div.card-head', h('h2', 'Add someone'),
+        h('p.card-help', 'Everyone on the team can read every inquiry, so only add people you trust.')), addForm)));
+  }
+
   function notFound() {
     main.replaceChildren(page(null, 'Not found', 'That page of the admin panel does not exist.', h('a.btn', { href: '#/' }, 'Back to the start')));
   }
@@ -1983,6 +2173,7 @@
     if (!a) return viewHome();
     if (a === 'photos') return viewPhotos(b);
     if (a === 'inquiries') return viewInquiries(b).catch(showError);
+    if (a === 'team') return viewTeam().catch(showError);
     if (a === 'c' && c) return viewDoc(b, c).catch(showError);
     if (a === 'c') return viewCollection(b).catch(showError);
     if (a === 'list') return viewList(b).catch(showError);
@@ -2047,9 +2238,7 @@
             h('li', 'Sign in to GitHub and open ', h('a', { href: 'https://github.com/settings/personal-access-tokens/new', target: '_blank', rel: 'noopener' }, 'New fine-grained token'), '.'),
             h('li', 'Name it “Sunbird admin” and choose an expiry date.'),
             h('li', 'Repository access: ', h('b', 'Only select repositories'), ' → ', h('b', gh.repo.split('/')[1] || gh.repo), '.'),
-            S.cfg.host === 'cloudflare'
-              ? h('li', 'Permissions → Repository permissions: ', h('b', 'Contents: Read and write'), '.')
-              : h('li', 'Permissions → Repository permissions: ', h('b', 'Contents: Read and write'), '. Also ', h('b', 'Actions: Read-only'), ' if you want to see when the site is live.'),
+            h('li', 'Permissions → Repository permissions: ', h('b', 'Contents: Read and write'), '. Also ', h('b', 'Actions: Read-only'), ' if you want to see when the site is live.'),
             h('li', 'Generate the token, copy it and paste it above.')),
           h('p.muted', 'The key stays in this browser only. Anyone who has it can change the website, so don’t share it. Sign out on shared computers.')))));
     inp.focus();
@@ -2070,13 +2259,14 @@
     setStatus('', S.be.mode === 'local' ? 'Ready' : 'Signed in');
     route();
     // the number of new inquiries, next to Inquiries in the menu
-    if (S.be.mode === 'github' && S.cfg.inquiries && !inq.items) loadInquiries().catch(e => { inq.error = e; });
+    if (inqBase() && inqAuth.token && !inq.items) loadInquiries().catch(e => { inq.error = e; });
   }
 
   async function boot() {
     let cfg = {};
     try { cfg = await (await fetch('config.json', { cache: 'no-store' })).json(); } catch (e) { /* no config */ }
     S.cfg = cfg;
+    inqAuth.load();
     if (cfg.mode === 'local') { S.be = Local; return start(); }
     if (!cfg.repo) {
       app.replaceChildren(h('div.login', h('div.login-box', h('h1', 'Admin is not set up'),

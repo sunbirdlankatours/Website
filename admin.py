@@ -40,6 +40,22 @@ build_lock = threading.Lock()
 state = {"ok": None, "log": "", "built": 0}
 
 
+def inquiry_api():
+    """The inquiry box's address (inquiry_api in content/settings.txt), so the panel's Inquiries page
+    works here too. INQUIRY_API=<address> overrides it, like in build.py."""
+    v = os.environ.get("INQUIRY_API", "")
+    if not v:
+        try:
+            with open(os.path.join(ROOT, "content", "settings.txt"), encoding="utf-8") as f:
+                for line in f:
+                    if line.startswith("inquiry_api:"):
+                        v = line.split(":", 1)[1]
+        except OSError:
+            pass
+    v = v.strip()
+    return "" if v.lower() in ("off", "no", "0") else v.rstrip("/")
+
+
 def run_build():
     with build_lock:
         r = subprocess.run([sys.executable, os.path.join(ROOT, "build.py")], cwd=ROOT,
@@ -135,7 +151,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             self.end_headers()
             return
         if u.path == "/admin/config.json":
-            return self.send_json({"mode": "local"})
+            return self.send_json({"mode": "local", "inquiry_api": inquiry_api()})
         if not u.path.startswith("/api/"):
             return super().do_GET()
         if not self.local_only():

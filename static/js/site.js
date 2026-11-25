@@ -2541,7 +2541,7 @@
   }
 
   // ---- enquiry forms and the trip letter go two ways at once: into the inquiry box that the admin
-  // panel reads (cfg.api, functions/api/inquiries.js, only on Cloudflare) and by email through
+  // panel reads (cfg.api, the Cloudflare Worker in worker/, from inquiry_api in settings.txt) and by email through
   // Web3Forms (cfg.key). Either one arriving is enough.
   var cfg = window.SB || {};
   var contactHtml = function () {

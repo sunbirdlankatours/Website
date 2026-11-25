@@ -36,7 +36,7 @@ The panel opens at <http://localhost:8090/admin/>. Saving writes straight into t
 and rebuilds the site at once, so you can check it at <http://localhost:8090/>. To put the changes online,
 upload them to GitHub as usual (GitHub Desktop: **Commit**, then **Push**).
 
-**On the live website**, at `sunbirdtours.lk/admin/` (or `vockshel-gif.github.io/SunBird/admin/` before the
+**On the live website**, at `sunbirdtours.lk/admin/` (or `sunbirdlankatours.github.io/Website/admin/` before the
 domain switch). Saving sends the change to GitHub, and the website updates about a minute later. The first
 time, the panel asks for a GitHub key:
 
@@ -90,45 +90,44 @@ Use JPG photos around 1600 px wide or smaller. Then use `/img/tours/your-photo.j
 
 A letter or form sent from the website goes two ways at once. Either one arriving is enough:
 
-- **Into the admin panel** (Inquiries). This works once the site runs on Cloudflare Pages
-  with the inquiry box connected (next section).
+- **Into the admin panel** (Inquiries), through the inquiry box on Cloudflare (next section).
 - **By email** through Web3Forms. Go to <https://web3forms.com>, enter `letstravel@sunbirdtours.lk`,
   get the free **Access Key** by email and put it in `content/settings.txt` on the `web3forms_key:` line.
 
 With neither, the forms ask visitors to email or WhatsApp you instead.
 
-## Host on Cloudflare Pages, with the inquiry box (one time)
+## The inquiry box on Cloudflare (one time)
 
-Cloudflare builds the site straight from this GitHub repository (it doesn't need GitHub Actions),
-serves it fast all over the world, and keeps the inquiries in a free D1 database.
-Use the Cloudflare account that already holds the `sunbirdtours.lk` DNS.
+The inquiry box is a small Cloudflare Worker (the `worker/` folder). It keeps the letters, and the
+team's emails and passwords, in a free D1 database. The website itself can be hosted anywhere
+(GitHub Pages now, Hostinger later): it only needs the inquiry box's address. Free, no card needed.
 
-1. **Workers & Pages → Create → Pages → Connect to Git**, allow Cloudflare to see the `SunBird`
-   repository and pick it.
-2. Build settings: framework preset **None**, build command
-   `pip install -r requirements.txt && python build.py`, build output directory `_site`,
-   production branch `main`. **Save and Deploy.**
-   The site appears at `https://<project-name>.pages.dev`.
-3. **Workers & Pages → D1 SQL database → Create**, name it `sunbird-inquiries`.
-4. Open the Pages project → **Settings → Bindings → Add → D1 database**:
-   variable name `DB`, database `sunbird-inquiries` → Save.
-5. **Deployments → the newest one → ⋯ → Retry deployment**, so the site picks up the database.
-6. Test it: send a letter from `https://<project-name>.pages.dev/contact-us/`, then open
-   `https://<project-name>.pages.dev/admin/`, sign in with the GitHub key and open **Inquiries**.
+1. **Storage & Databases → D1 SQL Database → Create**, name it `sunbird-inquiries`.
+2. **Workers & Pages → Create → Start with Hello World**, give it a name and **Deploy**. Note its
+   address, ending in `.workers.dev`.
+3. Open the Worker → **Bindings → Add binding → D1 database**: variable name `DB`,
+   database `sunbird-inquiries` (tick **Use production value** for previews) → **Add Binding**.
+4. Open the Worker → **Settings → Variables and Secrets → Add**: type **Secret**, name `SETUP_CODE`,
+   and a value only you know (8 characters or more). It is used to make the first account, and
+   to set a new password when one is forgotten.
+5. Put the Worker's address in `content/settings.txt` on the `inquiry_api:` line.
+6. Send the code to the Worker (from the `worker` folder, on a computer with Node.js 22 or newer):
+   `npx wrangler login` once, then `npx wrangler deploy`. The first time, put the database's id
+   (Cloudflare shows it on the D1 page, or `npx wrangler d1 list`) in `worker/wrangler.toml`.
+7. Open the admin panel → **Inquiries → First time, or forgot your password?**, type the setup code,
+   your name, email and a password. Then add the rest of the team on the **Team** page.
 
 How it works:
 
-- The inquiry box is `functions/api/inquiries.js`. The table makes itself on first use.
-- It lets in whoever signs in to the admin panel with a GitHub key that may change this repository.
-- It takes at most 10 letters an hour from one connection.
-- Every save in the admin panel starts a new Cloudflare build. The top bar says "Live on the site"
-  when it's done. The free plan allows 500 builds a month.
-- **Moving the real domain** (only when you're ready to replace the old WordPress site): in the Pages
-  project, open **Custom domains → Set up a custom domain** and add `sunbirdtours.lk`, then `www.sunbirdtours.lk`.
-  **Do not change the MX / email records.**
-- Once Cloudflare hosts the site, `.github/workflows/publish.yml` (GitHub Pages) isn't needed any more.
+- Anyone can send a letter; only someone signed in can read them. The tables make themselves on first use.
+- It takes letters only from the site's own addresses (`sunbirdtours.lk`, the GitHub test site and
+  `localhost`); more can be added as `ALLOWED_ORIGINS` in the Worker's settings.
+- At most 10 letters an hour from one connection. After 8 wrong passwords in 15 minutes, that
+  connection has to wait 15 minutes.
+- Passwords are kept scrambled (PBKDF2), never as typed. A sign-in lasts 30 days on a device.
+- Changing a password signs out that person's other devices. Removing someone signs them out at once.
 
-Photos: when Pillow is installed (`pip install pillow`; on Cloudflare the build command installs it),
+Photos: when Pillow is installed (`pip install pillow`),
 the build makes smaller WebP copies of every photo in `/imgv/`, in several widths for the big ones,
 so phones download phone-sized photos. The text files keep using the normal `/img/...jpg` names.
 
@@ -146,7 +145,7 @@ so phones download phone-sized photos. The text files keep using the normal `/im
 
 ### Test address before the domain switch
 
-Until step 3 is done, the site runs at `https://vockshel-gif.github.io/SunBird/`.
+Until step 3 is done, the site runs at `https://sunbirdlankatours.github.io/Website/`.
 The build adjusts every link for that sub-folder automatically, and stops doing so
 as soon as the custom domain is set. Nothing needs changing by hand.
 
@@ -159,5 +158,6 @@ python -m http.server 8000 --directory _site
 
 Then open <http://localhost:8000>.
 
-To try the inquiry box on your own computer, build with `INQUIRY_API=/api/inquiries` (or `CF_PAGES=1`)
-and serve `_site` with Cloudflare's `wrangler pages dev _site --d1 DB` instead.
+To try the inquiry box on your own computer, run it with `npx wrangler dev --var SETUP_CODE:try-it-out`
+in the `worker` folder (it keeps its own test database), and build with
+`INQUIRY_API=http://localhost:8787` so the site and the admin panel use it.

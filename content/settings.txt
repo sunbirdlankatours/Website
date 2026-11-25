@@ -25,6 +25,8 @@ tripadvisor: https://www.tripadvisor.com/Attraction_Review-g297897-d16831459-Rev
 
 # Enquiry forms: get a free key at https://web3forms.com (enter letstravel@sunbirdtours.lk)
 web3forms_key: PASTE-YOUR-WEB3FORMS-KEY-HERE
+# The inquiry box on Cloudflare: letters and forms are also kept there for the admin panel (Inquiries)
+inquiry_api: https://green-sea-c14dsunbird-inquiries.sunbirdlankatours.workers.dev
 
 # Google tag (analytics) and Tawk.to live chat
 google_tag: GT-KV5H35VK
@@ -38,5 +40,5 @@ languages: en, fr, de, it, es, nl, pt, ru, ar, zh-CN
 footer_text: We turn your Sri Lanka journey into a soulful, joy-filled adventure with authentic moments and lasting memories.
 
 # Admin panel (/admin/): the GitHub repository it saves to when used on the live website
-admin_repo: vockshel-gif/SunBird
+admin_repo: sunbirdlankatours/Website
 admin_branch: main

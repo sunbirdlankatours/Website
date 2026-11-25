@@ -1,0 +1,16 @@
+# The Sunbird inquiry box (src/index.js), a Cloudflare Worker. README.md → "The inquiry box" explains it.
+# Send a new version to Cloudflare from this folder with:  npx wrangler deploy
+# Try it on this computer with:  npx wrangler dev --var SETUP_CODE:try-it-out
+name = "green-sea-c14dsunbird-inquiries"
+main = "src/index.js"
+compatibility_date = "2026-05-01"
+workers_dev = true
+preview_urls = false
+
+[observability]
+enabled = true
+
+[[d1_databases]]
+binding = "DB"
+database_name = "sunbird-inquiries"
+database_id = "85f119bf-43d2-4802-a973-9815f1638f42"

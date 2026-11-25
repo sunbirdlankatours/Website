@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      # Tells the build where the site lives: "/SunBird" on username.github.io/SunBird/,
+      # Tells the build where the site lives: "/Website" on sunbirdlankatours.github.io/Website/,
       # or nothing once the custom domain (sunbirdtours.lk) is set in Settings -> Pages.
       - id: pages
         uses: actions/configure-pages@v5

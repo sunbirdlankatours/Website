@@ -26,12 +26,13 @@ OUT = os.path.join(ROOT, "_site")
 
 esc = lambda s: html.escape(str(s or ""), quote=True)  # noqa: E731
 
-# The inquiry box (functions/api/inquiries.js) only exists when Cloudflare Pages hosts the site;
-# Cloudflare sets CF_PAGES while it builds. Letters and forms then also go there, for the admin panel.
-# INQUIRY_API=/api/inquiries switches it on by hand (for testing), INQUIRY_API=off switches it off.
-INQUIRY_API = os.environ.get("INQUIRY_API") or ("/api/inquiries" if os.environ.get("CF_PAGES") else "")
-if INQUIRY_API.lower() in ("off", "no", "0"):
-    INQUIRY_API = ""
+# The inquiry box is a Cloudflare Worker (worker/ in this folder) that keeps trip letters and forms,
+# and the team's sign-ins, for the admin panel. Its address is inquiry_api in settings.txt; letters and
+# forms go there as well as by email. INQUIRY_API=<address> overrides it (for testing), INQUIRY_API=off
+# switches it off.
+def inquiry_api(s):
+    v = (os.environ.get("INQUIRY_API") or s.get("inquiry_api", "")).strip()
+    return "" if v.lower() in ("off", "no", "0") else v.rstrip("/")
 
 
 # =============================================================== reading files
@@ -2392,9 +2393,8 @@ class Builder:
         own_chat = s.get("chat_box", "").strip().lower() in ("on", "yes", "true", "1")
         tawk = None if own_chat else s.get("tawk_chat")
         cfg ={"key": s.get("web3forms_key", ""), "email": s.get("email", ""), "whatsapp": s.get("whatsapp", "")}
-        if INQUIRY_API:
-            base = os.environ.get("SITE_BASE_PATH", "").strip("/")
-            cfg["api"] = ("/" + base if base and INQUIRY_API.startswith("/") else "") + INQUIRY_API
+        if inquiry_api(s):
+            cfg["api"] = inquiry_api(s) + "/api/inquiries"
         doc = """<!doctype html>
 <html lang="en">
 <head>
@@ -3050,16 +3050,13 @@ def main():
     b.build_posts()
     n_red = b.build_redirects()
     n = b.build_extras()
-    # the admin panel (/admin/) saves to this GitHub repository when it runs on the live site
+    # the admin panel (/admin/) saves to this GitHub repository when it runs on the live site,
+    # and reads letters from the inquiry box
     if os.path.isdir(os.path.join(OUT, "admin")):
         with open(os.path.join(OUT, "admin", "config.json"), "w", encoding="utf-8") as f:
             json.dump({"mode": "github", "repo": site.s.get("admin_repo", ""),
                        "branch": site.s.get("admin_branch", "main") or "main",
-                       # on Cloudflare: the inquiry box, and the commit this build was made from
-                       # (the panel compares it with its last save to say "Live on the site")
-                       "inquiries": bool(INQUIRY_API),
-                       "host": "cloudflare" if os.environ.get("CF_PAGES") else "",
-                       "built_from": os.environ.get("CF_PAGES_COMMIT_SHA", "")}, f)
+                       "inquiry_api": inquiry_api(site.s)}, f)
     print("Built %d pages, %d tours, %d posts, %d redirects -> %s" % (n, len(site.tours), len(site.posts), n_red, OUT))
     use_photo_copies(make_photo_copies())
     base = os.environ.get("SITE_BASE_PATH", "")
