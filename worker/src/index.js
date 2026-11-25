@@ -18,9 +18,17 @@
      POST   /api/team               {name, email, password}         adds someone
      PATCH  /api/team               {id, password, current?, name?} a new password (your own needs the current one)
      DELETE /api/team?id=N          removes someone (not yourself)
+   The website's own files, for the admin panel's editors (only content/ and static/img/):
+     GET    /api/site/files         every editable file: [{path, size, sha}]
+     GET    /api/site/file?sha=S    one file's contents (base64)
+     POST   /api/site/upload        {content, encoding: "base64"} → {sha}   a new file's contents
+     POST   /api/site/save          {changes: [{path, sha} | {path, delete}], message, expected}
+                                    → {commit}   saves them together as one change to the website
+     GET    /api/site/status?sha=C  whether the website has been rebuilt with that change yet
 
-   Setting it up (once): in Cloudflare, give the Worker a D1 database binding called DB, and a secret
-   called SETUP_CODE. The tables make themselves the first time they are used. README.md has the clicks. */
+   Setting it up (once): in Cloudflare, give the Worker a D1 database binding called DB, and the
+   secrets SETUP_CODE and GITHUB_TOKEN (a GitHub key that may change GITHUB_REPO, see wrangler.toml).
+   The tables make themselves the first time they are used. README.md has the clicks. */
 
 const FIELDS = { // the parts of a letter or form that are kept, with the most characters kept of each
   name: 120, email: 200, phone: 60, country: 80, travellers: 120, adults: 4, children: 4,
@@ -229,6 +237,15 @@ async function handle(request, env) {
       if (m === "POST") return await addMember(c);
       if (m === "PATCH") return await changeMember(c, me);
       if (m === "DELETE") return await removeMember(c, me);
+    } else if (path.startsWith("/api/site/")) {
+      const me = await signedIn(c);
+      const what = path.slice("/api/site/".length);
+      if (what === "files" && m === "GET") return await siteFiles(c);
+      if (what === "file" && m === "GET") return await siteFile(c);
+      if (what === "upload" && m === "POST") return await siteUpload(c);
+      if (what === "save" && m === "POST") return await siteSave(c, me);
+      if (what === "status" && m === "GET") return await siteStatus(c);
+      if (!["files", "file", "upload", "save", "status"].includes(what)) return json({ error: "Not found." }, 404);
     } else {
       return json({ error: "Not found." }, 404);
     }
@@ -450,6 +467,125 @@ async function changeMember({ request, env, db }, me) {
   if (!sets.length) stop(400, "Nothing to change.");
   await db.batch(sets);
   return json({ ok: true });
+}
+
+// ------------------------------------------------------------------ the website's files
+// The admin panel's editors read and save the website's texts and photos through here, so the team
+// never needs a GitHub key of their own: the Worker uses the GITHUB_TOKEN secret, and only for the
+// folders the panel may change. Every save becomes one commit, with the team member as its author.
+const EDITABLE = ["content/", "static/img/"];
+const SHA = /^[0-9a-f]{40}$/;
+
+function canEdit(p) {
+  return typeof p === "string" && p.length < 300 && EDITABLE.some(d => p.startsWith(d))
+    && !p.split("/").some(s => s === "" || s === "." || s === "..") && !/[\u0000-\u001f\\:*?"<>|]/.test(p);
+}
+
+function repoOf(env) {
+  const repo = String(env.GITHUB_REPO || "sunbirdlankatours/Website");
+  if (!env.GITHUB_TOKEN || !/^[\w.-]+\/[\w.-]+$/.test(repo)) {
+    stop(503, "Saving the website isn’t connected yet. In Cloudflare, add the GITHUB_TOKEN secret to the inquiry box.", { setup: "github" });
+  }
+  return { repo, branch: String(env.GITHUB_BRANCH || "main") };
+}
+
+async function github(env, path, opts = {}) {
+  const { repo } = repoOf(env);
+  const r = await fetch((env.GITHUB_API || "https://api.github.com") + "/repos/" + repo + path, {
+    method: opts.method || "GET",
+    headers: Object.assign({
+      Authorization: "Bearer " + env.GITHUB_TOKEN, Accept: "application/vnd.github+json",
+      "X-GitHub-Api-Version": "2022-11-28", "User-Agent": "sunbird-inquiry-box",
+    }, opts.body ? { "Content-Type": "application/json" } : {}),
+    body: opts.body,
+  });
+  const data = r.status === 204 ? {} : await r.json().catch(() => ({}));
+  if (!r.ok) {
+    if (r.status === 401) stop(503, "The GitHub key in Cloudflare doesn’t work any more (it may have run out). Make a new one and put it in GITHUB_TOKEN.", { setup: "github" });
+    if (opts.allow && opts.allow.includes(r.status)) return { failed: r.status };
+    if (r.status === 403 || r.status === 404) stop(503, "The GitHub key in Cloudflare may not change " + repo + ". Check its repository and permissions.", { setup: "github" });
+    const e = new Error("GitHub: " + (data.message || r.status));
+    e.status = r.status;
+    throw e;
+  }
+  return data;
+}
+
+async function headOf(env) {
+  const { branch } = repoOf(env);
+  const ref = await github(env, "/git/ref/heads/" + branch);
+  const commit = await github(env, "/git/commits/" + ref.object.sha);
+  const tree = await github(env, "/git/trees/" + commit.tree.sha + "?recursive=1");
+  return { commit: ref.object.sha, tree: commit.tree.sha, blobs: (tree.tree || []).filter(e => e.type === "blob") };
+}
+
+async function siteFiles({ env }) {
+  const hd = await headOf(env);
+  return json({ commit: hd.commit, files: hd.blobs.filter(e => canEdit(e.path)).map(e => ({ path: e.path, size: e.size, sha: e.sha })) });
+}
+
+async function siteFile({ env, url }) {
+  const sha = url.searchParams.get("sha") || "";
+  if (!SHA.test(sha)) stop(400, "Which file?");
+  const b = await github(env, "/git/blobs/" + sha);
+  return json({ content: String(b.content || "").replace(/\s+/g, "") });
+}
+
+async function siteUpload({ request, env }) {
+  if (Number(request.headers.get("Content-Length") || 0) > 30 * 1048576) stop(413, "That file is too big.");
+  const body = await request.arrayBuffer(); // passed on as it is: {content, encoding: "base64"}
+  if (!body.byteLength) stop(400, "Nothing to upload.");
+  const b = await github(env, "/git/blobs", { method: "POST", body });
+  return json({ sha: b.sha });
+}
+
+async function siteSave({ request, env }, me) {
+  const b = await readJson(request);
+  const changes = Array.isArray(b.changes) ? b.changes : [];
+  if (!changes.length || changes.length > 200) stop(400, "Nothing to save.");
+  for (const ch of changes) {
+    if (!ch || !canEdit(ch.path)) stop(400, "The admin panel may not change " + (ch && ch.path) + ".");
+    if (!ch.delete && !SHA.test(String(ch.sha || ""))) stop(400, "Something is missing from " + ch.path + ".");
+  }
+  const expected = b.expected && typeof b.expected === "object" ? b.expected : {};
+  const message = String(b.message || "Update the website").replace(/\s+/g, " ").trim().slice(0, 200);
+  const who = me.name || me.email;
+  const { branch } = repoOf(env);
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const hd = await headOf(env);
+    const now = new Map(hd.blobs.map(e => [e.path, e.sha]));
+    for (const [p, sha] of Object.entries(expected)) { // someone else changed it since it was opened
+      if (sha && now.get(p) !== sha) stop(409, "Someone else changed " + p + " since you opened it.", { conflict: p });
+    }
+    const entries = [];
+    for (const ch of changes) {
+      if (ch.delete) { if (now.has(ch.path)) entries.push({ path: ch.path, mode: "100644", type: "blob", sha: null }); }
+      else entries.push({ path: ch.path, mode: "100644", type: "blob", sha: ch.sha });
+    }
+    if (!entries.length) stop(400, "Nothing to save.");
+    const tree = await github(env, "/git/trees", { method: "POST", body: JSON.stringify({ base_tree: hd.tree, tree: entries }) });
+    const commit = await github(env, "/git/commits", {
+      method: "POST",
+      body: JSON.stringify({
+        message: message + "\n\nSaved in the admin panel by " + who + ".",
+        tree: tree.sha, parents: [hd.commit],
+        author: { name: who, email: me.email, date: new Date().toISOString() },
+      }),
+    });
+    const moved = await github(env, "/git/refs/heads/" + branch, { method: "PATCH", body: JSON.stringify({ sha: commit.sha }), allow: [409, 422] });
+    if (!moved.failed) return json({ ok: true, commit: commit.sha });
+    // someone saved at the same moment: try once more on top of their change
+  }
+  stop(409, "Someone else saved at the same moment. Please try again.");
+}
+
+async function siteStatus({ env, url }) {
+  const sha = url.searchParams.get("sha") || "";
+  if (!SHA.test(sha)) stop(400, "Which change?");
+  const r = await github(env, "/actions/runs?head_sha=" + sha + "&per_page=5", { allow: [403, 404] });
+  if (r.failed) return json({ found: false, unknown: true }); // the key may not read Actions
+  const run = (r.workflow_runs || [])[0];
+  return json(run ? { found: true, status: run.status, conclusion: run.conclusion, url: run.html_url } : { found: false });
 }
 
 async function removeMember({ url, db }, me) {

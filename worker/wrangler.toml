@@ -10,6 +10,11 @@ preview_urls = false
 [observability]
 enabled = true
 
+# the website's files, which the admin panel edits through the Worker (the GITHUB_TOKEN secret)
+[vars]
+GITHUB_REPO = "sunbirdlankatours/Website"
+GITHUB_BRANCH = "main"
+
 [[d1_databases]]
 binding = "DB"
 database_name = "sunbird-inquiries"

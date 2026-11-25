@@ -1,9 +1,10 @@
 /* Sunbird admin panel.
    It works two ways, with the same screens:
    - on your computer (python admin.py): saves straight into the files and rebuilds the site;
-   - on the live website (/admin/): saves to GitHub, which rebuilds and publishes the site.
-   Inquiries and Team talk to the inquiry box on Cloudflare (worker/ in the project) in both cases,
-   with the team's own email and password.
+   - on the live website (/admin/): saves through the inquiry box on Cloudflare (worker/ in the project)
+     to GitHub, which rebuilds and publishes the site.
+   Either way, everyone first signs in with their own email and password (checked by the inquiry box),
+   and Inquiries and Team come from the inquiry box too.
    No libraries: everything is in this file. */
 (function () {
   'use strict';
@@ -262,8 +263,49 @@
         watchPublish(commit.sha);
         return { files: await gh.tree() };
       },
+      async runStatus(sha) {
+        const r = await gh.api('/actions/runs?head_sha=' + sha + '&per_page=5');
+        const run = (r.workflow_runs || [])[0];
+        return run ? { found: true, status: run.status, conclusion: run.conclusion, url: run.html_url } : { found: false };
+      },
     };
     return gh;
+  }
+
+  // ====================================================================== saving: through Cloudflare
+  // On the live website the panel reads and saves the website's files through the inquiry box
+  // (worker/ in the project), which keeps the GitHub key. So the team only ever signs in with their
+  // own email and password, and nobody needs a GitHub key.
+  function makeCloud(cfg) {
+    const cl = {
+      mode: 'cloud',
+      repo: cfg.repo || '',
+      fresh: new Map(), // photos uploaded but not published yet: path -> blob URL
+      async tree() { return (await inqApi('GET', '/api/site/files')).files; },
+      async readText(f) { return dec.decode(b64ToBytes((await inqApi('GET', '/api/site/file', '?sha=' + f.sha)).content)); },
+      imageUrl: f => cl.fresh.get(f.path) || siteBase + sitePath(f.path),
+      siteUrl: u => (u.startsWith('/') ? siteBase + u : u),
+      async commit(changes, message, expected) {
+        const list = [];
+        for (const c of changes) {
+          if (c.delete) { list.push({ path: c.path, delete: true }); continue; }
+          const up = await inqApi('POST', '/api/site/upload', '', { content: bytesToB64(c.bytes || enc.encode(c.text)), encoding: 'base64' });
+          list.push({ path: c.path, sha: up.sha });
+        }
+        let d;
+        try {
+          d = await inqApi('POST', '/api/site/save', '', { changes: list, message, expected: expected || {} });
+        } catch (e) {
+          if (e.status === 409 && e.conflict) throw new Conflict(e.conflict);
+          throw e;
+        }
+        changes.forEach(c => { if (c.blobUrl) cl.fresh.set(c.path, c.blobUrl); });
+        watchPublish(d.commit);
+        return { files: await cl.tree() };
+      },
+      runStatus: sha => inqApi('GET', '/api/site/status', '?sha=' + sha),
+    };
+    return cl;
   }
 
   // "Publishing…" -> "Live" in the top bar, from GitHub's build of the site
@@ -275,13 +317,13 @@
     publishTimer = setInterval(async () => {
       if (Date.now() - started > 6 * 60 * 1000) { clearInterval(publishTimer); setStatus('', 'Saved'); return; }
       try {
-        const r = await S.be.api('/actions/runs?head_sha=' + sha + '&per_page=5');
-        const run = (r.workflow_runs || [])[0];
-        if (!run) return;
+        const run = await S.be.runStatus(sha);
+        if (run.unknown) throw new Error('unknown');
+        if (!run.found) return;
         if (run.status !== 'completed') { setStatus('busy', 'Publishing…'); return; }
         clearInterval(publishTimer);
         if (run.conclusion === 'success') setStatus('ok', 'Live on the site');
-        else setStatus('bad', 'The site did not update', run.html_url);
+        else setStatus('bad', 'The site did not update', run.url);
       } catch (e) {
         // the key may not be allowed to read Actions: just say it was saved
         clearInterval(publishTimer);
@@ -572,8 +614,10 @@
     const siteLink = h('a.top-link', { href: S.be.siteUrl('/'), target: '_blank', rel: 'noopener' }, 'View site', icon('ext'));
     const modeChip = S.be.mode === 'local'
       ? h('span.mode-chip', { title: 'Changes are saved into the files on this computer and the site is rebuilt at once.' }, h('i'), 'On this computer')
-      : h('span.mode-chip.online', { title: 'Changes are saved to GitHub and published.' }, h('i'), 'Online · ' + S.be.repo);
-    const signOut = S.be.mode === 'github' ? h('button.top-link.plain', { type: 'button', onclick: () => { S.be.signOut(); location.reload(); } }, 'Sign out') : null;
+      : h('span.mode-chip.online', { title: 'Changes are saved to the website and published about a minute later.' }, h('i'), 'Online · ' + S.be.repo);
+    const me = inqAuth.user ? (inqAuth.user.name || inqAuth.user.email) : '';
+    const who = me ? h('span.top-who', { title: inqAuth.user.email }, me) : null;
+    const signOut = inqAuth.token || S.be.mode === 'github' ? h('button.top-link.plain', { type: 'button', onclick: signOutAll }, 'Sign out') : null;
     saveBarText = h('span.sb-text', 'You have unsaved changes');
     saveBar = h('div.save-bar', { hidden: true },
       h('div.sb-inner', saveBarText,
@@ -583,7 +627,7 @@
     app.replaceChildren(
       h('header.topbar',
         h('a.brand', { href: '#/' }, h('img', { src: imgUrl('/img/logo-white.png'), alt: '' }), h('span', 'Admin')),
-        modeChip, h('div.spacer'), statusEl, siteLink, signOut),
+        modeChip, h('div.spacer'), statusEl, siteLink, who, signOut),
       h('div.layout', h('aside.side', nav), main),
       saveBar,
       h('div.toasts'));
@@ -1389,7 +1433,7 @@
     ];
     const how = S.be.mode === 'local'
       ? [h('b', 'Working on this computer.'), ' Saving writes into the files in this folder and rebuilds the site at once, so you can check it on ', h('a', { href: '/', target: '_blank' }, 'localhost'), '. To put changes online, upload them to GitHub as usual.']
-      : [h('b', 'Working on the live website.'), ' Saving sends the change to GitHub, and the website updates a minute or two later. The status at the top shows when it is live.'];
+      : [h('b', 'Working on the live website.'), ' Saving sends the change to the website, and it updates about a minute later. The status at the top shows when it is live.'];
     main.replaceChildren(page('Sunbird Lanka Tours', hello + '.', 'What would you like to change today?',
       h('div.tiles', tiles.map(t => h('a.tile-card', { href: t[0] }, icon(t[4]), h('h2', t[1]), h('p.tc-count', t[2]), h('p.tc-sub', t[3])))),
       h('div.note', how)));
@@ -1768,6 +1812,7 @@
   const INQ_KEY = 'sbInquiryPass';
   const inqAuth = {
     token: '',
+    user: null, // {id, email, name} once checked
     load() {
       try { inqAuth.token = sessionStorage.getItem(INQ_KEY) || localStorage.getItem(INQ_KEY) || ''; } catch (e) { /* storage blocked */ }
     },
@@ -1780,6 +1825,7 @@
     },
     clear() {
       inqAuth.token = '';
+      inqAuth.user = null;
       inq.items = null;
       try { localStorage.removeItem(INQ_KEY); sessionStorage.removeItem(INQ_KEY); } catch (e) { /* nothing stored */ }
       setInquiryBadge();
@@ -1806,7 +1852,11 @@
       const e = new Error((data && (data.error || data.message)) || 'The inquiry box did not answer (' + r.status + ').');
       e.status = r.status;
       e.setup = data && data.setup;
-      if (r.status === 401 && data && data.signin) inqAuth.clear(); // the sign-in ran out or was ended
+      e.conflict = data && data.conflict;
+      if (r.status === 401 && data && data.signin) { // the sign-in ran out or was ended: sign in again
+        inqAuth.clear();
+        if (S.started) setTimeout(() => teamLogin(e.message), 0);
+      }
       throw e;
     }
     return data;
@@ -1866,9 +1916,27 @@
     return h('div.note', h('b', 'The inquiries could not be loaded. '), (e && e.message) || '');
   }
 
-  // sign in to the inquiry box, or make an account with the setup code; done() runs once signed in
+  // the sign-in screen for the whole panel: sign in with your team email and password, or make an
+  // account with the setup code. The inquiry box on Cloudflare checks it.
+  function teamLogin(note) {
+    clearInterval(publishTimer);
+    S.started = false;
+    app.replaceChildren(h('div.login', h('div.login-box',
+      h('img.login-logo', { src: siteBase + '/img/logo.png', alt: 'Sunbird Lanka Tours' }),
+      h('h1', 'Admin'),
+      inqSignIn(() => start(), note))));
+  }
+
+  async function signOutAll() {
+    try { if (inqAuth.token) await inqApi('POST', '/api/logout', ''); } catch (e) { /* signed out here anyway */ }
+    inqAuth.clear();
+    if (S.be && S.be.mode === 'github') S.be.signOut();
+    location.reload();
+  }
+
+  // the sign-in form; done() runs once signed in
   function inqSignIn(done, error) {
-    const box = h('section.card.inq-login');
+    const box = h('div.signin');
     const draw = (mode, msgText) => {
       const field = (label, input, help) => h('label.field', h('span.f-label', label), input, help ? h('span.f-help', help) : null);
       const code = h('input', { type: 'password', autocomplete: 'off' });
@@ -1898,20 +1966,20 @@
             ? await inqApi('POST', '/api/login', '', { email: email.value, password: pass.value })
             : await inqApi('POST', '/api/setup', '', { code: code.value, name: name.value, email: email.value, password: pass.value });
           inqAuth.set(d.token, remember.checked);
+          inqAuth.user = d.user;
           inq.items = null;
+          await done();
           toast(mode === 'in' ? 'Signed in as ' + (d.user.name || d.user.email)
             : (d.reset ? 'New password set' : 'Account made') + ' · signed in as ' + (d.user.name || d.user.email));
-          done();
         } catch (e) {
           btn.disabled = false;
           msg.textContent = e.message;
         }
       });
       box.replaceChildren(
-        h('div.card-head', h('h2', mode === 'in' ? 'Sign in to the inquiries' : 'Make an account'),
-          h('p.card-help', mode === 'in'
-            ? 'Use your own team email and password. This is separate from saving the website.'
-            : 'For the first account, or to set a new password when one is forgotten.')),
+        h('p.signin-help', mode === 'in'
+          ? 'Sign in with your own team email and password.'
+          : 'Make an account with the setup code: for the first account, or to set a new password when one is forgotten.'),
         form);
       setTimeout(() => (mode === 'in' ? email : code).focus(), 0);
     };
@@ -1922,12 +1990,13 @@
   async function viewInquiries(id) {
     const blank = body => main.replaceChildren(page('Website', 'Inquiries', 'Trip letters and enquiry forms sent from the website.', body));
     if (!inqBase()) return blank(inquiryBlocked(null));
-    if (!inqAuth.token) return blank(inqSignIn(() => viewInquiries(id)));
+    if (!inqAuth.token) return teamLogin();
     if (!inq.items) {
       loading('Opening the inquiry box…');
       try { await loadInquiries(); } catch (e) {
         inq.error = e;
-        return blank(e.status === 401 ? inqSignIn(() => viewInquiries(id), e.message) : inquiryBlocked(e));
+        if (e.status === 401) return; // the sign-in screen is shown
+        return blank(inquiryBlocked(e));
       }
     }
     if (id) return viewInquiry(Number(id));
@@ -2044,15 +2113,16 @@
   }
 
   // ------------------------------------------------------------------ team
-  // Who may read the inquiries: each person signs in to the inquiry box with their own email and password.
+  // Who may use the admin panel: each person signs in with their own email and password.
   async function viewTeam() {
-    const blank = body => main.replaceChildren(page('Website', 'Team', 'Who can sign in to read the inquiries.', body));
+    const blank = body => main.replaceChildren(page('Website', 'Team', 'Who can sign in to the admin panel.', body));
     if (!inqBase()) return blank(inquiryBlocked(null));
-    if (!inqAuth.token) return blank(inqSignIn(viewTeam));
+    if (!inqAuth.token) return teamLogin();
     loading('Opening the team list…');
     let d;
     try { d = await inqApi('GET', '/api/team'); } catch (e) {
-      return blank(e.status === 401 ? inqSignIn(viewTeam, e.message) : inquiryBlocked(e));
+      if (e.status === 401) return; // the sign-in screen is shown
+      return blank(inquiryBlocked(e));
     }
     const me = d.items.find(m => m.id === d.me) || { id: d.me, name: '', email: '' };
     const who = m => m.name || m.email;
@@ -2074,13 +2144,6 @@
       } catch (e) { toast(e.message, { bad: true }); }
       pwBtn.disabled = false;
     });
-    const signOut = async () => {
-      try { await inqApi('POST', '/api/logout', ''); } catch (e) { /* signed out here anyway */ }
-      inqAuth.clear();
-      toast('Signed out of the inquiries');
-      viewTeam();
-    };
-
     // everyone on the team
     const list = h('div.doc-list.team-list');
     const drawList = () => list.replaceChildren(...d.items.map(m => {
@@ -2144,13 +2207,13 @@
       addBtn.disabled = false;
     });
 
-    main.replaceChildren(page('Website', 'Team', 'Everyone here can sign in to read and answer the inquiries, each with their own email and password.',
+    main.replaceChildren(page('Website', 'Team', 'Everyone here can sign in to the admin panel, each with their own email and password.',
       h('section.card', h('div.card-head', h('h2', 'You'),
         h('p.card-help', 'Signed in as ', h('b', who(me)), me.name ? ' (' + me.email + ')' : '', '. ',
-          h('button.link-btn', { type: 'button', onclick: signOut }, 'Sign out of the inquiries'))), pwForm),
+          h('button.link-btn', { type: 'button', onclick: signOutAll }, 'Sign out'))), pwForm),
       h('section.card', h('div.card-head', h('h2', 'The team')), list),
       h('section.card', h('div.card-head', h('h2', 'Add someone'),
-        h('p.card-help', 'Everyone on the team can read every inquiry, so only add people you trust.')), addForm)));
+        h('p.card-help', 'Everyone on the team can change the website and read every inquiry, so only add people you trust.')), addForm)));
   }
 
   function notFound() {
@@ -2170,6 +2233,12 @@
     });
     window.scrollTo(0, 0);
     const [a, b, c] = parts;
+    // editing the website isn't connected yet (no GitHub key in Cloudflare): Inquiries and Team still work
+    if (S.siteError && a !== 'inquiries' && a !== 'team') {
+      return main.replaceChildren(page('Website', 'Editing the website isn’t connected yet', null,
+        h('div.note', S.siteError, ' Until then, Inquiries and Team work as usual.'),
+        h('p', h('a.btn', { href: '#/inquiries' }, icon('mail'), 'Inquiries'), ' ', h('a.btn', { href: '#/team' }, icon('user'), 'Team'))));
+    }
     if (!a) return viewHome();
     if (a === 'photos') return viewPhotos(b);
     if (a === 'inquiries') return viewInquiries(b).catch(showError);
@@ -2247,19 +2316,42 @@
   // ====================================================================== start
   async function start() {
     app.replaceChildren(h('p.boot', 'Opening the admin panel…'));
+    S.siteError = '';
     try {
       setFiles(await S.be.tree());
     } catch (e) {
       if (S.be.mode === 'github' && (e.status === 401 || e.status === 403 || e.status === 404)) { S.be.signOut(); return loginScreen(S.be, e.message); }
-      app.replaceChildren(h('div.login', h('div.login-box', h('h1', 'Could not open the files'), h('p', e.message), h('button.btn', { type: 'button', onclick: () => location.reload() }, 'Try again'))));
-      return;
+      if (S.be.mode === 'cloud' && e.status === 401) return; // the sign-in screen is shown
+      if (S.be.mode === 'cloud' && e.setup === 'github') {
+        S.siteError = e.message; // Inquiries and Team still work
+        setFiles([]);
+      } else {
+        app.replaceChildren(h('div.login', h('div.login-box', h('h1', 'Could not open the files'), h('p', e.message), h('button.btn', { type: 'button', onclick: () => location.reload() }, 'Try again'))));
+        return;
+      }
     }
     S.ready = preloadTexts();
     shell();
+    S.started = true;
     setStatus('', S.be.mode === 'local' ? 'Ready' : 'Signed in');
     route();
     // the number of new inquiries, next to Inquiries in the menu
     if (inqBase() && inqAuth.token && !inq.items) loadInquiries().catch(e => { inq.error = e; });
+  }
+
+  // with an inquiry box, everyone signs in with their own email and password before anything else
+  async function checkSignIn() {
+    if (!inqAuth.token) return teamLogin();
+    app.replaceChildren(h('p.boot', 'Checking your sign-in…'));
+    try {
+      inqAuth.user = (await inqApi('GET', '/api/me')).user;
+    } catch (e) {
+      if (e.status === 401) return teamLogin(e.message);
+      app.replaceChildren(h('div.login', h('div.login-box', h('h1', 'Could not check your sign-in'), h('p', e.message),
+        h('button.btn', { type: 'button', onclick: () => location.reload() }, 'Try again'))));
+      return;
+    }
+    return start();
   }
 
   async function boot() {
@@ -2267,14 +2359,16 @@
     try { cfg = await (await fetch('config.json', { cache: 'no-store' })).json(); } catch (e) { /* no config */ }
     S.cfg = cfg;
     inqAuth.load();
-    if (cfg.mode === 'local') { S.be = Local; return start(); }
-    if (!cfg.repo) {
+    if (cfg.mode === 'local') S.be = Local;
+    else if (inqBase()) S.be = makeCloud(cfg); // saving goes through the inquiry box
+    else if (cfg.repo) S.be = makeGitHub(cfg); // no inquiry box: saving needs a GitHub key
+    else {
       app.replaceChildren(h('div.login', h('div.login-box', h('h1', 'Admin is not set up'),
-        h('p', 'Add the line “admin_repo: owner/repository” to content/settings.txt, or open the panel on your computer with python admin.py.'))));
+        h('p', 'Add the line “inquiry_api: …” (the inquiry box) to content/settings.txt, or open the panel on your computer with python admin.py.'))));
       return;
     }
-    S.be = makeGitHub(cfg);
-    if (!S.be.token) return loginScreen(S.be);
+    if (inqBase()) return checkSignIn();
+    if (S.be.mode === 'github' && !S.be.token) return loginScreen(S.be);
     return start();
   }
 

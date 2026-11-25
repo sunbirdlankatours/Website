@@ -26,6 +26,10 @@ Everything in the table above, apart from colours and layout, can also be change
 tours with their days and photos, destinations, photos, reviews, logos, vehicles, settings and blog posts.
 Photos are shrunk automatically when you upload them, so the site stays fast.
 
+Everyone signs in with their **own email and password** (the team is kept in the inquiry box on
+Cloudflare, see below). The first account is made with the setup code; after that, add people on the
+**Team** page. Nobody needs a GitHub key.
+
 **On your own computer:**
 
 ```
@@ -37,15 +41,10 @@ and rebuilds the site at once, so you can check it at <http://localhost:8090/>. 
 upload them to GitHub as usual (GitHub Desktop: **Commit**, then **Push**).
 
 **On the live website**, at `sunbirdtours.lk/admin/` (or `sunbirdlankatours.github.io/Website/admin/` before the
-domain switch). Saving sends the change to GitHub, and the website updates about a minute later. The first
-time, the panel asks for a GitHub key:
+domain switch). Saving goes through the inquiry box, which saves the change to GitHub with its own GitHub
+key (the `GITHUB_TOKEN` secret, see below), and the website updates about a minute later.
 
-1. On github.com open **Settings → Developer settings → Fine-grained tokens → Generate new token**.
-2. Repository access: **Only select repositories** → this website's repository.
-3. Repository permissions: **Contents: Read and write** (and **Actions: Read-only** to see when the site is live).
-4. Copy the token and paste it into the panel. It stays in that browser only. Don't share it.
-
-The repository the panel saves to is set by `admin_repo:` in `content/settings.txt`.
+The repository it saves to is `GITHUB_REPO` in `worker/wrangler.toml` (and `admin_repo:` in `content/settings.txt`).
 If you also edit files on your computer, **pull** in GitHub Desktop before you start, so you have the
 changes made in the panel.
 
@@ -110,16 +109,23 @@ team's emails and passwords, in a free D1 database. The website itself can be ho
 4. Open the Worker → **Settings → Variables and Secrets → Add**: type **Secret**, name `SETUP_CODE`,
    and a value only you know (8 characters or more). It is used to make the first account, and
    to set a new password when one is forgotten.
-5. Put the Worker's address in `content/settings.txt` on the `inquiry_api:` line.
-6. Send the code to the Worker (from the `worker` folder, on a computer with Node.js 22 or newer):
+5. A GitHub key for saving the website: on github.com (the account that owns the repository) open
+   **Settings → Developer settings → Personal access tokens → Fine-grained tokens → Generate new token**.
+   Repository access: **Only select repositories** → `Website`. Repository permissions:
+   **Contents: Read and write** and **Actions: Read-only**. Copy it, and add it to the Worker like the
+   setup code: type **Secret**, name `GITHUB_TOKEN`. When it runs out, make a new one the same way.
+6. Put the Worker's address in `content/settings.txt` on the `inquiry_api:` line.
+7. Send the code to the Worker (from the `worker` folder, on a computer with Node.js 22 or newer):
    `npx wrangler login` once, then `npx wrangler deploy`. The first time, put the database's id
    (Cloudflare shows it on the D1 page, or `npx wrangler d1 list`) in `worker/wrangler.toml`.
-7. Open the admin panel → **Inquiries → First time, or forgot your password?**, type the setup code,
+8. Open the admin panel → **First time, or forgot your password?**, type the setup code,
    your name, email and a password. Then add the rest of the team on the **Team** page.
 
 How it works:
 
 - Anyone can send a letter; only someone signed in can read them. The tables make themselves on first use.
+- Signed-in team members can read and save the website's texts and photos (`content/` and `static/img/`)
+  through it; it can't change anything else. Each save is one commit, with that person as its author.
 - It takes letters only from the site's own addresses (`sunbirdtours.lk`, the GitHub test site and
   `localhost`); more can be added as `ALLOWED_ORIGINS` in the Worker's settings.
 - At most 10 letters an hour from one connection. After 8 wrong passwords in 15 minutes, that
