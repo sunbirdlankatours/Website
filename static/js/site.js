@@ -1189,6 +1189,24 @@
       go.setAttribute("href", words[c].getAttribute("href"));
       swap(goWord, words[c].textContent, go);
     };
+    // the line under the wheel takes one row for some trips and two for others. Keep its height at the tallest
+    // one, so the wheel, the side hint and the buttons don't jump up and down as the words change (the whole
+    // block sits in the middle of the screen, so any change in its height moved all of it)
+    var sizeLine = function () {
+      if (lineText === line) return;
+      var keep = lineText.textContent, tall = 0;
+      line.style.minHeight = "";
+      words.forEach(function (w) {
+        lineText.textContent = w.getAttribute("data-line") || "";
+        tall = Math.max(tall, line.offsetHeight);
+      });
+      lineText.textContent = keep;
+      line.style.minHeight = tall ? tall + "px" : "";
+    };
+    sizeLine();
+    if (d.fonts && d.fonts.ready) d.fonts.ready.then(sizeLine);
+    var sizeTimer = null;
+    window.addEventListener("resize", function () { clearTimeout(sizeTimer); sizeTimer = setTimeout(sizeLine, 150); });
     // place every word for the wheel's position x: --k is its place on the ring (or in the list on phones), in
     // between whole numbers while it moves; it shrinks and fades the further it is from the chosen spot
     var draw = function () {
@@ -1307,6 +1325,17 @@
     // wheel's area, and touch screens stop treating a swipe there as a page scroll. On phones it also waits
     // until the page has stopped moving, so a swipe that is still scrolling the page down never gets caught.
     var turnBox = sec.querySelector(".tw-turn"), hdr = d.querySelector(".site-header"), ready = false, pageMoved = 0, restTimer = null;
+    // the side hint says "Click to change"; while the mouse is over the part that scrolling turns (the wheel and
+    // its arrows) and scrolling there really does turn it, it says "Scroll to rotate" instead. (Leaving waits a
+    // moment, so crossing the small gap between the wheel and the arrows doesn't flicker it.)
+    var overTimer = null;
+    var hint = function () {
+      sec.classList.toggle("tw-over", ready && (wheel.matches(":hover") || turnBox.matches(":hover")));
+    };
+    [wheel, turnBox].forEach(function (el) {
+      el.addEventListener("mouseenter", function () { clearTimeout(overTimer); hint(); });
+      el.addEventListener("mouseleave", function () { clearTimeout(overTimer); overTimer = setTimeout(hint, 160); });
+    });
     var check = function () {
       var r = sec.getBoundingClientRect(), h = hdr ? hdr.getBoundingClientRect().bottom : 0, vh = window.innerHeight;
       var seen = Math.min(r.bottom, vh) - Math.max(r.top, Math.max(h, 0));
@@ -1316,6 +1345,7 @@
       if (now === ready) return;
       ready = now;
       sec.classList.toggle("tw-ready", ready);
+      hint();
       [wheel, turnBox].forEach(function (el) { if (ready) el.setAttribute("data-lenis-prevent", ""); else el.removeAttribute("data-lenis-prevent"); });
     };
     window.addEventListener("scroll", function () {
@@ -1324,30 +1354,46 @@
     }, { passive: true });
     window.addEventListener("resize", function () { check(); draw(); });
     check();
-    // a mouse wheel or trackpad over the wheel (or its arrows) turns it instead of the page, by the same
-    // distance the page would have scrolled: a gentle scroll moves it a little, a fast flick spins it through
-    // several words. When the scrolling stops it settles on the nearest word (always at least one word on).
-    // (browsers count one notch of a mouse wheel as about 100px, so that is one word; a trackpad's scroll then
-    // moves the words about as far as the fingers go)
-    var wheelTimer = null, wheelFrom = 0, wheelPx = 100;
+    // a mouse wheel or trackpad over the wheel (or its arrows) turns it instead of the page.
+    // - A mouse wheel: each notch is exactly one word. (Browsers report a notch as 100px on one screen, 125 or
+    //   150 on a zoomed one, 4 on a Mac, so count the notches themselves: the old wheelDelta comes in 120s per
+    //   notch, and Firefox may count 3 lines.)
+    // - A trackpad: the words follow the fingers (100px = one word), so a fast flick spins through several.
+    //   When the fingers stop it settles on a whole word, but only moves on once the words have gone at least
+    //   a third of the way to the next one: a small slip of the fingers springs back to the same word instead
+    //   of suddenly changing the trip and its photo.
+    // (a pinch on a trackpad arrives as a wheel event with Ctrl held: that is zooming the page, so it is left alone)
+    // (a Mac trackpad's wheelDelta is 3 × its pixels, so it can land on 120 by chance: that isn't a notch. And once
+    // a scroll has shown itself to be a trackpad's, its later steps count as pixels too, so the words never jump.)
+    var wheelTimer = null, wheelFrom = 0, wheelPx = 100, smooth = false;
+    var notches = function (e) {
+      if (e.deltaMode === 1) return Math.max(1, Math.round(Math.abs(e.deltaY) / 3));
+      if (e.deltaMode === 2) return 1;
+      var w = Math.abs(e.wheelDeltaY || 0);
+      if (!w || w % 120 || e.wheelDeltaY === -3 * e.deltaY) return 0;
+      return w / 120;
+    };
     var onWheel = function (e) {
       check();
-      if (!ready) return;
+      if (!ready || e.ctrlKey) return;
       e.preventDefault();
+      if (!e.deltaY) return;
       stop();
       if (mode !== "wheel") {
         wheelFrom = mode === "glide" ? target : Math.round(x);
         if (mode !== "glide") target = x;
         mode = "wheel";
+        smooth = false;
         run();
       }
-      target += e.deltaY * (e.deltaMode === 1 ? 33 : e.deltaMode === 2 ? 400 : 1) / wheelPx;
+      var k = smooth ? 0 : notches(e), dir = e.deltaY > 0 ? 1 : -1;
+      if (k) target = Math.round(target) + dir * k;
+      else { smooth = true; target += e.deltaY / wheelPx; }
       clearTimeout(wheelTimer);
       wheelTimer = setTimeout(function () {
         if (mode !== "wheel") return;
-        var t = Math.round(target);
-        if (t === wheelFrom && Math.abs(target - wheelFrom) > 0.04) t = wheelFrom + (target > wheelFrom ? 1 : -1);
-        glideTo(t, 0.16);
+        var dist = target - wheelFrom, words = Math.floor(Math.abs(dist) + 0.65);
+        glideTo(wheelFrom + (dist < 0 ? -words : words), 0.16);
       }, 140);
     };
     [wheel, turnBox].forEach(function (el) { el.addEventListener("wheel", onWheel, { passive: false }); });

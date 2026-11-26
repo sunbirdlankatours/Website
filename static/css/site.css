@@ -945,8 +945,17 @@ blockquote { margin: 1.4em 0; padding: 14px 22px; border-left: 4px solid var(--b
   border: 2px solid rgba(255, 255, 255, .45); background: rgba(255, 255, 255, .06); color: #fff; transition: background .2s, color .2s, border-color .2s; }
 .tw-turn button:hover, .tw-turn button:focus-visible { background: var(--brand-yellow); border-color: var(--brand-yellow); color: var(--brand-navy); }
 .tw-turn svg { width: 20px; height: 20px; stroke-width: 2.4; }
-.tw-hint-mouse { display: none; }
-@media (hover: hover) and (pointer: fine) { .tw-hint-touch { display: none; } .tw-hint-mouse { display: inline; } }
+.tw-hint-mouse, .tw-hint-scroll { display: none; }
+/* with a mouse the hint reads "Click to change", and "Scroll to rotate" while the mouse is over the wheel
+   (site.js adds tw-over). Both sit in the same spot, so the column never changes size, and they crossfade. */
+@media (hover: hover) and (pointer: fine) {
+  .tw-hint-touch { display: none; }
+  .tw-turn small { display: grid; place-items: center; }
+  .tw-hint-mouse, .tw-hint-scroll { display: block; grid-area: 1 / 1; transition: opacity .3s ease; }
+  .tw-hint-scroll { opacity: 0; }
+  .trip-wheel.tw-over .tw-hint-mouse { opacity: 0; }
+  .trip-wheel.tw-over .tw-hint-scroll { opacity: 1; }
+}
 
 .tw-line { margin: 22px 0 0; max-width: 34rem; min-height: 1.6em; font-size: 1.08rem; line-height: 1.6; font-weight: 500; color: #fff; }
 .tw-btns { display: flex; flex-wrap: wrap; gap: 12px; margin: 22px 0 0; }

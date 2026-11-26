@@ -1865,7 +1865,7 @@ class Builder:
             '<div class="tw-wheel" tabindex="0" aria-label="Choose a kind of trip. Use the arrow keys to turn the wheel.">'
             '<span class="tw-ring" aria-hidden="true"></span><div class="tw-rot">{words}</div></div>'
             '<div class="tw-turn"><button type="button" class="tw-prev" aria-label="Previous">{up}</button>'
-            '<small><span class="tw-hint-touch">Swipe to change</span><span class="tw-hint-mouse">Scroll to change</span></small><button type="button" class="tw-next" aria-label="Next">{down}</button></div></div>'
+            '<small><span class="tw-hint-touch">Swipe to change</span><span class="tw-hint-mouse">Click to change</span><span class="tw-hint-scroll" aria-hidden="true">Scroll to rotate</span></small><button type="button" class="tw-next" aria-label="Next">{down}</button></div></div>'
             '<p class="tw-line" aria-live="polite"><span>{line}</span></p>'
             '<p class="tw-btns"><a class="btn gold tw-go" href="{link}"><span>Show me <em>{word}</em></span>{arrow}</a>'
             '<a class="btn ghost tw-mix" href="/tours/#find">Want it all? Mix your own</a></p>'
