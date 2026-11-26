@@ -215,17 +215,39 @@
       while (trail.length > 2 && now - trail[0][2] > 120) trail.shift();
       aim();
     });
+    // a short wait before switching, so that brushing past a word doesn't open it
+    var enter = function (li) {
+      clearTimeout(tIn);
+      aimAt = null;
+      if (cur && cur !== li) { aimAt = li; aimQuick = false; aim(); }
+      else tIn = setTimeout(function () { show(li); }, cur ? 70 : 90);
+    };
+    // A sheet only opens for a pointer that is really moving. When a page appears under a pointer that is already
+    // resting on a menu word (the first visit's logo screen lifting away, say), the browser reports it as
+    // entering the word, and the sheet used to spring open by itself. Now that word waits, and opens once the
+    // mouse is moved while still on it. (The browser's own nudges after the page changes keep the pointer where
+    // it was, so they don't count as moving.)
+    var lastMove = 0, resting = null, lx = null, ly = null;
+    d.addEventListener("mousemove", function (e) {
+      var real = e.movementX || e.movementY || (lx !== null && (e.clientX !== lx || e.clientY !== ly));
+      lx = e.clientX;
+      ly = e.clientY;
+      if (!real) return;
+      lastMove = Date.now();
+      if (resting) {
+        var li = resting;
+        resting = null;
+        if (wide.matches && canHover.matches && !hush) enter(li);
+      }
+    }, { passive: true });
     words.forEach(function (li) {
       var a = li.querySelector(".top");
-      // a short wait before switching, so that brushing past a word doesn't open it
       li.addEventListener("mouseenter", function () {
         if (!wide.matches || !canHover.matches || hush) return;
-        clearTimeout(tIn);
-        aimAt = null;
-        if (cur && cur !== li) { aimAt = li; aimQuick = false; aim(); }
-        else tIn = setTimeout(function () { show(li); }, cur ? 70 : 90);
+        if (Date.now() - lastMove > 250) { resting = li; return; }
+        enter(li);
       });
-      li.addEventListener("mouseleave", function () { clearTimeout(tIn); aimAt = null; hush = false; });
+      li.addEventListener("mouseleave", function () { clearTimeout(tIn); aimAt = null; hush = false; if (resting === li) resting = null; });
       a.addEventListener("focus", function () { if (wide.matches && !quiet) show(li); });
       // touch screens: the first tap opens the sheet, a second tap follows the link
       a.addEventListener("click", function (e) {
