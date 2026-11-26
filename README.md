@@ -185,11 +185,9 @@ A push to `main` goes live; a push to any other branch gets its own preview addr
 
 The build also writes `_redirects`, so the old WordPress addresses answer with a real 301.
 
-### The GitHub test address
-
-Until the repository is made private, `main` is also published to `https://sunbirdlankatours.github.io/Website/`
-(the build adjusts every link for that sub-folder automatically). Once the repository is private,
-GitHub stops serving it; then remove the `build` and `deploy` jobs from `publish.yml`.
+The site went live this way on 2026-11-26. The old GitHub Pages test address
+(`sunbirdlankatours.github.io/Website/`) is no longer published. `build.py` can still build for a sub-folder
+with `SITE_BASE_PATH=/Website`, should a test address in a sub-folder ever be needed again.
 
 ## Preview on your own computer (optional)
 
