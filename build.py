@@ -2439,6 +2439,10 @@ class Builder:
         cfg ={"key": s.get("web3forms_key", ""), "email": s.get("email", ""), "whatsapp": s.get("whatsapp", "")}
         if inquiry_api(s):
             cfg["api"] = inquiry_api(s) + "/api/inquiries"
+        # The fonts come in two links. The serif (the big titles and the words in the page-change circle) waits
+        # for its own letters ("block") instead of first showing a stand-in serif that then snaps over; on a first
+        # visit that snap showed in the circle and on the next page's opening screen. The sans fonts keep "swap",
+        # so running text never waits.
         doc = """<!doctype html>
 <html lang="en">
 <head>
@@ -2458,7 +2462,8 @@ class Builder:
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Manrope:wght@600;700;800&family=Instrument+Serif:ital@0;1&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Manrope:wght@600;700;800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=block">
 <link rel="stylesheet" href="/css/site.css?v={ver}">
 {gtag}</head>
 <body class="layout-{layout}{over}">
