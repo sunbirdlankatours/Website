@@ -417,7 +417,7 @@ svg.brand { overflow: visible; }   /* logos that reach the edge of their box (Fa
 /* our representatives abroad (Contact page, build.py representatives): a card each, the round photo (or the
    initials until there is one) beside the name, title, place and a button straight into a WhatsApp chat */
 .band .wrap > .contact-cards + .kicker { margin-top: clamp(52px, 7vw, 80px); }
-.reps { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: 24px; max-width: 920px; margin: 0 auto; }
+.reps { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: 24px; margin: 0; }
 .rep { display: flex; align-items: center; gap: 22px; padding: 26px; background: var(--white); border-radius: var(--radius); box-shadow: var(--shadow); }
 .rep-ph { flex: none; width: 104px; height: 104px; border-radius: 50%; object-fit: cover; }
 .rep-none { display: grid; place-items: center; background: var(--mist); color: var(--brand-blue); font: 400 2.4rem/1 var(--serif); }
@@ -2499,7 +2499,6 @@ html.tf-dark { background-color: #10303c; }
 /* right under the letter, our representatives abroad (the same cards as on the Contact page). Their own chapter,
    so the founder's portrait, which stays in view beside the letter, stops before them */
 .layout-about .chapter.abroad { padding-top: 0; }
-.layout-about .abroad .reps { max-width: 920px; }
 
 /* how we plan: the heading and button stay in view while the six reasons pass by as numbered rows */
 .layout-about .plan { background: #f3f8fa; }
