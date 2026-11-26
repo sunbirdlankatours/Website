@@ -504,7 +504,8 @@ ARRIVE_SCRIPT = (
     '<script>(function(){try{var t=JSON.parse(sessionStorage.getItem("sbTrip")||"null");'
     'sessionStorage.removeItem("sbTrip");if(!t||Date.now()-t.t>8000)return;'
     'document.documentElement.classList.add("arriving");'
-    'var o=document.createElement("div");o.className="pt pt-in"+(t.kind?" pt-"+t.kind:"");o.setAttribute("aria-hidden","true");'
+    # (t.blue: left from the phone's white menu, so the screen is logo blue with white words, see site.css .pt-blue)
+    'var o=document.createElement("div");o.className="pt pt-in"+(t.kind?" pt-"+t.kind:"")+(t.blue?" pt-blue":"");o.setAttribute("aria-hidden","true");'
     # (with a photo: "arriving-photo" keeps the page's own big photo still, so the two copies line up, see site.css)
     'if(t.img){document.documentElement.classList.add("arriving-photo");'
     'var i=new Image();i.alt="";i.decoding="sync";i.src=t.img;o.appendChild(i)}'

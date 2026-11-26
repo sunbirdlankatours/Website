@@ -231,7 +231,7 @@ svg.brand { overflow: visible; }   /* logos that reach the edge of their box (Fa
   .nav-open .bars { background-color: transparent; }
   .nav-open .bars::before { top: 0; transform: rotate(45deg); }
   .nav-open .bars::after { top: 0; transform: rotate(-45deg); }
-  .nav { position: fixed; left: 0; right: 0; top: var(--hh); bottom: 0; display: block; margin: 0; padding: 4px clamp(20px, 6vw, 48px) 40px;
+  .nav { position: fixed; left: 0; right: 0; top: var(--hh); bottom: 0; display: block; margin: 0; --np: clamp(20px, 6vw, 48px); padding: 4px var(--np) 40px;
     overflow-y: auto; overscroll-behavior: contain; background: var(--paper); opacity: 0; visibility: hidden; transform: translate3d(0, -12px, 0);
     transition: opacity .3s ease, transform .5s var(--glide), visibility 0s .5s; }
   .nav-open .nav { opacity: 1; visibility: visible; transform: none; transition: opacity .3s ease, transform .5s var(--glide); }
@@ -241,8 +241,11 @@ svg.brand { overflow: visible; }   /* logos that reach the edge of their box (Fa
   .nav-open .nav > ul > li, .nav-open .nav-foot { opacity: 1; transform: none;
     transition: opacity .5s ease calc(.06s + var(--n, 0) * .05s), transform .6s var(--glide) calc(.06s + var(--n, 0) * .05s); }
   .nav .top { flex: 1; padding: 15px 0; font: 400 2.1rem/1.1 var(--serif); }
-  .sub-toggle { display: block; position: relative; width: 44px; height: 44px; margin-right: -10px; border: 0; background: none; color: #1f3a4a; cursor: pointer; }
-  .sub-toggle::before, .sub-toggle::after { content: ""; position: absolute; left: 50%; top: 50%; width: 16px; height: 1.5px; margin: -.75px 0 0 -8px;
+  /* the + owns the row's right end, from a little left of the + out to the screen edge, so a tap just short of it
+     still folds the lines open; the rest of the row opens the word's page */
+  .sub-toggle { display: block; position: relative; flex: none; align-self: stretch; width: calc(var(--np) + 56px); min-height: 44px;
+    margin-right: calc(-1 * var(--np)); border: 0; background: none; color: #1f3a4a; cursor: pointer; }
+  .sub-toggle::before, .sub-toggle::after { content: ""; position: absolute; right: calc(var(--np) + 4px); top: 50%; width: 16px; height: 1.5px; margin-top: -.75px;
     background: currentColor; transition: transform .4s var(--glide); }
   .sub-toggle::after { transform: rotate(90deg); }
   .open > .sub-toggle::after { transform: rotate(0deg); }
@@ -1172,6 +1175,12 @@ html.lenis, html.lenis body { height: auto; }
 .pt-nav .pt-word small:empty { display: none; }
 .pt-nav .pt-word em { font-size: clamp(2.4rem, 6vw, 4.6rem); }
 /* arriving: the words drift up and soften away first, then the pale screen dissolves into the new page */
+/* from the phone's white menu: the circle is logo blue with the words in white, so it reads clearly against the
+   paper menu it grows over (site.js cover(..., blue); the next page opens on the same blue) */
+.pt-in.pt-nav.pt-blue { background: var(--brand-blue); }
+.pt-blue .pt-disc { background: radial-gradient(closest-side, var(--brand-blue) 85%, rgba(31, 116, 186, 0) 100%); }
+.pt-nav.pt-blue .pt-word, .pt-nav.pt-blue .pt-word em { color: #fff; }
+.pt-nav.pt-blue .pt-word small { color: rgba(255, 255, 255, .78); }
 .pt-in.pt-plain.done, .pt-in.pt-nav.done { transition: opacity .75s cubic-bezier(.4, 0, .2, 1) .15s; }
 .pt-in.pt-plain.done .pt-word, .pt-in.pt-nav.done .pt-word { opacity: 0; filter: blur(8px); transform: translateY(calc(-50% - 14px));
   transition: opacity .45s cubic-bezier(.4, 0, .2, 1), filter .45s cubic-bezier(.4, 0, .2, 1), transform .6s cubic-bezier(.2, .7, .2, 1); }

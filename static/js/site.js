@@ -55,11 +55,15 @@
     nav.addEventListener("click", function (e) {
       var a = e.target.closest("a");
       if (a && !e.defaultPrevented) {
-        body.classList.remove("nav-open");
-        if (toggle) toggle.setAttribute("aria-expanded", "false");
         // the line under the menu words stays on the word whose page is opening, instead of gliding back to the
         // section you are leaving while the page fades out (not for links opening in a new tab: you stay here)
         var away = a.target === "_blank" || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey || e.button > 0;
+        // phones: the menu stays up while the blue circle grows over it (see "moving between pages"), so the page
+        // behind never shows through; it only closes at once for links that stay on this page or leave the site
+        if (away || calmMotion() || !pageLink(a)) {
+          body.classList.remove("nav-open");
+          if (toggle) toggle.setAttribute("aria-expanded", "false");
+        }
         sheetClose(away ? null : a);
         // the next page opens on its own content, not on the sheet of the word the pointer is still resting on
         // (see "hush" below)
@@ -897,12 +901,13 @@
   // (the small script at the top of every page puts the same screen up first: ARRIVE_SCRIPT in build.py)
   var calmMotion = function () { return window.matchMedia("(prefers-reduced-motion: reduce)").matches; };
   var leaving = false;
-  // kind "plain": the slower version for "Want it all?" (to the tour finder), with the sentence; kind "nav": every other page link
-  var cover = function (href, x, y, word, lead, kind) {
+  // kind "plain": the slower version for "Want it all?" (to the tour finder), with the sentence; kind "nav": every other page link.
+  // blue: from the phone's white menu the circle is logo blue with white words, so it stands out against the paper
+  var cover = function (href, x, y, word, lead, kind, blue) {
     leaving = true;
-    try { sessionStorage.setItem("sbTrip", JSON.stringify({ kind: kind, word: word, lead: lead, t: Date.now() })); } catch (err) { /* opens without it */ }
+    try { sessionStorage.setItem("sbTrip", JSON.stringify({ kind: kind, blue: blue ? 1 : 0, word: word, lead: lead, t: Date.now() })); } catch (err) { /* opens without it */ }
     var o = d.createElement("div");
-    o.className = "pt pt-out pt-" + kind;
+    o.className = "pt pt-out pt-" + kind + (blue ? " pt-blue" : "");
     o.setAttribute("aria-hidden", "true");
     // the circle: a soft-edged disc centred on the click, just big enough that its solid middle reaches the
     // farthest corner of the screen. It grows and fades in at once; both are things the browser animates
@@ -959,7 +964,7 @@
       y = b.top + b.height / 2;
     }
     var say = nameOf(a);
-    cover(url.href, x, y, say.word, say.lead, "nav");
+    cover(url.href, x, y, say.word, say.lead, "nav", !!nav && nav.contains(a) && body.classList.contains("nav-open"));
   });
   // the words in the circle name where the link goes. A link can say it outright (data-pt, with an optional
   // small line above, data-pt-lead: "and 2 more" says "Tours that visit / Kandy"); a card or a menu row shows only
@@ -986,11 +991,14 @@
     l.href = url.pathname;
     d.head.appendChild(l);
   }, { passive: true });
-  // coming back with the browser's Back button: take the full-screen circle down again
+  // coming back with the browser's Back button: take the full-screen circle down again (and the phone menu,
+  // which stayed up under the blue circle)
   window.addEventListener("pageshow", function (e) {
     if (!e.persisted) return;
     leaving = false;
     d.querySelectorAll(".pt-out").forEach(function (o) { o.remove(); });
+    body.classList.remove("nav-open");
+    if (toggle) toggle.setAttribute("aria-expanded", "false");
   });
   // the photo you clicked opens out from its place on the page (rect r) until it fills the screen, with the name
   // over it; the next page opens on that same picture and fades it away (ARRIVE_SCRIPT in build.py). Used by the
