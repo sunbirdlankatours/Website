@@ -30,12 +30,14 @@
    Setting it up (once): in Cloudflare, give the Worker a D1 database binding called DB, and the
    secrets SETUP_CODE and GITHUB_TOKEN (a GitHub key that may change GITHUB_REPO, see wrangler.toml).
    FCM_SERVICE_ACCOUNT (a Firebase key, see ring.js) makes the team's phones ring for chats.
+   Each new letter is also emailed to the team's Gmail (mail.js, the MAILER binding in wrangler.toml).
    The tables make themselves the first time they are used. README.md has the clicks. */
 
 import {
   Stop, stop, refuse, json, iso, b64, unb64, sha256hex, randomPass, sameText, cleanEmail, cleanName, readJson, senderOf, enc, EMAIL,
 } from "./common.js";
 import * as chat from "./chat.js";
+import { mailLater } from "./mail.js";
 export { Desk } from "./desk.js";
 
 const FIELDS = { // the parts of a letter or form that are kept, with the most characters kept of each
@@ -261,6 +263,8 @@ async function sendLetter(c) {
     JSON.stringify(d), (request.cf && request.cf.country) || "", sender).run();
   // the team's phones get a notification and their badge goes up (the app fetches the letter itself)
   chat.ringLater(c, { kind: "inquiry", chat: saved.meta.last_row_id });
+  // and a copy goes to the team's Gmail (mail.js), where Reply answers the traveller
+  mailLater(c, d, saved.meta.last_row_id);
   return json({ success: true });
 }
 

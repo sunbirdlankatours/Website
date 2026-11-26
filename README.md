@@ -89,8 +89,11 @@ Use JPG photos around 1600 px wide or smaller. Then use `/img/tours/your-photo.j
 
 A letter or form sent from the website goes two ways at once. Either one arriving is enough:
 
-- **Into the admin panel** (Inquiries), through the inquiry box on Cloudflare (next section).
-- **By email** through Web3Forms. Go to <https://web3forms.com>, enter `letstravel@sunbirdtours.lk`,
+- **Into the admin panel** (Inquiries) and the SunBird app, through the inquiry box on Cloudflare (next section).
+  The inquiry box also **emails each letter to sunbirdlankatours@gmail.com** (`worker/src/mail.js`, through
+  Cloudflare Email Routing; Reply answers the traveller). That Gmail must stay a verified destination address
+  in Cloudflare → Email → Email Routing.
+- **Optionally by email** through Web3Forms as well. Go to <https://web3forms.com>, enter `letstravel@sunbirdtours.lk`,
   get the free **Access Key** by email and put it in `content/settings.txt` on the `web3forms_key:` line.
 
 With neither, the forms ask visitors to email or WhatsApp you instead.

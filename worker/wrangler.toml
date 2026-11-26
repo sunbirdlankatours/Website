@@ -29,5 +29,11 @@ class_name = "Desk"
 tag = "v1"
 new_sqlite_classes = ["Desk"]
 
+# each new letter from the website is emailed to the team's Gmail too (src/mail.js). Cloudflare only sends to a
+# verified address: Email → Email Routing → Destination addresses (sunbirdlankatours@gmail.com is verified).
+[[send_email]]
+name = "MAILER"
+destination_address = "sunbirdlankatours@gmail.com"
+
 # Secrets, added in Cloudflare (never written here): SETUP_CODE, GITHUB_TOKEN, and FCM_SERVICE_ACCOUNT
 # (the Firebase key that rings the team's phones for chats, see src/ring.js).
