@@ -99,7 +99,7 @@ Write to Rohana: [rohana@sunbirdtours.lk](mailto:rohana@sunbirdtours.lk)
 :::
 
 ::: band window
-![Wild elephants at the water](/img/about/about-elephants.jpg)
+![A wild elephant walking down a jungle track](/img/about/about-elephant-road.jpg)
 
 ~ In the wild
 

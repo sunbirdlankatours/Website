@@ -8,6 +8,7 @@ about-train-window.jpg | https://unsplash.com/photos/ePAa2c9XbtE
 about-hills.jpg | https://unsplash.com/photos/i9eaAR4dWi8
 about-nine-arches.jpg | https://unsplash.com/photos/jpTT_SAU034
 about-elephants.jpg | https://unsplash.com/photos/nDrkDvdC9kU
+about-elephant-road.jpg | https://unsplash.com/photos/IHwt8DQk6gM  (added 2026-11-26 for the "In the wild" window, in place of about-elephants.jpg)
 about-waterfall.jpg | https://unsplash.com/photos/Wak57_M4JKM
 about-stilt-fisherman.jpg | https://unsplash.com/photos/Qx8_d5dGhrs
 about-lighthouse-sunset.jpg | https://unsplash.com/photos/fnySGfSMY-s
