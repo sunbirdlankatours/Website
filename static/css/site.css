@@ -16,7 +16,8 @@
   --body: "Inter", system-ui, sans-serif;
 }
 *, *::before, *::after { box-sizing: border-box; }
-html { scroll-behavior: smooth; scroll-padding-top: 96px; }
+/* no blue flash over links and buttons when they're tapped on a phone (keyboard focus rings stay) */
+html { scroll-behavior: smooth; scroll-padding-top: 96px; -webkit-tap-highlight-color: transparent; }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
 body { margin: 0; font: 16px/1.7 var(--body); color: var(--text); background: var(--white); -webkit-font-smoothing: antialiased; }
 img { max-width: 100%; height: auto; display: block; }

@@ -17,6 +17,7 @@
 }
 *, *::before, *::after { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; background: var(--night); }
+html { -webkit-tap-highlight-color: transparent; }   /* no blue flash on tap on phones */
 body { font: 16px/1.6 var(--body); color: var(--white); -webkit-font-smoothing: antialiased; overflow: hidden; }
 svg { width: 1.2em; height: 1.2em; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; flex: none; }
 a { color: var(--fire); }
