@@ -2823,6 +2823,7 @@ class Builder:
 
     def build_redirects(self):
         n = 0
+        rules = []  # the same moves for Cloudflare Pages' _redirects file (written below)
         for old, new in self.site.redirects:
             if not old.startswith("/") or old.rstrip("/") == "":
                 continue
@@ -2837,6 +2838,13 @@ class Builder:
                         '</head><body><p>This page has moved: <a href="{new}">{new}</a></p></body></html>'.format(
                             abs=esc(self.s.get("url", "") + new), new=esc(new), js=json.dumps(new)))
             n += 1
+            for src in {old, old.rstrip("/")}:  # with and without the last slash
+                rules.append("%s %s 301" % (src, new))
+        # Cloudflare Pages reads _redirects and answers these old addresses with a real "moved permanently" (301),
+        # which search engines trust more than the little pages above. Those pages stay, for hosts without it.
+        with open(os.path.join(OUT, "_redirects"), "w", encoding="utf-8") as f:
+            f.write("# Old WordPress addresses and where they now go (content/redirects.txt). Made by build.py.\n")
+            f.write("".join(r + "\n" for r in sorted(set(rules))))
         return n
 
     def build_extras(self):

@@ -1,9 +1,14 @@
-# Rebuilds and publishes the website every time a change is saved to the main branch.
+# Rebuilds and publishes the website every time a change is saved (pushed).
+#  - Cloudflare Pages: the real site (sunbirdtours.lk). A push to main goes live; a push to any other branch
+#    gets its own private preview address, so unfinished work can be checked first. This part only runs once
+#    the CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID secrets are added (README → "Publish on Cloudflare").
+#  - GitHub Pages: the old test address (sunbirdlankatours.github.io/Website/), main only, until the
+#    repository is made private.
 name: Publish website
 
 on:
   push:
-    branches: [main]
+    branches: ["**"]
   workflow_dispatch:
 
 permissions:
@@ -12,16 +17,58 @@ permissions:
   id-token: write
 
 concurrency:
-  group: pages
+  group: publish-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
+  cloudflare:
+    runs-on: ubuntu-latest
+    env:
+      HAS_CF: ${{ secrets.CLOUDFLARE_API_TOKEN != '' }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      PROJECT: sunbirdtours
+    steps:
+      - name: Cloudflare isn't connected yet
+        if: env.HAS_CF != 'true'
+        run: echo "::notice::No CLOUDFLARE_API_TOKEN secret yet, so only the GitHub test address was updated."
+      - uses: actions/checkout@v4
+        if: env.HAS_CF == 'true'
+      - uses: actions/setup-python@v5
+        if: env.HAS_CF == 'true'
+        with:
+          python-version: "3.12"
+      - name: Install the photo tool
+        if: env.HAS_CF == 'true'
+        run: pip install -r requirements.txt
+      - uses: actions/cache@v4
+        if: env.HAS_CF == 'true'
+        with:
+          path: .cache/photos
+          key: photos-${{ hashFiles('static/img/**') }}
+          restore-keys: photos-
+      # built for the top of the domain (no sub-folder), as sunbirdtours.lk needs
+      - name: Build the site
+        if: env.HAS_CF == 'true'
+        run: python build.py
+      - uses: actions/setup-node@v4
+        if: env.HAS_CF == 'true'
+        with:
+          node-version: "22"
+      # makes the Cloudflare Pages project the first time (later runs just find it there)
+      - name: Make sure the Cloudflare project exists
+        if: env.HAS_CF == 'true'
+        run: npx --yes wrangler@4 pages project create "$PROJECT" --production-branch=main || true
+      - name: Send the site to Cloudflare
+        if: env.HAS_CF == 'true'
+        run: npx --yes wrangler@4 pages deploy _site --project-name="$PROJECT" --branch="$GITHUB_REF_NAME" --commit-hash="$GITHUB_SHA"
+
   build:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      # Tells the build where the site lives: "/Website" on sunbirdlankatours.github.io/Website/,
-      # or nothing once the custom domain (sunbirdtours.lk) is set in Settings -> Pages.
+      # Tells the build where the site lives: "/Website" on sunbirdlankatours.github.io/Website/
       - id: pages
         uses: actions/configure-pages@v5
       - uses: actions/setup-python@v5
@@ -45,6 +92,7 @@ jobs:
           path: _site
 
   deploy:
+    if: github.ref == 'refs/heads/main'
     needs: build
     runs-on: ubuntu-latest
     environment:

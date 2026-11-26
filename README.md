@@ -167,23 +167,29 @@ the whole downloaded file's contents to the Worker as a secret called `FCM_SERVI
 way as `SETUP_CODE`. Never put that file in this folder or on GitHub. The doorbell needs a deploy with
 wrangler (`npx wrangler deploy` in `worker`); the Cloudflare dashboard's Edit code can't add it.
 
-## Publish on GitHub Pages (one time)
+## Publish on Cloudflare Pages (one time)
 
-1. Create a new repository on github.com (for example `sunbirdtours-website`) and upload this folder
-   (GitHub Desktop: **File → Add local repository → Publish repository**).
-2. On github.com: **Settings → Pages → Source: GitHub Actions**.
-3. **Settings → Pages → Custom domain:** `sunbirdtours.lk` → Save.
-4. Point the domain to GitHub (Cloudflare DNS, all "DNS only"):
-   - four `A` records for `sunbirdtours.lk`: `185.199.108.153`, `185.199.109.153`, `185.199.110.153`, `185.199.111.153`
-   - `CNAME` record `www` → `<your-github-username>.github.io`
-   - **Do not change the MX / email records.**
-5. When GitHub shows the certificate is ready, tick **Enforce HTTPS**.
+Every push builds the site on GitHub (`.github/workflows/publish.yml`) and sends it to Cloudflare Pages.
+A push to `main` goes live; a push to any other branch gets its own preview address.
 
-### Test address before the domain switch
+1. **Cloudflare key:** dash.cloudflare.com → your profile → **API Tokens → Create Token → Custom token**,
+   permission **Account → Cloudflare Pages → Edit**, for your account. Copy the token.
+2. **Account ID:** shown on the Cloudflare dashboard home (Account details), or in the address bar.
+3. **GitHub:** the repository → **Settings → Secrets and variables → Actions → New repository secret**:
+   `CLOUDFLARE_API_TOKEN` (the token) and `CLOUDFLARE_ACCOUNT_ID` (the ID).
+4. Push anything (or **Actions → Publish website → Run workflow**). The first run makes the Cloudflare
+   project `sunbirdtours` and puts the site at its `….pages.dev` address (kept out of Google by `static/_headers`).
+5. **Go live:** Cloudflare → **Workers & Pages → sunbirdtours → Custom domains** → add `sunbirdtours.lk`
+   (and `www.sunbirdtours.lk`). Cloudflare points the domain at the site itself.
+   **Don't touch the MX / email records.**
 
-Until step 3 is done, the site runs at `https://sunbirdlankatours.github.io/Website/`.
-The build adjusts every link for that sub-folder automatically, and stops doing so
-as soon as the custom domain is set. Nothing needs changing by hand.
+The build also writes `_redirects`, so the old WordPress addresses answer with a real 301.
+
+### The GitHub test address
+
+Until the repository is made private, `main` is also published to `https://sunbirdlankatours.github.io/Website/`
+(the build adjusts every link for that sub-folder automatically). Once the repository is private,
+GitHub stops serving it; then remove the `build` and `deploy` jobs from `publish.yml`.
 
 ## Preview on your own computer (optional)
 
