@@ -419,6 +419,7 @@ class Site:
         self.pages = self.load_dir("pages")
         self.testimonials = read_rows(os.path.join(CONTENT, "testimonials.txt"))
         self.partners = read_rows(os.path.join(CONTENT, "partners.txt"))
+        self.representatives = read_rows(os.path.join(CONTENT, "representatives.txt"))
         self.vehicles = read_rows(os.path.join(CONTENT, "vehicles.txt"))
         self.redirects = [[c.strip() for c in l.split("->")] for l in read_lines(os.path.join(CONTENT, "redirects.txt"))
                           if "->" in l and not l.lstrip().startswith("#")]
@@ -2025,6 +2026,29 @@ class Builder:
                  pl=esc(s.get("phone_link")), p=esc(s.get("phone")), pl2=esc(s.get("phone2_link")), p2=esc(s.get("phone2")),
                  wa=esc(s.get("whatsapp")), e=esc(s.get("email")), e2=esc(s.get("email2")), hours=esc(s.get("hours")))
 
+    def representatives(self):
+        """Our people abroad (content/representatives.txt), one card each: the photo (or the initials in a circle
+        until there is one), the name and title, the place, and a button straight into a WhatsApp chat."""
+        cards = []
+        for row in self.site.representatives:
+            name, title, place, phone, photo = (row + [""] * 5)[:5]
+            if not name:
+                continue
+            # the initials, without a "Mr." / "Mrs." / "Dr." in front
+            words = [w for w in re.sub(r"^(mr|mrs|ms|miss|dr)\.?\s+", "", name, flags=re.I).split() if w[:1].isalpha()]
+            initials = "".join(w[0] for w in words[:2]).upper()
+            pic = ('<img class="rep-ph" src="%s" alt="%s" width="160" height="160" loading="lazy">' % (esc(photo), esc(name)) if photo
+                   else '<span class="rep-ph rep-none" aria-hidden="true">%s</span>' % esc(initials))
+            digits = re.sub(r"\D", "", phone)
+            chat = ('<a class="rep-wa" href="https://wa.me/%s" target="_blank" rel="noopener">%s<span>WhatsApp %s</span></a>'
+                    % (digits, ICON["whatsapp"], esc(phone))) if digits else ""
+            cards.append(
+                '<div class="rep">{pic}<div class="rep-in"><h3>{name}</h3>{title}{place}{chat}</div></div>'.format(
+                    pic=pic, name=esc(name), chat=chat,
+                    title='<p class="rep-t">%s</p>' % esc(title) if title else "",
+                    place='<p class="rep-pl">%s%s</p>' % (ICON["pin"], esc(place)) if place else ""))
+        return '<div class="reps">%s</div>' % "".join(cards) if cards else ""
+
     def form(self, tour=None):
         opts = ['<option value="">Not sure yet – help me plan</option>']
         for t in self.site.tours:
@@ -2161,6 +2185,7 @@ class Builder:
             "partners": lambda: self.partners(),
             "vehicles": lambda: self.vehicles(),
             "contact-cards": lambda: self.contact_cards(),
+            "representatives": lambda: self.representatives(),
             "form": lambda: self.form(),
             "letter": lambda: self.letter(),
         }.get(kind, lambda: "<!-- unknown block %s -->" % esc(name))()
@@ -2236,11 +2261,15 @@ class Builder:
                         cta='<a class="btn gold blue mp-cta" href="%s">%s</a>' % (esc(it["button"][1]), esc(it["button"][0]))
                         if it.get("button") else ""))
                 paths.append(own)
+            # WhatsApp and the socials in settings.txt as one row of round icons (like the footer's), under the email
+            links = ([("https://wa.me/" + s["whatsapp"], "WhatsApp", ICON["whatsapp"])] if s.get("whatsapp") else []) + [
+                (s[k], k.title(), ICON[k]) for k in ("facebook", "instagram", "tripadvisor") if s.get(k)]
             foot = ('<div class="nav-foot"><a class="btn gold nav-cta" href="/contact-us/#plan">Plan my trip</a>'
-                    '<a class="nf-line" href="https://wa.me/{wa}" target="_blank" rel="noopener">{waicon}WhatsApp {phone}</a>'
-                    '<a class="nf-line" href="mailto:{mail}">{mailicon}{mail}</a></div>').format(
-                wa=esc(s.get("whatsapp")), waicon=ICON["whatsapp"], phone=esc(s.get("phone")),
-                mail=esc(s.get("email")), mailicon=ICON["mail"])
+                    '<a class="nf-line" href="mailto:{mail}">{mailicon}{mail}</a>{social}</div>').format(
+                mail=esc(s.get("email")), mailicon=ICON["mail"],
+                social=('<div class="nf-social">%s</div>' % "".join(
+                    '<a href="%s" target="_blank" rel="noopener" aria-label="%s">%s</a>' % (esc(href), label, icon)
+                    for href, label, icon in links)) if links else "")
             self._nav = (items, paths, foot)
         items, paths, foot = self._nav
         # the section this page is in: its own address or the start of it, or (tour pages, blog posts) by kind

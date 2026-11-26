@@ -1,0 +1,8 @@
+# Our representatives abroad, shown on the Contact page and under Rohana's letter on About us ({{representatives}}).
+# One person per line:
+#   name | title | place | WhatsApp number (with the country code) | photo (optional)
+# Photos go in static/img/representatives/ (a square photo of the face looks best). With no photo, the card
+# shows the person's initials in a circle instead.
+
+Mr. Satheeskumar | Director Operation, European market | Scotland, UK | +44 7539174346 | /img/representatives/satheeskumar.jpg
+Amila Rathugamage | Representative | Epping NSW 2121, Australia | +94 77 931 5918 |

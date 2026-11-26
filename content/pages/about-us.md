@@ -56,15 +56,23 @@ A licensed inbound tour operator, registered with the Sri Lanka Tourism Developm
 
 > At Sunbird Lanka Tours, we are actively embracing a new phase in our journey — one that places sustainability, eco-conscious travel, and community-based tourism at the heart of everything we do.
 
-I am the Chairman & Managing Director of Sunbird Lanka Tours & Travels (Pvt) Ltd, a licensed inbound tour operator registered with the Sri Lanka Tourism Development Authority (SLTDA) since 2010, and the Managing Partner at Rohana Hettiarachchi & Company, a firm specializing in audit, taxation, and financial advisory services. I also serve as an Associate Wealth Planners’ Manager at AIA Insurance Lanka Ltd.
+Welcome to the newly upgraded digital home of Sunbird Lanka Tours & Travels (Pvt) Ltd. As Chairman & Managing Director, I am proud to lead a trusted, licensed inbound tour operator registered with the Sri Lanka Tourism Development Authority (SLTDA) since 2010. This new platform reflects a bold, transformative phase in our company’s journey—one that places sustainability, eco-conscious travel, and community-based tourism at the very heart of every journey we design.
 
-With over 25 years of leadership experience spanning finance, taxation, auditing, and tourism, I bring a distinctive blend of financial discipline and strategic insight into Sri Lanka’s inbound travel industry. My professional journey includes senior roles at Ernst & Young Colombo, the Caritas Colombo Tsunami Rehabilitation Project, and other leading private sector organizations.
+At Sunbird Lanka Tours, we believe that exploring Sri Lanka should leave a lasting, positive impact. Our operations are deeply guided by responsible tourism practices that protect our island’s extraordinary biodiversity, honor its rich cultural heritage, and create direct economic benefits for the local communities we partner with. Whether curating bespoke cultural circuits, wildlife and nature expeditions, or soft adventure travel, we are committed to delivering authentic, enriching experiences for global travelers and international partners alike—all while upholding the highest standards of hospitality and environmental stewardship.
 
-Our operations are increasingly guided by responsible tourism practices that protect the environment, respect local cultures, and directly benefit the communities we work with.
+Alongside steering the strategic vision of Sunbird Lanka Tours, I bring over 25 years of executive leadership spanning finance, auditing, and corporate advisory services. I serve as the Managing Partner at Rohana Hettiarachchi & Company (specializing in audit, taxation, and financial advisory) and as an Associate Wealth Planners’ Manager at AIA Insurance Lanka Ltd. My professional journey also includes senior roles at leading private sector organizations.
 
-Known for being dynamic, results-driven, and target-oriented, I take pride in inspiring teams to achieve their goals while upholding the highest professional standards.
+This distinctive background allows me to infuse Sri Lanka’s inbound travel industry with strong financial discipline, operational stability, and long-term strategic foresight. Dynamic and results-driven, I take pride in inspiring our passionate team to innovate, exceed expectations, and position Sunbird Lanka Tours as a premier leader in sustainable Sri Lankan travel.
+
+We invite you to explore our new website and discover how we can craft your next unforgettable, responsible journey through Sri Lanka.
 
 Write to Rohana: [rohana@sunbirdtours.lk](mailto:rohana@sunbirdtours.lk)
+:::
+
+::: band chapter abroad
+~ Our representatives abroad
+
+{{representatives}}
 :::
 
 ::: band window
