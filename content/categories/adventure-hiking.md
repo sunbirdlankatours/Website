@@ -6,6 +6,7 @@ title: "Sri Lanka Adventure & Hiking Tours"
 word: "adventure"
 tagline: "Rafting, hiking and surfing"
 image: "/img/site/sunbird-lanka-tours-hero-bg-04-surffing-female.jpg"
+focus: "72% 50%"
 description: "Sri Lanka adventure and hiking tours: white-water rafting in Kitulgala, hikes in Ella and Horton Plains, surfing at Arugam Bay and kayaking on Negombo’s lagoon."
 order: 7
 ---
